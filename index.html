@@ -267,11 +267,21 @@
         /* Loader */
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Estilos para login */
+        .login-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; }
+        .login-card { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 400px; overflow: hidden; }
+        .login-header { background: linear-gradient(90deg, var(--primary), var(--primary-dark)); color: white; padding: 40px 30px; text-align: center; }
+        .login-body { padding: 40px 30px; }
+        .login-footer { padding: 20px 30px; background: #f8fafc; text-align: center; border-top: 1px solid var(--border); }
+        .setup-required { text-align: center; padding: 60px 20px; max-width: 600px; margin: 100px auto; }
+        .setup-required h1 { color: var(--danger); margin-bottom: 20px; }
+        .setup-required .btn { margin-top: 20px; }
     </style>
 </head>
 <body>
-    <!-- Contenedor Principal -->
-    <div class="app-container">
+    <!-- Contenedor Principal (oculto hasta login) -->
+    <div class="app-container" id="appContainer" style="display: none;">
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -1496,10 +1506,109 @@
             </div>
         </div>
     </div>
+
+    <!-- Pantalla de Login -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>🏪 Sistema POS</h1>
+                <p>Facturación y Gestión Comercial</p>
+            </div>
+            <div class="login-body">
+                <div id="setupRequired" class="setup-required" style="display: none;">
+                    <h1><i class="fas fa-exclamation-triangle"></i> Configuración Requerida</h1>
+                    <p>El sistema necesita ser configurado antes de su primer uso.</p>
+                    <p>Por favor, configura Firebase y los datos básicos del sistema.</p>
+                    <button class="btn btn-primary" onclick="iniciarConfiguracion()">
+                        <i class="fas fa-cog"></i> Iniciar Configuración
+                    </button>
+                </div>
+                
+                <div id="loginForm">
+                    <h3 style="text-align: center; margin-bottom: 30px;">Iniciar Sesión</h3>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="loginEmail" class="form-control" placeholder="tu@email.com" value="admin@pos.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="loginPassword" class="form-control" placeholder="********" value="admin123">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary" style="width: 100%;" onclick="iniciarSesion()">
+                            <i class="fas fa-sign-in-alt"></i> Ingresar al Sistema
+                        </button>
+                    </div>
+                    <div class="alert alert-info" style="text-align: center; font-size: 14px;">
+                        <i class="fas fa-info-circle"></i> Usuario demo: admin@pos.com / admin123
+                    </div>
+                </div>
+            </div>
+            <div class="login-footer">
+                <small>© 2024 Sistema POS - Versión 2.0</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para configuración inicial -->
+    <div class="modal" id="modalConfigInicial">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Configuración Inicial del Sistema</h3>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Configura los datos básicos para comenzar a usar el sistema.
+                </div>
+                <form id="formConfigInicial">
+                    <div class="form-group">
+                        <label>Nombre del Comercio *</label>
+                        <input type="text" id="configInicialNombre" class="form-control" placeholder="Mi Comercio" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección</label>
+                        <input type="text" id="configInicialDireccion" class="form-control" placeholder="Av. Principal 123">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="text" id="configInicialTelefono" class="form-control" placeholder="+54 11 1234-5678">
+                    </div>
+                    <div class="form-group">
+                        <label>Email del Administrador *</label>
+                        <input type="email" id="configInicialEmail" class="form-control" placeholder="admin@micomercio.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña del Administrador *</label>
+                        <input type="password" id="configInicialPassword" class="form-control" placeholder="********" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirmar Contraseña *</label>
+                        <input type="password" id="configInicialPasswordConfirm" class="form-control" placeholder="********" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Configuración de Firebase</label>
+                        <textarea id="configInicialFirebase" class="form-control" rows="4" placeholder='{
+  "apiKey": "TU_API_KEY",
+  "authDomain": "TU_DOMINIO.firebaseapp.com",
+  "projectId": "TU_PROJECT_ID",
+  "storageBucket": "TU_STORAGE_BUCKET",
+  "messagingSenderId": "TU_SENDER_ID",
+  "appId": "TU_APP_ID"
+}'></textarea>
+                        <small>Deja vacío para usar configuración demo.</small>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Configuración e Iniciar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     
-    <!-- MODALES -->
-    
-    <!-- Modal Productos -->
+    <!-- MODALES EXISTENTES (se mantienen igual que en el código original) -->
     <div class="modal" id="modalProductos">
         <div class="modal-content">
             <div class="modal-header">
@@ -1512,7 +1621,6 @@
         </div>
     </div>
     
-    <!-- Modal Nuevo Producto -->
     <div class="modal" id="modalNuevoProducto">
         <div class="modal-content">
             <div class="modal-header">
@@ -1584,7 +1692,6 @@
         </div>
     </div>
     
-    <!-- Modal Importar Productos -->
     <div class="modal" id="modalImportarProductos">
         <div class="modal-content">
             <div class="modal-header">
@@ -1621,90 +1728,6 @@
         </div>
     </div>
     
-    <!-- Modal Cambio Masivo de Precios -->
-    <div class="modal" id="modalCambioMasivoPrecios">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Cambio Masivo de Precios</h3>
-                <button class="modal-close" onclick="cerrarModal('modalCambioMasivoPrecios')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Tipo de Ajuste</label>
-                    <select id="tipoAjustePrecios" class="form-control" onchange="actualizarOpcionesAjuste()">
-                        <option value="porcentaje">Porcentaje</option>
-                        <option value="monto">Monto Fijo</option>
-                        <option value="redondeo">Redondeo</option>
-                        <option value="margen">Margen de Ganancia</option>
-                    </select>
-                </div>
-                <div id="opcionesAjustePorcentaje" class="opciones-ajuste">
-                    <div class="form-group">
-                        <label>Porcentaje de Aumento (%)</label>
-                        <input type="number" id="ajustePorcentaje" class="form-control" step="0.1" value="10">
-                    </div>
-                    <div class="form-group">
-                        <label>Aplicar a:</label>
-                        <select id="aplicarPorcentajeA" class="form-control">
-                            <option value="precio_venta">Precio de Venta</option>
-                            <option value="precio_costo">Precio de Costo</option>
-                            <option value="ambos">Ambos</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="opcionesAjusteMonto" class="opciones-ajuste" style="display: none;">
-                    <div class="form-group">
-                        <label>Monto a Sumar</label>
-                        <input type="number" id="ajusteMonto" class="form-control" step="0.01" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Aplicar a:</label>
-                        <select id="aplicarMontoA" class="form-control">
-                            <option value="precio_venta">Precio de Venta</option>
-                            <option value="precio_costo">Precio de Costo</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="opcionesAjusteMargen" class="opciones-ajuste" style="display: none;">
-                    <div class="form-group">
-                        <label>Margen de Ganancia Deseado (%)</label>
-                        <input type="number" id="ajusteMargen" class="form-control" step="0.1" value="30">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Filtrar por:</label>
-                    <select id="filtroAjuste" class="form-control" onchange="actualizarFiltroAjuste()">
-                        <option value="todos">Todos los productos</option>
-                        <option value="categoria">Categoría</option>
-                        <option value="proveedor">Proveedor</option>
-                        <option value="stock">Stock</option>
-                    </select>
-                </div>
-                <div id="filtroCategoriaAjuste" class="filtro-ajuste" style="display: none;">
-                    <div class="form-group">
-                        <label>Seleccionar Categoría</label>
-                        <select id="categoriaAjuste" class="form-control"></select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Productos a Afectar: <span id="contadorProductosAjuste">0</span></label>
-                </div>
-                <div class="form-group">
-                    <button class="btn btn-warning" onclick="calcularPrevisualizacionAjuste()">
-                        <i class="fas fa-calculator"></i> Previsualizar Cambios
-                    </button>
-                </div>
-                <div id="previsualizacionAjuste" style="display: none; margin-top: 20px;"></div>
-                <div class="form-group" style="margin-top: 20px;">
-                    <button class="btn btn-danger" id="btnAplicarAjuste" onclick="aplicarCambioMasivoPrecios()" disabled>
-                        <i class="fas fa-exclamation-triangle"></i> Aplicar Cambios Masivos
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal Clientes -->
     <div class="modal" id="modalClientes">
         <div class="modal-content">
             <div class="modal-header">
@@ -1717,7 +1740,6 @@
         </div>
     </div>
     
-    <!-- Modal Nuevo Cliente -->
     <div class="modal" id="modalNuevoCliente">
         <div class="modal-content">
             <div class="modal-header">
@@ -1774,406 +1796,86 @@
                     </div>
                     <div class="form-group">
                         <label>Límite de Crédito</label>
-                        <input type="number" id="nuevoClienteLimiteCredito" class="form-control" step="0.01" min="0" value="0">
+                                        <input type="number" id="nuevoClienteLimiteCredito" class="form-control" step="0.01" min="0" value="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Días de Crédito</label>
+                                        <input type="number" id="nuevoClienteDiasCredito" class="form-control" min="0" value="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Categoría</label>
+                                        <select id="nuevoClienteCategoria" class="form-control">
+                                            <option value="normal">Normal</option>
+                                            <option value="preferencial">Preferencial</option>
+                                            <option value="corporativo">Corporativo</option>
+                                            <option value="distribuidor">Distribuidor</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="nuevoClienteActivo" checked> Activo
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="nuevoClienteRecibirEmail"> Recibir emails promocionales
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Guardar Cliente
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Días de Crédito</label>
-                        <input type="number" id="nuevoClienteDiasCredito" class="form-control" min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Categoría</label>
-                        <select id="nuevoClienteCategoria" class="form-control">
-                            <option value="normal">Normal</option>
-                            <option value="preferencial">Preferencial</option>
-                            <option value="corporativo">Corporativo</option>
-                            <option value="distribuidor">Distribuidor</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="nuevoClienteActivo" checked> Activo
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="nuevoClienteRecibirEmail"> Recibir emails promocionales
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Guardar Cliente
+                    
+                    <!-- Scanner de Código de Barras -->
+                    <div class="barcode-scanner" id="barcodeScanner">
+                        <video class="barcode-video" id="barcodeVideo"></video>
+                        <div class="barcode-overlay"></div>
+                        <button class="btn btn-danger" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);" onclick="cerrarScanner()">
+                            <i class="fas fa-times"></i> Cerrar Scanner
                         </button>
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal Pagos Clientes -->
-    <div class="modal" id="modalPagosClientes">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Registrar Pago de Cliente</h3>
-                <button class="modal-close" onclick="cerrarModal('modalPagosClientes')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Seleccionar Cliente *</label>
-                    <select id="pagoClienteSeleccion" class="form-control" onchange="cargarDeudaCliente()" required>
-                        <option value="">Seleccionar cliente</option>
-                    </select>
-                </div>
-                <div id="infoDeudaCliente" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 8px;">
-                    <h4>Información de Deuda</h4>
-                    <p>Saldo Actual: <strong id="pagoSaldoActual">$0.00</strong></p>
-                    <p>Límite de Crédito: <span id="pagoLimiteCredito">$0.00</span></p>
-                    <p>Disponible: <span id="pagoDisponibleCredito">$0.00</span></p>
-                </div>
-                <div class="form-group">
-                    <label>Monto del Pago *</label>
-                    <input type="number" id="pagoMonto" class="form-control" step="0.01" min="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label>Fecha del Pago</label>
-                    <input type="date" id="pagoFecha" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Método de Pago</label>
-                    <select id="pagoMetodo" class="form-control">
-                        <option value="efectivo">Efectivo</option>
-                        <option value="transferencia">Transferencia</option>
-                        <option value="cheque">Cheque</option>
-                        <option value="otros">Otros</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Referencia/Comprobante</label>
-                    <input type="text" id="pagoReferencia" class="form-control" placeholder="Número de comprobante">
-                </div>
-                <div class="form-group">
-                    <label>Notas</label>
-                    <textarea id="pagoNotas" class="form-control" rows="3" placeholder="Notas adicionales"></textarea>
-                </div>
-                <div class="form-group">
-                    <button class="btn btn-success" onclick="registrarPagoCliente()">
-                        <i class="fas fa-money-check"></i> Registrar Pago
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal Anulación -->
-    <div class="modal" id="modalAnulacion">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Anular Venta</h3>
-                <button class="modal-close" onclick="cerrarModal('modalAnulacion')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Número de Factura *</label>
-                    <input type="text" id="anulacionNumeroFactura" class="form-control" placeholder="Ej: 001-00012345" required>
-                </div>
-                <div class="form-group">
-                    <label>Motivo de Anulación *</label>
-                    <select id="anulacionMotivo" class="form-control" required>
-                        <option value="">Seleccionar motivo</option>
-                        <option value="error_precio">Error en precio</option>
-                        <option value="error_producto">Producto incorrecto</option>
-                        <option value="devolucion">Devolución del cliente</option>
-                        <option value="error_sistema">Error del sistema</option>
-                        <option value="otros">Otros</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Detalle del Motivo</label>
-                    <textarea id="anulacionDetalle" class="form-control" rows="3" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="anulacionDevolverStock" checked> Devolver productos al stock
-                    </label>
-                </div>
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    Advertencia: Esta acción no se puede deshacer. Se generará una nota de crédito.
-                </div>
-                <div class="form-group">
-                    <button class="btn btn-danger" onclick="procesarAnulacion()">
-                        <i class="fas fa-ban"></i> Confirmar Anulación
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal Arqueo de Caja -->
-    <div class="modal" id="modalArqueoCaja">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Arqueo de Caja</h3>
-                <button class="modal-close" onclick="cerrarModal('modalArqueoCaja')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Fecha</label>
-                    <input type="date" id="arqueoFecha" class="form-control" value="">
-                </div>
-                <div class="form-group">
-                    <label>Efectivo en Caja (Según Sistema)</label>
-                    <input type="number" id="arqueoEfectivoSistema" class="form-control" readonly style="background: #f8fafc;">
-                </div>
-                <div class="form-group">
-                    <label>Efectivo Contado Físicamente *</label>
-                    <input type="number" id="arqueoEfectivoFisico" class="form-control" step="0.01" required oninput="calcularDiferenciaArqueo()">
-                </div>
-                <div class="form-group">
-                    <label>Diferencia</label>
-                    <input type="number" id="arqueoDiferencia" class="form-control" readonly style="background: #f8fafc;">
-                </div>
-                <div class="form-group">
-                    <label>Desglose por Denominaciones</label>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
-                        <div><label>$1000 x <input type="number" id="denom1000" class="form-control" min="0" value="0" oninput="calcularDesglose()"> = $<span id="total1000">0.00</span></label></div>
-                        <div><label>$500 x <input type="number" id="denom500" class="form-control" min="0" value="0" oninput="calcularDesglose()"> = $<span id="total500">0.00</span></label></div>
-                        <div><label>$200 x <input type="number" id="denom200" class="form-control" min="0" value="0" oninput="calcularDesglose()"> = $<span id="total200">0.00</span></label></div>
-                        <div><label>$100 x <input type="number" id="denom100" class="form-control" min="0" value="0" oninput="calcularDesglose()"> = $<span id="total100">0.00</span></label></div>
-                        <div><label>$50 x <input type="number" id="denom50" class="form-control" min="0" value="0" oninput="calcularDesglose()"> = $<span id="total50">0.00</span></label></div>
-                        <div><label>$20 x <input type="number" id="denom20" class="form-control" min="0" value="0" oninput="calcularDesglose()"> = $<span id="total20">0.00</span></label></div>
-                        <div><label>$10 x <input type="number" id="denom10" class="form-control" min="0" value="0" oninput="calcularDesglose()"> = $<span id="total10">0.00</span></label></div>
-                        <div><label>Monedas <input type="number" id="denomMonedas" class="form-control" step="0.01" min="0" value="0" oninput="calcularDesglose()"></label></div>
+                    
+                    <!-- Modo Emergencia -->
+                    <div class="emergency-mode" id="emergencyMode">
+                        <div class="emergency-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h2>Modo Emergencia Activado</h2>
+                        <p>No hay conexión a internet. Trabajando con datos locales.</p>
+                        <p><strong>Ventas pendientes:</strong> <span id="pendingSalesCount">0</span></p>
+                        
+                        <div class="emergency-actions">
+                            <button class="btn btn-primary" onclick="continuarSinConexion()">
+                                <i class="fas fa-play"></i> Continuar
+                            </button>
+                            <button class="btn btn-outline" onclick="verVentasPendientes()">
+                                <i class="fas fa-list"></i> Ver Pendientes
+                            </button>
+                        </div>
                     </div>
-                    <div style="margin-top: 10px; font-weight: bold;">
-                        Total Desglose: $<span id="totalDesglose">0.00</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Observaciones</label>
-                    <textarea id="arqueoObservaciones" class="form-control" rows="3" placeholder="Observaciones del arqueo"></textarea>
-                </div>
-                <div class="form-group">
-                    <button class="btn btn-primary" onclick="guardarArqueoCaja()">
-                        <i class="fas fa-save"></i> Guardar Arqueo
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal Nuevo Proveedor -->
-    <div class="modal" id="modalNuevoProveedor">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Nuevo Proveedor</h3>
-                <button class="modal-close" onclick="cerrarModal('modalNuevoProveedor')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="formNuevoProveedor">
-                    <div class="form-group">
-                        <label>Nombre/Razón Social *</label>
-                        <input type="text" id="nuevoProveedorNombre" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label>CUIT</label>
-                        <input type="text" id="nuevoProveedorCuit" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Contacto</label>
-                        <input type="text" id="nuevoProveedorContacto" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Teléfono</label>
-                        <input type="text" id="nuevoProveedorTelefono" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="nuevoProveedorEmail" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Dirección</label>
-                        <input type="text" id="nuevoProveedorDireccion" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Categoría</label>
-                        <select id="nuevoProveedorCategoria" class="form-control">
-                            <option value="alimentos">Alimentos</option>
-                            <option value="bebidas">Bebidas</option>
-                            <option value="limpieza">Limpieza</option>
-                            <option value="otros">Otros</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Plazo de Entrega (días)</label>
-                        <input type="number" id="nuevoProveedorPlazoEntrega" class="form-control" min="1" value="7">
-                    </div>
-                    <div class="form-group">
-                        <label>Términos de Pago</label>
-                        <select id="nuevoProveedorTerminosPago" class="form-control">
-                            <option value="contado">Contado</option>
-                            <option value="7dias">7 días</option>
-                            <option value="15dias">15 días</option>
-                            <option value="30dias">30 días</option>
-                            <option value="60dias">60 días</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="nuevoProveedorActivo" checked> Activo
-                        </label>
-                    </div>
-                    <div class="form-group">
-                        <label>Notas</label>
-                        <textarea id="nuevoProveedorNotas" class="form-control" rows="3" placeholder="Notas adicionales"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Guardar Proveedor
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal Nuevo Pedido -->
-    <div class="modal" id="modalNuevoPedido">
-        <div class="modal-content" style="max-width: 1000px;">
-            <div class="modal-header">
-                <h3>Nuevo Pedido a Proveedor</h3>
-                <button class="modal-close" onclick="cerrarModal('modalNuevoPedido')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Proveedor *</label>
-                    <select id="pedidoProveedor" class="form-control" onchange="cargarProductosProveedor()" required>
-                        <option value="">Seleccionar proveedor</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Fecha Estimada de Entrega</label>
-                    <input type="date" id="pedidoFechaEntrega" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Notas</label>
-                    <textarea id="pedidoNotas" class="form-control" rows="2" placeholder="Notas para el proveedor"></textarea>
-                </div>
-                
-                <h4 style="margin-top: 30px; margin-bottom: 15px;">Productos del Pedido</h4>
-                <div style="margin-bottom: 15px;">
-                    <button class="btn btn-outline" onclick="agregarFilaPedido()">
-                        <i class="fas fa-plus"></i> Agregar Producto
-                    </button>
-                    <button class="btn btn-outline" onclick="sugerirPedidoStockBajo()">
-                        <i class="fas fa-lightbulb"></i> Sugerir por Stock Bajo
-                    </button>
-                </div>
-                
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Cantidad</th>
-                                <th>Precio Unitario</th>
-                                <th>Subtotal</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaItemsPedido">
-                            <tr id="filaPedidoTemplate" style="display: none;">
-                                <td>
-                                    <select class="form-control producto-pedido" onchange="actualizarPrecioPedido(this)">
-                                        <option value="">Seleccionar producto</option>
-                                    </select>
-                                </td>
-                                <td><input type="number" class="form-control cantidad-pedido" min="1" value="1" oninput="calcularSubtotalPedido(this)"></td>
-                                <td><input type="number" class="form-control precio-pedido" step="0.01" min="0" oninput="calcularSubtotalPedido(this)"></td>
-                                <td class="subtotal-pedido">$0.00</td>
-                                <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarFilaPedido(this)"><i class="fas fa-trash"></i></button></td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="3" style="text-align: right; font-weight: bold;">Total:</td>
-                                <td style="font-weight: bold; font-size: 18px;" id="totalPedido">$0.00</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                
-                <div class="form-group" style="margin-top: 30px;">
-                    <button class="btn btn-primary" onclick="guardarPedido()">
-                        <i class="fas fa-save"></i> Guardar Pedido
-                    </button>
-                    <button class="btn btn-success" onclick="guardarYEnviarPedidoWhatsApp()" style="margin-left: 10px;">
-                        <i class="fab fa-whatsapp"></i> Guardar y Enviar por WhatsApp
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal Notas -->
-    <div class="modal" id="modalNotas">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Notas del Sistema</h3>
-                <button class="modal-close" onclick="cerrarModal('modalNotas')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="contenidoNotas"></div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Scanner de Código de Barras -->
-    <div class="barcode-scanner" id="barcodeScanner">
-        <video class="barcode-video" id="barcodeVideo"></video>
-        <div class="barcode-overlay"></div>
-        <button class="btn btn-danger" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);" onclick="cerrarScanner()">
-            <i class="fas fa-times"></i> Cerrar Scanner
-        </button>
-    </div>
-    
-    <!-- Modo Emergencia -->
-    <div class="emergency-mode" id="emergencyMode">
-        <div class="emergency-icon">
-            <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <h2>Modo Emergencia Activado</h2>
-        <p>No hay conexión a internet. Trabajando con datos locales.</p>
-        <p><strong>Ventas pendientes:</strong> <span id="pendingSalesCount">0</span></p>
-        
-        <div class="emergency-actions">
-            <button class="btn btn-primary" onclick="continuarSinConexion()">
-                <i class="fas fa-play"></i> Continuar
-            </button>
-            <button class="btn btn-outline" onclick="verVentasPendientes()">
-                <i class="fas fa-list"></i> Ver Pendientes
-            </button>
-        </div>
-    </div>
-    
-    <!-- Ticket de Venta (oculto para impresión) -->
-    <div id="ticketContainer" style="display: none;"></div>
-    
-    <!-- File input oculto para importaciones -->
-    <input type="file" id="fileBackupImport" style="display: none;" accept=".json,.zip">
+                    
+                    <!-- Ticket de Venta (oculto para impresión) -->
+                    <div id="ticketContainer" style="display: none;"></div>
+                    
+                    <!-- File input oculto para importaciones -->
+                    <input type="file" id="fileBackupImport" style="display: none;" accept=".json,.zip">
     
     <script>
         // ============================================
         // CONFIGURACIÓN PRINCIPAL Y VARIABLES GLOBALES
         // ============================================
         
-        // Verificar si el sistema está configurado
-        if (!localStorage.getItem('firebase_config') && !localStorage.getItem('sistema_configurado')) {
-            window.location.href = 'setup.html';
-        }
+        // Verificar configuración del sistema
+        const configuracionGuardada = localStorage.getItem('sistema_configurado');
+        const firebaseConfigGuardada = localStorage.getItem('firebase_config');
         
-        // Firebase configuration
-        const firebaseConfig = JSON.parse(localStorage.getItem('firebase_config')) || {
+        // Configuración demo para Firebase (Spark Plan)
+        const firebaseConfigDemo = {
             apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
             authDomain: "whatsappau-30dc1.firebaseapp.com",
             projectId: "whatsappau-30dc1",
@@ -2183,14 +1885,9 @@
         };
         
         // Inicializar Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        
-        // Habilitar persistencia para modo offline
-        db.enablePersistence().catch((err) => {
-            console.log('Persistencia no soportada:', err.code);
-        });
+        let app;
+        let auth;
+        let db;
         
         // Variables globales del sistema
         let usuarioActual = null;
@@ -2213,8 +1910,6 @@
         
         // Constantes del sistema
         const IVA_PORCENTAJE = 0.21;
-        const LIMITE_PRODUCTOS_PAGINA = 100;
-        const LIMITE_VENTAS_PAGINA = 50;
         const ROLES = {
             ADMIN_GENERAL: 'admin_general',
             ADMIN_SUCURSAL: 'admin_sucursal',
@@ -2227,71 +1922,260 @@
         // ============================================
         
         document.addEventListener('DOMContentLoaded', async function() {
-            // Inicializar IndexedDB
-            await initIndexedDB();
+            // Verificar si el sistema está configurado
+            if (!configuracionGuardada) {
+                document.getElementById('setupRequired').style.display = 'block';
+                document.getElementById('loginForm').style.display = 'none';
+                return;
+            }
             
-            // Cargar configuración local
-            await cargarConfiguracionLocal();
+            // Inicializar Firebase con configuración guardada o demo
+            const firebaseConfig = firebaseConfigGuardada ? 
+                JSON.parse(firebaseConfigGuardada) : firebaseConfigDemo;
             
-            // Verificar estado de conexión
-            initConnectionMonitor();
-            
-            // Configurar eventos de autenticación
-            auth.onAuthStateChanged(async (user) => {
-                if (user) {
-                    await iniciarSistema(user);
-                } else {
-                    mostrarLogin();
-                }
-            });
-            
-            // Configurar navegación del sidebar
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const viewId = this.getAttribute('data-view');
-                    cambiarVista(viewId);
+            try {
+                app = firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                
+                // Habilitar persistencia para modo offline
+                db.enablePersistence().catch((err) => {
+                    console.log('Persistencia no soportada:', err.code);
                 });
-            });
-            
-            // Configurar toggle del menú en móviles
-            document.getElementById('menuToggle').addEventListener('click', function() {
-                document.getElementById('sidebar').classList.toggle('active');
-            });
-            
-            // Configurar cierre de sesión por inactividad (30 minutos)
-            setupInactivityTimer(30 * 60 * 1000);
-            
-            // Configurar formularios
-            configurarFormularios();
-            
-            // Inicializar listeners de tiempo real
-            inicializarListenersTiempoReal();
-            
-            // Configurar PWA
-            configurarPWA();
-            
-            // Configurar eventos antes de recargar/cerrar página
-            window.addEventListener('beforeunload', function (e) {
-                if (carrito.length > 0 || modoEmergencia) {
-                    e.preventDefault();
-                    e.returnValue = '';
-                    guardarCarritoLocal();
-                    guardarEstadoSistema();
+                
+                // Inicializar IndexedDB
+                await initIndexedDB();
+                
+                // Cargar configuración local
+                await cargarConfiguracionLocal();
+                
+                // Verificar estado de conexión
+                initConnectionMonitor();
+                
+                // Configurar eventos de autenticación
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        await iniciarSistema(user);
+                    } else {
+                        // Mostrar login si no hay usuario
+                        mostrarLogin();
+                    }
+                });
+                
+                // Intentar autenticación automática si hay token guardado
+                const userToken = localStorage.getItem('user_token');
+                if (userToken) {
+                    try {
+                        await auth.signInWithCustomToken(userToken);
+                    } catch (error) {
+                        console.log('Error autenticación automática:', error);
+                        localStorage.removeItem('user_token');
+                    }
                 }
-            });
-            
-            // Verificar si hay ventas pendientes de sincronizar
-            verificarVentasPendientes();
-            
-            console.log('Sistema POS inicializado correctamente');
+                
+            } catch (error) {
+                console.error('Error inicializando Firebase:', error);
+                mostrarError('Error de conexión con Firebase. Verifica la configuración.');
+                document.getElementById('setupRequired').style.display = 'block';
+                document.getElementById('loginForm').style.display = 'none';
+            }
         });
+        
+        // ============================================
+        // CONFIGURACIÓN INICIAL DEL SISTEMA
+        // ============================================
+        
+        function iniciarConfiguracion() {
+            mostrarModal('modalConfigInicial');
+        }
+        
+        document.getElementById('formConfigInicial').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const nombre = document.getElementById('configInicialNombre').value;
+            const email = document.getElementById('configInicialEmail').value;
+            const password = document.getElementById('configInicialPassword').value;
+            const passwordConfirm = document.getElementById('configInicialPasswordConfirm').value;
+            const firebaseConfig = document.getElementById('configInicialFirebase').value;
+            
+            if (password !== passwordConfirm) {
+                alert('Las contraseñas no coinciden');
+                return;
+            }
+            
+            try {
+                // Guardar configuración de Firebase
+                let firebaseConfigObj;
+                if (firebaseConfig.trim()) {
+                    try {
+                        firebaseConfigObj = JSON.parse(firebaseConfig);
+                        localStorage.setItem('firebase_config', JSON.stringify(firebaseConfigObj));
+                    } catch (error) {
+                        alert('Configuración de Firebase inválida. Usando configuración demo.');
+                        firebaseConfigObj = firebaseConfigDemo;
+                    }
+                } else {
+                    firebaseConfigObj = firebaseConfigDemo;
+                }
+                
+                // Reinicializar Firebase con nueva configuración
+                if (app) {
+                    try { app.delete(); } catch(e) {}
+                }
+                
+                app = firebase.initializeApp(firebaseConfigObj);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                
+                // Crear usuario administrador
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Crear documento de usuario
+                await db.collection('usuarios').doc(user.uid).set({
+                    email: email,
+                    nombre: 'Administrador',
+                    rol: ROLES.ADMIN_GENERAL,
+                    fechaRegistro: new Date(),
+                    estado: 'activo',
+                    sucursalId: null
+                });
+                
+                // Crear sucursal principal
+                const sucursalRef = await db.collection('sucursales').add({
+                    nombre: nombre,
+                    codigo: '001',
+                    direccion: document.getElementById('configInicialDireccion').value || '',
+                    telefono: document.getElementById('configInicialTelefono').value || '',
+                    email: email,
+                    estado: 'activa',
+                    fechaCreacion: new Date(),
+                    configuracion: {
+                        puntoVenta: '0001',
+                        proximoNumeroFacturaA: 1,
+                        proximoNumeroFacturaB: 1,
+                        proximoNumeroFacturaC: 1
+                    }
+                });
+                
+                // Actualizar usuario con sucursal
+                await db.collection('usuarios').doc(user.uid).update({
+                    sucursalId: sucursalRef.id
+                });
+                
+                // Crear configuración del sistema
+                const configSistema = {
+                    empresaNombre: nombre,
+                    empresaDireccion: document.getElementById('configInicialDireccion').value || '',
+                    empresaTelefono: document.getElementById('configInicialTelefono').value || '',
+                    empresaEmail: email,
+                    empresaCuit: '',
+                    empresaCondicionIva: 'responsable_inscripto',
+                    ivaPorcentaje: 21,
+                    puntoVenta: '0001',
+                    tipoImpresion: 'pdf',
+                    mensajeTicket: '¡Gracias por su compra!',
+                    caja: '1',
+                    sucursalPrincipal: sucursalRef.id,
+                    fechaConfiguracion: new Date()
+                };
+                
+                await db.collection('configuracion').doc('sistema').set(configSistema);
+                
+                // Guardar en localStorage
+                localStorage.setItem('sistema_configurado', 'true');
+                localStorage.setItem('configuracion_sistema', JSON.stringify(configSistema));
+                configuracionSistema = configSistema;
+                
+                // Cerrar modal y continuar
+                cerrarModal('modalConfigInicial');
+                document.getElementById('setupRequired').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block';
+                
+                alert('✅ Sistema configurado correctamente. Ahora puedes iniciar sesión.');
+                
+            } catch (error) {
+                console.error('Error configurando sistema:', error);
+                alert('❌ Error al configurar el sistema: ' + error.message);
+            }
+        });
+        
+        // ============================================
+        // AUTENTICACIÓN Y LOGIN
+        // ============================================
+        
+        async function iniciarSesion() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                alert('Por favor completa todos los campos');
+                return;
+            }
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Guardar token para autenticación automática
+                const token = await user.getIdToken();
+                localStorage.setItem('user_token', token);
+                
+                // Ocultar login y mostrar sistema
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'flex';
+                
+                await iniciarSistema(user);
+                
+            } catch (error) {
+                console.error('Error iniciando sesión:', error);
+                
+                // Intentar crear usuario demo si no existe
+                if (error.code === 'auth/user-not-found' && email === 'admin@pos.com') {
+                    try {
+                        await crearUsuarioDemo();
+                        alert('✅ Usuario demo creado. Intenta iniciar sesión nuevamente.');
+                    } catch (demoError) {
+                        alert('❌ Error: ' + error.message);
+                    }
+                } else {
+                    alert('❌ Error: ' + error.message);
+                }
+            }
+        }
+        
+        async function crearUsuarioDemo() {
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword('admin@pos.com', 'admin123');
+                const user = userCredential.user;
+                
+                // Crear documento de usuario
+                await db.collection('usuarios').doc(user.uid).set({
+                    email: 'admin@pos.com',
+                    nombre: 'Administrador Demo',
+                    rol: ROLES.ADMIN_GENERAL,
+                    fechaRegistro: new Date(),
+                    estado: 'activo',
+                    sucursalId: null
+                });
+                
+                alert('✅ Usuario demo creado exitosamente');
+                
+            } catch (error) {
+                console.error('Error creando usuario demo:', error);
+                throw error;
+            }
+        }
+        
+        function mostrarLogin() {
+            document.getElementById('loginContainer').style.display = 'flex';
+            document.getElementById('appContainer').style.display = 'none';
+        }
         
         // ============================================
         // FUNCIONES PRINCIPALES DEL SISTEMA
         // ============================================
         
-        // 1. Sistema de Autenticación y Usuarios
         async function iniciarSistema(user) {
             try {
                 usuarioActual = user;
@@ -2329,6 +2213,47 @@
                     // Actualizar contadores
                     actualizarContadores();
                     
+                    // Configurar navegación del sidebar
+                    document.querySelectorAll('.menu-item').forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const viewId = this.getAttribute('data-view');
+                            cambiarVista(viewId);
+                        });
+                    });
+                    
+                    // Configurar toggle del menú en móviles
+                    document.getElementById('menuToggle').addEventListener('click', function() {
+                        document.getElementById('sidebar').classList.toggle('active');
+                    });
+                    
+                    // Configurar cierre de sesión por inactividad (30 minutos)
+                    setupInactivityTimer(30 * 60 * 1000);
+                    
+                    // Configurar formularios
+                    configurarFormularios();
+                    
+                    // Inicializar listeners de tiempo real
+                    inicializarListenersTiempoReal();
+                    
+                    // Configurar PWA
+                    configurarPWA();
+                    
+                    // Configurar eventos antes de recargar/cerrar página
+                    window.addEventListener('beforeunload', function (e) {
+                        if (carrito.length > 0 || modoEmergencia) {
+                            e.preventDefault();
+                            e.returnValue = '';
+                            guardarCarritoLocal();
+                            guardarEstadoSistema();
+                        }
+                    });
+                    
+                    // Verificar si hay ventas pendientes de sincronizar
+                    verificarVentasPendientes();
+                    
+                    console.log('Sistema POS inicializado correctamente');
+                    
                 } else {
                     // Si no existe documento, crear uno básico
                     await db.collection('usuarios').doc(user.uid).set({
@@ -2344,6 +2269,9 @@
                     document.getElementById('userRole').textContent = 'Vendedor';
                     document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
                     document.getElementById('sucursalNombre').textContent = 'Sin sucursal asignada';
+                    
+                    // Recargar datos del usuario
+                    await iniciarSistema(user);
                 }
             } catch (error) {
                 console.error('Error al iniciar sistema:', error);
@@ -2385,7 +2313,10 @@
             }
         }
         
-        // 2. Gestión de Turnos y Caja
+        // ============================================
+        // GESTIÓN DE TURNOS Y CAJA
+        // ============================================
+        
         async function verificarTurnoActivo() {
             try {
                 if (!sucursalActual) {
@@ -2558,7 +2489,10 @@
             }
         }
         
-        // 3. Sistema POS - Carrito y Ventas
+        // ============================================
+        // SISTEMA POS - CARRITO Y VENTAS
+        // ============================================
+        
         function agregarAlCarrito(producto) {
             // Verificar stock
             if (producto.controlStock && producto.stock <= 0) {
@@ -2695,7 +2629,74 @@
             }
         }
         
-        // 4. Procesamiento de Ventas con Transacciones
+        function modificarCantidad(index, delta) {
+            if (carrito[index]) {
+                const nuevaCantidad = carrito[index].cantidad + delta;
+                
+                if (nuevaCantidad < 1) {
+                    eliminarDelCarrito(index);
+                    return;
+                }
+                
+                if (carrito[index].controlStock && carrito[index].stock < nuevaCantidad) {
+                    mostrarError(`Stock insuficiente. Solo quedan ${carrito[index].stock} unidades.`);
+                    return;
+                }
+                
+                carrito[index].cantidad = nuevaCantidad;
+                carrito[index].subtotal = nuevaCantidad * carrito[index].precioVenta;
+                
+                actualizarCarrito();
+                guardarCarritoLocal();
+            }
+        }
+        
+        function eliminarDelCarrito(index) {
+            if (carrito[index]) {
+                carrito.splice(index, 1);
+                actualizarCarrito();
+                guardarCarritoLocal();
+            }
+        }
+        
+        function vaciarCarrito() {
+            if (carrito.length === 0) {
+                mostrarError('El carrito ya está vacío');
+                return;
+            }
+            
+            if (confirm(`¿Estás seguro de vaciar el carrito? Se eliminarán ${carrito.length} productos.`)) {
+                carrito = [];
+                document.getElementById('descuentoGlobal').value = '0';
+                actualizarCarrito();
+                guardarCarritoLocal();
+                mostrarExito('Carrito vaciado correctamente');
+            }
+        }
+        
+        function aplicarDescuentoItem(index, porcentaje) {
+            if (carrito[index]) {
+                porcentaje = Math.min(Math.max(parseFloat(porcentaje) || 0, 0), 100);
+                const item = carrito[index];
+                const descuento = (item.cantidad * item.precioVenta * porcentaje) / 100;
+                
+                item.descuento = descuento;
+                item.descuentoPorcentaje = porcentaje;
+                item.subtotal = (item.cantidad * item.precioVenta) - descuento;
+                
+                actualizarCarrito();
+                guardarCarritoLocal();
+            }
+        }
+        
+        function aplicarDescuentoGlobal() {
+            actualizarCarrito();
+        }
+        
+        // ============================================
+        // PROCESAMIENTO DE VENTAS
+        // ============================================
+        
         async function procesarVenta() {
             if (carrito.length === 0) {
                 mostrarError('El carrito está vacío');
@@ -2948,7 +2949,140 @@
             }
         }
         
-        // 5. Sistema Offline con IndexedDB
+        // ============================================
+        // MÉTODOS DE PAGO
+        // ============================================
+        
+        function actualizarPago() {
+            const metodoPago = document.getElementById('selectPago').value;
+            
+            // Ocultar todos los métodos
+            document.querySelectorAll('.metodo-pago').forEach(div => {
+                div.style.display = 'none';
+            });
+            
+            // Mostrar método seleccionado
+            const metodoCapitalizado = metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
+            document.getElementById(`pago${metodoCapitalizado}`).style.display = 'block';
+            
+            // Actualizar cliente si es cuenta corriente
+            if (metodoPago === 'cuenta_corriente') {
+                actualizarCliente();
+            }
+        }
+        
+        function calcularCambio() {
+            const montoRecibido = parseFloat(document.getElementById('montoRecibido').value) || 0;
+            const total = parseFloat(document.getElementById('total').textContent.replace('$', '')) || 0;
+            
+            const cambio = montoRecibido - total;
+            document.getElementById('cambio').value = cambio > 0 ? cambio.toFixed(2) : '0.00';
+            
+            // Cambiar color según si hay cambio positivo, negativo o exacto
+            const cambioElement = document.getElementById('cambio');
+            if (cambio > 0) {
+                cambioElement.style.color = 'var(--secondary)';
+                cambioElement.style.fontWeight = 'bold';
+            } else if (cambio < 0) {
+                cambioElement.style.color = 'var(--danger)';
+                cambioElement.style.fontWeight = 'bold';
+            } else {
+                cambioElement.style.color = 'var(--gray)';
+                cambioElement.style.fontWeight = 'normal';
+            }
+        }
+        
+        function calcularMixto() {
+            const efectivo = parseFloat(document.getElementById('mixtoEfectivo').value) || 0;
+            const tarjeta = parseFloat(document.getElementById('mixtoTarjeta').value) || 0;
+            const transferencia = parseFloat(document.getElementById('mixtoTransferencia').value) || 0;
+            const qr = parseFloat(document.getElementById('mixtoQR').value) || 0;
+            
+            const totalMixto = efectivo + tarjeta + transferencia + qr;
+            document.getElementById('totalMixto').value = totalMixto.toFixed(2);
+        }
+        
+        function validarPago(metodo, total) {
+            switch(metodo) {
+                case 'efectivo':
+                    const montoRecibido = parseFloat(document.getElementById('montoRecibido').value) || 0;
+                    if (montoRecibido < total) {
+                        return { valido: false, mensaje: 'El monto recibido es menor al total' };
+                    }
+                    break;
+                    
+                case 'mixto':
+                    const totalMixto = parseFloat(document.getElementById('totalMixto').value) || 0;
+                    if (Math.abs(totalMixto - total) > 0.01) {
+                        return { valido: false, mensaje: `La suma de los montos (${totalMixto}) no coincide con el total (${total})` };
+                    }
+                    break;
+                    
+                case 'cuenta_corriente':
+                    const clienteId = document.getElementById('selectCliente').value;
+                    if (!clienteId) {
+                        return { valido: false, mensaje: 'Seleccione un cliente para cuenta corriente' };
+                    }
+                    const cliente = clientesCache.get(clienteId);
+                    if (!cliente) {
+                        return { valido: false, mensaje: 'Cliente no encontrado' };
+                    }
+                    break;
+            }
+            
+            return { valido: true, mensaje: '' };
+        }
+        
+        function obtenerDatosPago(metodo) {
+            switch(metodo) {
+                case 'efectivo':
+                    return {
+                        montoRecibido: parseFloat(document.getElementById('montoRecibido').value) || 0,
+                        cambio: parseFloat(document.getElementById('cambio').value) || 0
+                    };
+                    
+                case 'tarjeta':
+                    return {
+                        numero: document.getElementById('tarjetaNumero').value,
+                        tipo: document.getElementById('tarjetaTipo').value,
+                        cuotas: document.getElementById('tarjetaCuotas').value
+                    };
+                    
+                case 'transferencia':
+                    return {
+                        comprobante: document.getElementById('transferenciaComprobante').value,
+                        banco: document.getElementById('transferenciaBanco').value
+                    };
+                    
+                case 'qr':
+                    return {
+                        plataforma: document.getElementById('qrPlataforma').value,
+                        transaccion: document.getElementById('qrTransaccion').value
+                    };
+                    
+                case 'mixto':
+                    return {
+                        efectivo: parseFloat(document.getElementById('mixtoEfectivo').value) || 0,
+                        tarjeta: parseFloat(document.getElementById('mixtoTarjeta').value) || 0,
+                        transferencia: parseFloat(document.getElementById('mixtoTransferencia').value) || 0,
+                        qr: parseFloat(document.getElementById('mixtoQR').value) || 0
+                    };
+                    
+                case 'cuenta_corriente':
+                    return {
+                        clienteId: document.getElementById('selectCliente').value,
+                        clienteNombre: document.getElementById('selectCliente').options[document.getElementById('selectCliente').selectedIndex].text
+                    };
+                    
+                default:
+                    return {};
+            }
+        }
+        
+        // ============================================
+        // SISTEMA OFFLINE CON INDEXEDDB
+        // ============================================
+        
         async function initIndexedDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -3053,7 +3187,10 @@
             });
         }
         
-        // 6. Gestión de Productos Avanzada
+        // ============================================
+        // GESTIÓN DE PRODUCTOS
+        // ============================================
+        
         async function cargarProductosCache() {
             try {
                 if (!sucursalActual) {
@@ -3066,7 +3203,7 @@
                     .where('sucursalId', '==', sucursalActual.id)
                     .where('estado', '==', 'activo')
                     .orderBy('nombre')
-                    .limit(1000) // Optimizado para 20k productos con paginación
+                    .limit(1000)
                     .get();
                 
                 productosCache.clear();
@@ -3087,106 +3224,73 @@
             }
         }
         
-        async function importarProductosDesdeExcel(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
+        function cargarProductosEnVista() {
+            const productosGrid = document.getElementById('productosGrid');
+            productosGrid.innerHTML = '';
+            
+            let productosArray = Array.from(productosCache.values());
+            
+            // Mostrar solo los primeros 50 para performance
+            productosArray.slice(0, 50).forEach(producto => {
+                const productoCard = document.createElement('div');
+                productoCard.className = 'producto-card';
+                productoCard.onclick = () => agregarAlCarrito(producto);
                 
-                reader.onload = async function(e) {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                        
-                        let productosImportados = 0;
-                        let productosActualizados = 0;
-                        let errores = [];
-                        
-                        for (const [index, row] of jsonData.entries()) {
-                            try {
-                                const productoData = {
-                                    codigo: row.Codigo || row.codigo || `IMP-${Date.now()}-${index}`,
-                                    nombre: row.Nombre || row.nombre || '',
-                                    descripcion: row.Descripcion || row.descripcion || '',
-                                    categoria: row.Categoria || row.categoria || 'General',
-                                    precioCosto: parseFloat(row['Precio Costo'] || row.precioCosto || 0),
-                                    precioVenta: parseFloat(row['Precio Venta'] || row.precioVenta || 0),
-                                    stock: parseInt(row.Stock || row.stock || 0),
-                                    stockMinimo: parseInt(row['Stock Minimo'] || row.stockMinimo || 5),
-                                    controlStock: true,
-                                    sucursalId: sucursalActual.id,
-                                    fechaRegistro: new Date(),
-                                    estado: 'activo',
-                                    proveedorId: document.getElementById('importarProductosProveedor').value || null
-                                };
-                                
-                                // Validar datos mínimos
-                                if (!productoData.nombre) {
-                                    errores.push(`Fila ${index + 1}: Nombre es requerido`);
-                                    continue;
-                                }
-                                
-                                // Buscar si ya existe el producto por código
-                                let productoExistente = null;
-                                for (let prod of productosCache.values()) {
-                                    if (prod.codigo === productoData.codigo) {
-                                        productoExistente = prod;
-                                        break;
-                                    }
-                                }
-                                
-                                if (productoExistente && document.getElementById('importarSobrescribir').checked) {
-                                    // Actualizar producto existente
-                                    await db.collection('productos').doc(productoExistente.id).update(productoData);
-                                    productosActualizados++;
-                                } else if (!productoExistente) {
-                                    // Crear nuevo producto
-                                    await db.collection('productos').add(productoData);
-                                    productosImportados++;
-                                }
-                                
-                            } catch (error) {
-                                errores.push(`Fila ${index + 1}: ${error.message}`);
-                            }
-                        }
-                        
-                        // Recargar cache
-                        await cargarProductosCache();
-                        
-                        const resultado = {
-                            importados: productosImportados,
-                            actualizados: productosActualizados,
-                            errores: errores
-                        };
-                        
-                        // Mostrar resultado
-                        const resultadoDiv = document.getElementById('importacionResultado');
-                        resultadoDiv.style.display = 'block';
-                        resultadoDiv.innerHTML = `
-                            <h4>Resultado de la Importación</h4>
-                            <p>✅ Productos importados: ${resultado.importados}</p>
-                            <p>📝 Productos actualizados: ${resultado.actualizados}</p>
-                            ${errores.length > 0 ? `
-                                <p>❌ Errores: ${errores.length}</p>
-                                <div style="max-height: 100px; overflow-y: auto;">
-                                    ${errores.map(e => `<small style="color: var(--danger);">${e}</small><br>`).join('')}
-                                </div>
-                            ` : ''}
-                        `;
-                        
-                        resolve(resultado);
-                        
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
+                const stockClass = producto.stock <= producto.stockMinimo ? 'stock-bajo' : 'stock-normal';
                 
-                reader.onerror = reject;
-                reader.readAsArrayBuffer(file);
+                productoCard.innerHTML = `
+                    <div class="producto-codigo">${producto.codigo}</div>
+                    <div class="producto-nombre">${producto.nombre}</div>
+                    <div class="producto-precio">$${producto.precioVenta.toFixed(2)}</div>
+                    <div class="producto-stock ${stockClass}">
+                        ${producto.controlStock ? `Stock: ${producto.stock}` : 'Sin control'}
+                    </div>
+                `;
+                
+                productosGrid.appendChild(productoCard);
             });
         }
         
-        // 7. Gestión de Clientes y Cuenta Corriente
+        function buscarProductos() {
+            const query = document.getElementById('buscarProducto').value.toLowerCase();
+            const productosGrid = document.getElementById('productosGrid');
+            productosGrid.innerHTML = '';
+            
+            let productosArray = Array.from(productosCache.values());
+            
+            if (query) {
+                productosArray = productosArray.filter(producto => 
+                    producto.nombre.toLowerCase().includes(query) ||
+                    producto.codigo.toLowerCase().includes(query) ||
+                    producto.categoria.toLowerCase().includes(query)
+                );
+            }
+            
+            // Mostrar resultados limitados para performance
+            productosArray.slice(0, 50).forEach(producto => {
+                const productoCard = document.createElement('div');
+                productoCard.className = 'producto-card';
+                productoCard.onclick = () => agregarAlCarrito(producto);
+                
+                const stockClass = producto.stock <= producto.stockMinimo ? 'stock-bajo' : 'stock-normal';
+                
+                productoCard.innerHTML = `
+                    <div class="producto-codigo">${producto.codigo}</div>
+                    <div class="producto-nombre">${producto.nombre}</div>
+                    <div class="producto-precio">$${producto.precioVenta.toFixed(2)}</div>
+                    <div class="producto-stock ${stockClass}">
+                        ${producto.controlStock ? `Stock: ${producto.stock}` : 'Sin control'}
+                    </div>
+                `;
+                
+                productosGrid.appendChild(productoCard);
+            });
+        }
+        
+        // ============================================
+        // GESTIÓN DE CLIENTES
+        // ============================================
+        
         async function cargarClientesCache() {
             try {
                 if (!sucursalActual) return;
@@ -3214,525 +3318,240 @@
             }
         }
         
-        async function registrarPagoCliente() {
-            try {
-                const clienteId = document.getElementById('pagoClienteSeleccion').value;
-                const monto = parseFloat(document.getElementById('pagoMonto').value);
-                const metodo = document.getElementById('pagoMetodo').value;
-                const referencia = document.getElementById('pagoReferencia').value;
-                const notas = document.getElementById('pagoNotas').value;
-                const fecha = document.getElementById('pagoFecha').value || new Date().toISOString().split('T')[0];
-                
-                if (!clienteId || !monto || monto <= 0) {
-                    mostrarError('Cliente y monto válido son requeridos');
-                    return;
-                }
-                
-                const cliente = clientesCache.get(clienteId);
-                if (!cliente) {
-                    mostrarError('Cliente no encontrado');
-                    return;
-                }
-                
-                if ((cliente.saldo || 0) < monto) {
-                    mostrarError('El monto del pago excede la deuda del cliente');
-                    return;
-                }
-                
-                // Crear registro de pago
-                const pagoData = {
-                    clienteId: clienteId,
-                    clienteNombre: cliente.nombre,
-                    monto: monto,
-                    metodo: metodo,
-                    referencia: referencia,
-                    notas: notas,
-                    fecha: new Date(fecha),
-                    usuarioId: usuarioActual.uid,
-                    usuarioNombre: usuarioActual.displayName || usuarioActual.email,
-                    sucursalId: sucursalActual.id,
-                    tipo: 'pago',
-                    estado: 'completado'
-                };
-                
-                await db.collection('pagos_clientes').add(pagoData);
-                
-                // Actualizar saldo del cliente
-                await db.collection('clientes').doc(clienteId).update({
-                    saldo: firebase.firestore.FieldValue.increment(-monto),
-                    ultimoPago: new Date(),
-                    pagosTotal: firebase.firestore.FieldValue.increment(1)
-                });
-                
-                // Actualizar cache local
-                cliente.saldo = (cliente.saldo || 0) - monto;
-                
-                mostrarExito(`Pago de $${monto.toFixed(2)} registrado correctamente`);
-                cerrarModal('modalPagosClientes');
-                
-                // Recargar vista de clientes si está activa
-                if (document.getElementById('clientesView').classList.contains('active')) {
-                    await cargarTablaClientesGestion();
-                }
-                
-            } catch (error) {
-                console.error('Error registrando pago:', error);
-                mostrarError('Error al registrar pago: ' + error.message);
-            }
-        }
-        
-        // 8. Sistema de Anulaciones
-        async function procesarAnulacion() {
-            try {
-                const numeroFactura = document.getElementById('anulacionNumeroFactura').value;
-                const motivo = document.getElementById('anulacionMotivo').value;
-                const detalle = document.getElementById('anulacionDetalle').value;
-                const devolverStock = document.getElementById('anulacionDevolverStock').checked;
-                
-                if (!numeroFactura || !motivo || !detalle) {
-                    mostrarError('Todos los campos son requeridos');
-                    return;
-                }
-                
-                // Buscar la venta
-                const ventasRef = db.collection('ventas')
-                    .where('numeroFactura', '==', numeroFactura)
-                    .where('sucursalId', '==', sucursalActual.id)
-                    .limit(1);
-                
-                const snapshot = await ventasRef.get();
-                
-                if (snapshot.empty) {
-                    mostrarError('No se encontró la factura especificada');
-                    return;
-                }
-                
-                const ventaDoc = snapshot.docs[0];
-                const ventaData = ventaDoc.data();
-                
-                // Validar que no esté ya anulada
-                if (ventaData.anulada) {
-                    mostrarError('Esta factura ya está anulada');
-                    return;
-                }
-                
-                // Confirmar anulación
-                if (!confirm(`¿Confirmar anulación de la factura ${numeroFactura} por $${ventaData.total.toFixed(2)}?`)) {
-                    return;
-                }
-                
-                // Procesar anulación con transacción
-                await db.runTransaction(async (transaction) => {
-                    // Marcar venta como anulada
-                    const ventaRef = db.collection('ventas').doc(ventaDoc.id);
-                    transaction.update(ventaRef, {
-                        anulada: true,
-                        fechaAnulacion: new Date(),
-                        motivoAnulacion: motivo,
-                        detalleAnulacion: detalle,
-                        usuarioAnulacion: usuarioActual.uid,
-                        usuarioAnulacionNombre: usuarioActual.displayName || usuarioActual.email
-                    });
-                    
-                    // Devolver stock si corresponde
-                    if (devolverStock) {
-                        for (const item of ventaData.items) {
-                            if (item.controlStock) {
-                                const productoRef = db.collection('productos').doc(item.productoId);
-                                transaction.update(productoRef, {
-                                    stock: firebase.firestore.FieldValue.increment(item.cantidad),
-                                    vendidosTotal: firebase.firestore.FieldValue.increment(-item.cantidad)
-                                });
-                            }
-                        }
-                    }
-                    
-                    // Revertir turno si existe
-                    if (ventaData.turnoId) {
-                        const turnoRef = db.collection('turnos').doc(ventaData.turnoId);
-                        transaction.update(turnoRef, {
-                            ventasCount: firebase.firestore.FieldValue.increment(-1),
-                            totalVentas: firebase.firestore.FieldValue.increment(-ventaData.total),
-                            [`desglosePagos.${ventaData.metodoPago}`]: firebase.firestore.FieldValue.increment(-ventaData.total)
-                        });
-                    }
-                    
-                    // Revertir saldo del cliente si era cuenta corriente
-                    if (ventaData.metodoPago === 'cuenta_corriente' && ventaData.clienteId) {
-                        const clienteRef = db.collection('clientes').doc(ventaData.clienteId);
-                        transaction.update(clienteRef, {
-                            saldo: firebase.firestore.FieldValue.increment(-ventaData.total),
-                            comprasTotal: firebase.firestore.FieldValue.increment(-1)
-                        });
-                    }
-                    
-                    // Crear nota de crédito
-                    const notaCreditoData = {
-                        ventaId: ventaDoc.id,
-                        numeroFacturaOriginal: ventaData.numeroFactura,
-                        numeroNotaCredito: await generarNumeroNotaCredito(transaction),
-                        fecha: new Date(),
-                        clienteId: ventaData.clienteId,
-                        clienteNombre: ventaData.clienteNombre,
-                        monto: ventaData.total,
-                        motivo: motivo,
-                        detalle: detalle,
-                        items: ventaData.items,
-                        usuarioId: usuarioActual.uid,
-                        sucursalId: sucursalActual.id,
-                        estado: 'emitida'
-                    };
-                    
-                    const notaCreditoRef = db.collection('notas_credito').doc();
-                    transaction.set(notaCreditoRef, notaCreditoData);
-                });
-                
-                mostrarExito(`Factura ${numeroFactura} anulada correctamente. Nota de crédito generada.`);
-                cerrarModal('modalAnulacion');
-                
-                // Recargar ventas si está activa la vista
-                if (document.getElementById('ventasView').classList.contains('active')) {
-                    await cargarTablaVentas();
-                }
-                
-            } catch (error) {
-                console.error('Error procesando anulación:', error);
-                mostrarError('Error al procesar anulación: ' + error.message);
-            }
-        }
-        
-        // 9. Sistema de Reportes
-        async function generarReporteDiario() {
-            try {
-                const hoy = new Date();
-                const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
-                const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
-                
-                const ventasSnapshot = await db.collection('ventas')
-                    .where('sucursalId', '==', sucursalActual.id)
-                    .where('fecha', '>=', inicioDia)
-                    .where('fecha', '<=', finDia)
-                    .where('anulada', '==', false)
-                    .orderBy('fecha', 'desc')
-                    .get();
-                
-                let reporteData = {
-                    fecha: hoy,
-                    totalVentas: 0,
-                    cantidadVentas: 0,
-                    promedioVenta: 0,
-                    productosVendidos: 0,
-                    porMetodoPago: {},
-                    porCategoria: {},
-                    porHora: {},
-                    ventas: []
-                };
-                
-                ventasSnapshot.forEach(doc => {
-                    const venta = doc.data();
-                    reporteData.totalVentas += venta.total;
-                    reporteData.cantidadVentas++;
-                    reporteData.productosVendidos += venta.items.reduce((sum, item) => sum + item.cantidad, 0);
-                    
-                    // Método de pago
-                    if (!reporteData.porMetodoPago[venta.metodoPago]) {
-                        reporteData.porMetodoPago[venta.metodoPago] = 0;
-                    }
-                    reporteData.porMetodoPago[venta.metodoPago] += venta.total;
-                    
-                    // Por hora
-                    const hora = new Date(venta.fecha.seconds * 1000).getHours();
-                    if (!reporteData.porHora[hora]) {
-                        reporteData.porHora[hora] = 0;
-                    }
-                    reporteData.porHora[hora] += venta.total;
-                    
-                    reporteData.ventas.push(venta);
-                });
-                
-                reporteData.promedioVenta = reporteData.cantidadVentas > 0 ? 
-                    reporteData.totalVentas / reporteData.cantidadVentas : 0;
-                
-                // Generar Excel con el reporte
-                await exportarReporteExcel(reporteData, `reporte_diario_${formatFecha(hoy, 'YYYY-MM-DD')}`);
-                
-            } catch (error) {
-                console.error('Error generando reporte diario:', error);
-                mostrarError('Error al generar reporte: ' + error.message);
-            }
-        }
-        
-        // 10. Sistema de Proveedores y Pedidos
-        async function cargarProveedoresCache() {
-            try {
-                const snapshot = await db.collection('proveedores')
-                    .where('sucursalId', '==', sucursalActual.id)
-                    .where('estado', '==', 'activo')
-                    .orderBy('nombre')
-                    .limit(100)
-                    .get();
-                
-                proveedoresCache.clear();
-                snapshot.forEach(doc => {
-                    proveedoresCache.set(doc.id, { id: doc.id, ...doc.data() });
-                });
-                
-            } catch (error) {
-                console.error('Error cargando proveedores:', error);
-            }
-        }
-        
-        async function guardarPedido() {
-            try {
-                const proveedorId = document.getElementById('pedidoProveedor').value;
-                const fechaEntrega = document.getElementById('pedidoFechaEntrega').value;
-                const notas = document.getElementById('pedidoNotas').value;
-                
-                if (!proveedorId) {
-                    mostrarError('Seleccione un proveedor');
-                    return;
-                }
-                
-                // Recolectar items del pedido
-                const items = [];
-                let total = 0;
-                
-                const filas = document.querySelectorAll('#tablaItemsPedido tr:not(#filaPedidoTemplate)');
-                filas.forEach(fila => {
-                    const productoSelect = fila.querySelector('.producto-pedido');
-                    const cantidadInput = fila.querySelector('.cantidad-pedido');
-                    const precioInput = fila.querySelector('.precio-pedido');
-                    
-                    if (productoSelect.value && cantidadInput.value && precioInput.value) {
-                        const productoId = productoSelect.value;
-                        const productoNombre = productoSelect.options[productoSelect.selectedIndex].text;
-                        const cantidad = parseInt(cantidadInput.value);
-                        const precio = parseFloat(precioInput.value);
-                        const subtotal = cantidad * precio;
-                        
-                        items.push({
-                            productoId: productoId,
-                            productoNombre: productoNombre,
-                            cantidad: cantidad,
-                            precioUnitario: precio,
-                            subtotal: subtotal
-                        });
-                        
-                        total += subtotal;
-                    }
-                });
-                
-                if (items.length === 0) {
-                    mostrarError('Agregue al menos un producto al pedido');
-                    return;
-                }
-                
-                // Generar número de pedido
-                const numeroPedido = await generarNumeroPedido();
-                
-                const pedidoData = {
-                    numeroPedido: numeroPedido,
-                    proveedorId: proveedorId,
-                    proveedorNombre: proveedoresCache.get(proveedorId)?.nombre || '',
-                    fecha: new Date(),
-                    fechaEntrega: fechaEntrega ? new Date(fechaEntrega) : null,
-                    items: items,
-                    total: total,
-                    notas: notas,
-                    estado: 'pendiente',
-                    sucursalId: sucursalActual.id,
-                    usuarioId: usuarioActual.uid,
-                    usuarioNombre: usuarioActual.displayName || usuarioActual.email
-                };
-                
-                await db.collection('pedidos').add(pedidoData);
-                
-                mostrarExito(`Pedido #${numeroPedido} guardado correctamente`);
-                cerrarModal('modalNuevoPedido');
-                
-                // Recargar vista de pedidos
-                if (document.getElementById('proveedoresView').classList.contains('active')) {
-                    await cargarTablaPedidos();
-                }
-                
-            } catch (error) {
-                console.error('Error guardando pedido:', error);
-                mostrarError('Error al guardar pedido: ' + error.message);
-            }
-        }
-        
-        async function enviarPedidosWhatsApp() {
-            try {
-                // Obtener pedidos pendientes
-                const pedidosSnapshot = await db.collection('pedidos')
-                    .where('sucursalId', '==', sucursalActual.id)
-                    .where('estado', '==', 'pendiente')
-                    .get();
-                
-                if (pedidosSnapshot.empty) {
-                    mostrarInfo('No hay pedidos pendientes para enviar');
-                    return;
-                }
-                
-                // Construir mensaje
-                let mensaje = `*PEDIDOS PENDIENTES - ${sucursalActual.nombre}*\n\n`;
-                mensaje += `Fecha: ${formatFecha(new Date(), 'DD/MM/YYYY')}\n\n`;
-                
-                pedidosSnapshot.forEach(doc => {
-                    const pedido = doc.data();
-                    mensaje += `*Pedido #${pedido.numeroPedido}*\n`;
-                    mensaje += `Proveedor: ${pedido.proveedorNombre}\n`;
-                    mensaje += `Fecha: ${formatFecha(pedido.fecha, 'DD/MM/YYYY')}\n`;
-                    mensaje += `Total: $${pedido.total.toFixed(2)}\n\n`;
-                    
-                    pedido.items.forEach((item, index) => {
-                        mensaje += `${index + 1}. ${item.productoNombre} - ${item.cantidad} x $${item.precioUnitario.toFixed(2)} = $${item.subtotal.toFixed(2)}\n`;
-                    });
-                    
-                    mensaje += `\n---\n\n`;
-                });
-                
-                // Codificar mensaje para URL de WhatsApp
-                const mensajeCodificado = encodeURIComponent(mensaje);
-                
-                // Crear URL de WhatsApp (asumiendo que se envía a un número configurado)
-                const numeroWhatsApp = configuracionSistema.whatsappContacto || '';
-                let whatsappURL = 'https://wa.me/';
-                
-                if (numeroWhatsApp) {
-                    whatsappURL += `${numeroWhatsApp}?text=${mensajeCodificado}`;
-                } else {
-                    // Si no hay número configurado, usar la API de compartir
-                    whatsappURL = `https://api.whatsapp.com/send?text=${mensajeCodificado}`;
-                }
-                
-                // Abrir en nueva pestaña
-                window.open(whatsappURL, '_blank');
-                
-                mostrarExito('Mensaje preparado para WhatsApp');
-                
-            } catch (error) {
-                console.error('Error enviando pedidos por WhatsApp:', error);
-                mostrarError('Error al preparar mensaje: ' + error.message);
-            }
-        }
-        
-        // 11. Sistema de Backup y Restauración
-        async function exportarBackup() {
-            try {
-                // Recolectar datos
-                const backupData = {
-                    metadata: {
-                        version: '2.0',
-                        fecha: new Date().toISOString(),
-                        sucursal: sucursalActual.id,
-                        usuario: usuarioActual.uid
-                    },
-                    productos: Array.from(productosCache.values()),
-                    clientes: Array.from(clientesCache.values()),
-                    proveedores: Array.from(proveedoresCache.values()),
-                    configuracion: configuracionSistema,
-                    ventas_pendientes: ventasPendientes
-                };
-                
-                // Convertir a JSON
-                const jsonStr = JSON.stringify(backupData, null, 2);
-                
-                // Crear blob y descargar
-                const blob = new Blob([jsonStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `backup_pos_${sucursalActual.id}_${formatFecha(new Date(), 'YYYY-MM-DD_HH-mm')}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                // Guardar registro del backup
-                await db.collection('backups').add({
-                    fecha: new Date(),
-                    tipo: 'manual',
-                    tamaño: jsonStr.length,
-                    usuarioId: usuarioActual.uid,
-                    sucursalId: sucursalActual.id,
-                    estado: 'completado'
-                });
-                
-                mostrarExito('Backup exportado correctamente');
-                
-            } catch (error) {
-                console.error('Error exportando backup:', error);
-                mostrarError('Error al exportar backup: ' + error.message);
-            }
-        }
-        
-        async function importarBackup() {
-            document.getElementById('fileBackupImport').click();
-        }
-        
-        document.getElementById('fileBackupImport').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        function cargarClientesEnSelect() {
+            const selectCliente = document.getElementById('selectCliente');
             
-            if (!confirm('¿Está seguro de importar este backup? Se sobrescribirán los datos actuales.')) {
+            // Limpiar opciones excepto la primera
+            while (selectCliente.options.length > 1) {
+                selectCliente.remove(1);
+            }
+            
+            clientesCache.forEach(cliente => {
+                const option = document.createElement('option');
+                option.value = cliente.id;
+                option.textContent = `${cliente.nombre}${cliente.documento ? ` - ${cliente.documento}` : ''}`;
+                selectCliente.appendChild(option);
+            });
+        }
+        
+        function actualizarCliente() {
+            const clienteId = document.getElementById('selectCliente').value;
+            const clienteInfo = document.getElementById('clienteInfo');
+            
+            if (clienteId) {
+                const cliente = clientesCache.get(clienteId);
+                if (cliente) {
+                    document.getElementById('clienteNombre').textContent = cliente.nombre;
+                    document.getElementById('clienteDocumento').textContent = cliente.documento ? `Doc: ${cliente.documento}` : '';
+                    document.getElementById('clienteSaldo').textContent = `$${(cliente.saldo || 0).toFixed(2)}`;
+                    document.getElementById('clienteLimiteCredito').textContent = cliente.limiteCredito ? `Límite: $${cliente.limiteCredito.toFixed(2)}` : '';
+                    
+                    // Actualizar límite disponible para cuenta corriente
+                    const limiteDisponible = (cliente.limiteCredito || 0) - (cliente.saldo || 0);
+                    document.getElementById('limiteDisponible').value = limiteDisponible.toFixed(2);
+                    
+                    clienteInfo.style.display = 'block';
+                    return;
+                }
+            }
+            
+            clienteInfo.style.display = 'none';
+        }
+        
+        // ============================================
+        // SCANNER DE CÓDIGO DE BARRAS
+        // ============================================
+        
+        let scannerStream = null;
+        
+        async function abrirScanner() {
+            try {
+                const scanner = document.getElementById('barcodeScanner');
+                scanner.style.display = 'block';
+                
+                // Solicitar permisos de cámara
+                scannerStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                
+                const video = document.getElementById('barcodeVideo');
+                video.srcObject = scannerStream;
+                await video.play();
+                
+                // Configurar QuaggaJS
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: video,
+                        constraints: {
+                            facingMode: "environment"
+                        }
+                    },
+                    decoder: {
+                        readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader"]
+                    }
+                }, function(err) {
+                    if (err) {
+                        console.error('Error inicializando Quagga:', err);
+                        iniciarScannerAlternativo();
+                        return;
+                    }
+                    
+                    Quagga.start();
+                    
+                    Quagga.onDetected(function(result) {
+                        const codigo = result.codeResult.code;
+                        buscarProductoPorCodigo(codigo);
+                        cerrarScanner();
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Error al abrir scanner:', error);
+                iniciarScannerAlternativo();
+            }
+        }
+        
+        function iniciarScannerAlternativo() {
+            const codigo = prompt('Ingresa el código de barras manualmente:');
+            if (codigo && codigo.trim() !== '') {
+                buscarProductoPorCodigo(codigo.trim());
+            }
+        }
+        
+        function buscarProductoPorCodigo(codigo) {
+            for (let producto of productosCache.values()) {
+                if (producto.codigo === codigo) {
+                    agregarAlCarrito(producto);
+                    mostrarExito(`Producto agregado: ${producto.nombre}`);
+                    return;
+                }
+            }
+            
+            mostrarError(`No se encontró producto con código: ${codigo}`);
+        }
+        
+        function cerrarScanner() {
+            const scanner = document.getElementById('barcodeScanner');
+            scanner.style.display = 'none';
+            
+            // Detener Quagga
+            Quagga.stop();
+            
+            // Detener stream de cámara
+            if (scannerStream) {
+                scannerStream.getTracks().forEach(track => track.stop());
+                scannerStream = null;
+            }
+        }
+        
+        // ============================================
+        // FUNCIONALIDADES ADICIONALES
+        // ============================================
+        
+        function crearPresupuesto() {
+            if (carrito.length === 0) {
+                mostrarError('El carrito está vacío');
                 return;
             }
             
-            try {
-                const reader = new FileReader();
-                
-                reader.onload = async function(e) {
-                    try {
-                        const backupData = JSON.parse(e.target.result);
-                        
-                        // Validar estructura del backup
-                        if (!backupData.metadata || !backupData.productos) {
-                            throw new Error('Formato de backup inválido');
-                        }
-                        
-                        // Procesar importación
-                        mostrarCargando('Importando backup...');
-                        
-                        // Importar productos
-                        for (const producto of backupData.productos) {
-                            await db.collection('productos').doc(producto.id).set(producto, { merge: true });
-                        }
-                        
-                        // Importar clientes
-                        for (const cliente of backupData.clientes) {
-                            await db.collection('clientes').doc(cliente.id).set(cliente, { merge: true });
-                        }
-                        
-                        // Actualizar configuración local
-                        if (backupData.configuracion) {
-                            localStorage.setItem('configuracion_sistema', JSON.stringify(backupData.configuracion));
-                            configuracionSistema = backupData.configuracion;
-                            await actualizarConfiguracionUI();
-                        }
-                        
-                        // Recargar datos
-                        await cargarProductosCache();
-                        await cargarClientesCache();
-                        await cargarProveedoresCache();
-                        
-                        mostrarExito('Backup importado correctamente');
-                        
-                    } catch (error) {
-                        console.error('Error procesando backup:', error);
-                        mostrarError('Error al importar backup: ' + error.message);
-                    }
-                };
-                
-                reader.readAsText(file);
-                
-            } catch (error) {
-                console.error('Error leyendo archivo:', error);
-                mostrarError('Error al leer el archivo de backup');
+            // Calcular totales
+            const subtotal = carrito.reduce((sum, item) => sum + (item.cantidad * item.precioVenta - item.descuento), 0);
+            const descuentoGlobal = parseFloat(document.getElementById('descuentoGlobal').value) || 0;
+            const descuentoGlobalMonto = (subtotal * descuentoGlobal) / 100;
+            const subtotalConDescuento = subtotal - descuentoGlobalMonto;
+            const iva = subtotalConDescuento * IVA_PORCENTAJE;
+            const total = subtotalConDescuento + iva;
+            
+            // Obtener datos del cliente
+            const clienteSelect = document.getElementById('selectCliente');
+            const clienteId = clienteSelect.value;
+            let clienteNombre = 'Consumidor Final';
+            
+            if (clienteId) {
+                const cliente = clientesCache.get(clienteId);
+                clienteNombre = cliente ? cliente.nombre : clienteSelect.options[clienteSelect.selectedIndex].text;
             }
-        });
+            
+            // Crear objeto de presupuesto
+            const presupuestoData = {
+                sucursalId: sucursalActual.id,
+                sucursalNombre: sucursalActual.nombre,
+                fecha: new Date(),
+                clienteId: clienteId || null,
+                clienteNombre: clienteNombre,
+                subtotal: subtotal,
+                descuentoGlobal: descuentoGlobalMonto,
+                descuentoItems: carrito.reduce((sum, item) => sum + item.descuento, 0),
+                descuentoTotal: descuentoGlobalMonto + carrito.reduce((sum, item) => sum + item.descuento, 0),
+                iva: iva,
+                total: total,
+                items: carrito.map(item => ({
+                    productoId: item.id,
+                    codigo: item.codigo,
+                    nombre: item.nombre,
+                    cantidad: item.cantidad,
+                    precioUnitario: item.precioVenta,
+                    descuento: item.descuento,
+                    descuentoPorcentaje: item.descuentoPorcentaje,
+                    subtotal: item.cantidad * item.precioVenta - item.descuento,
+                    costo: item.precioCosto,
+                    controlStock: item.controlStock
+                })),
+                usuarioId: usuarioActual.uid,
+                usuarioNombre: usuarioActual.displayName || usuarioActual.email,
+                nota: document.getElementById('notaVenta').value,
+                estado: 'pendiente',
+                validezDias: 30,
+                fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            };
+            
+            // Guardar presupuesto
+            db.collection('presupuestos').add(presupuestoData)
+                .then(() => {
+                    mostrarExito('Presupuesto creado correctamente');
+                    
+                    // Limpiar carrito
+                    carrito = [];
+                    document.getElementById('descuentoGlobal').value = '0';
+                    document.getElementById('notaVenta').value = '';
+                    actualizarCarrito();
+                })
+                .catch(error => {
+                    console.error('Error creando presupuesto:', error);
+                    mostrarError('Error al crear presupuesto: ' + error.message);
+                });
+        }
         
-        // 12. Sistema de Impresión
+        function reimprimirUltimo() {
+            if (!ultimaVenta) {
+                mostrarError('No hay ventas recientes para reimprimir');
+                return;
+            }
+            
+            if (confirm(`¿Reimprimir ticket de venta #${ultimaVenta.numeroFactura}?`)) {
+                imprimirTicket(ultimaVenta);
+            }
+        }
+        
+        function congelarPrecios() {
+            if (carrito.length === 0) {
+                mostrarError('El carrito está vacío');
+                return;
+            }
+            
+            carrito.forEach(item => {
+                item.congelado = !item.congelado;
+            });
+            
+            mostrarExito('Precios congelados en el carrito actual');
+        }
+        
+        // ============================================
+        // IMPRESIÓN DE TICKETS
+        // ============================================
+        
         async function imprimirTicket(ventaData) {
             try {
                 const ticketContainer = document.getElementById('ticketContainer');
@@ -3876,46 +3695,9 @@
         }
         
         // ============================================
-        // FUNCIONES DE UTILIDAD Y AUXILIARES
+        // NAVEGACIÓN Y UI
         // ============================================
         
-        // Formatear fecha
-        function formatFecha(fecha, formato = 'DD/MM/YYYY HH:mm') {
-            const date = fecha instanceof Date ? fecha : (fecha && fecha.toDate ? fecha.toDate() : new Date(fecha));
-            
-            const pad = (n) => n.toString().padStart(2, '0');
-            
-            const replacements = {
-                'YYYY': date.getFullYear(),
-                'MM': pad(date.getMonth() + 1),
-                'DD': pad(date.getDate()),
-                'HH': pad(date.getHours()),
-                'mm': pad(date.getMinutes()),
-                'ss': pad(date.getSeconds())
-            };
-            
-            return formato.replace(/YYYY|MM|DD|HH|mm|ss/g, match => replacements[match]);
-        }
-        
-        // Mostrar mensajes
-        function mostrarError(mensaje) {
-            alert(`❌ ${mensaje}`);
-        }
-        
-        function mostrarExito(mensaje) {
-            alert(`✅ ${mensaje}`);
-        }
-        
-        function mostrarInfo(mensaje) {
-            alert(`ℹ️ ${mensaje}`);
-        }
-        
-        function mostrarCargando(mensaje) {
-            // Implementar spinner o modal de carga
-            console.log(`⏳ ${mensaje}`);
-        }
-        
-        // Navegación entre vistas
         function cambiarVista(viewId) {
             // Ocultar todas las vistas
             document.querySelectorAll('.view').forEach(view => {
@@ -3941,15 +3723,6 @@
                     case 'caja':
                         cargarHistorialTurnos();
                         break;
-                    case 'reportes':
-                        actualizarReportes();
-                        break;
-                    case 'proveedores':
-                        cargarTablaProveedores();
-                        break;
-                    case 'configuracion':
-                        cargarConfiguracionUI();
-                        break;
                 }
             }
             
@@ -3967,7 +3740,6 @@
             }
         }
         
-        // Actualizar contadores
         function actualizarContadores() {
             // Contador de productos
             document.getElementById('productosCount').textContent = productosCache.size;
@@ -3982,469 +3754,11 @@
             document.getElementById('localCount').textContent = productosCache.size;
         }
         
-        // Cerrar sesión
-        async function logout() {
-            try {
-                // Cerrar turno si está abierto
-                if (turnoActual && turnoActual.estado === 'abierto') {
-                    if (confirm('Tienes un turno abierto. ¿Deseas cerrarlo antes de salir?')) {
-                        const efectivoFinal = prompt('Ingrese el efectivo final en caja:', '0');
-                        if (efectivoFinal !== null) {
-                            await db.collection('turnos').doc(turnoActual.id).update({
-                                cierre: new Date(),
-                                estado: 'cerrado',
-                                efectivoFinal: parseFloat(efectivoFinal),
-                                observaciones: 'Cerrado al salir del sistema'
-                            });
-                        }
-                    }
-                }
-                
-                // Guardar estado del sistema
-                guardarCarritoLocal();
-                guardarEstadoSistema();
-                
-                // Detener todos los listeners
-                listenersActivos.forEach(unsubscribe => unsubscribe());
-                listenersActivos = [];
-                
-                // Cerrar sesión en Firebase
-                await auth.signOut();
-                
-                // Redirigir a página de login
-                window.location.href = 'login.html';
-                
-            } catch (error) {
-                console.error('Error cerrando sesión:', error);
-                mostrarError('Error al cerrar sesión');
-            }
-        }
-        
-        // ============================================
-        // FUNCIONES DE UI Y MANEJO DE EVENTOS
-        // ============================================
-        
-        function configurarFormularios() {
-            // Formulario nuevo producto
-            document.getElementById('formNuevoProducto')?.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                await guardarNuevoProducto();
-            });
-            
-            // Formulario nuevo cliente
-            document.getElementById('formNuevoCliente')?.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                await guardarNuevoCliente();
-            });
-            
-            // Formulario nuevo proveedor
-            document.getElementById('formNuevoProveedor')?.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                await guardarNuevoProveedor();
-            });
-            
-            // Configurar eventos de búsqueda
-            document.getElementById('buscarProducto')?.addEventListener('input', buscarProductos);
-            document.getElementById('buscarProductosGestion')?.addEventListener('input', filtrarProductosGestion);
-            document.getElementById('buscarClientes')?.addEventListener('input', filtrarClientes);
-        }
-        
-        function inicializarListenersTiempoReal() {
-            // Listener para cambios en productos
-            if (sucursalActual) {
-                const productosListener = db.collection('productos')
-                    .where('sucursalId', '==', sucursalActual.id)
-                    .where('estado', '==', 'activo')
-                    .onSnapshot(async (snapshot) => {
-                        snapshot.docChanges().forEach(change => {
-                            const producto = { id: change.doc.id, ...change.doc.data() };
-                            
-                            if (change.type === 'added' || change.type === 'modified') {
-                                productosCache.set(producto.id, producto);
-                            } else if (change.type === 'removed') {
-                                productosCache.delete(producto.id);
-                            }
-                        });
-                        
-                        actualizarContadores();
-                        
-                        // Actualizar UI si está en la vista de productos
-                        if (document.getElementById('productosView').classList.contains('active')) {
-                            cargarTablaProductosGestion();
-                        }
-                        
-                        // Actualizar búsqueda de POS si está activa
-                        if (document.getElementById('posView').classList.contains('active')) {
-                            buscarProductos();
-                        }
-                    });
-                
-                listenersActivos.push(productosListener);
-            }
-        }
-        
-        // ============================================
-        // FUNCIONES ESPECÍFICAS DE UI
-        // ============================================
-        
-        // Gestión del carrito
-        function modificarCantidad(index, delta) {
-            if (carrito[index]) {
-                const nuevaCantidad = carrito[index].cantidad + delta;
-                
-                if (nuevaCantidad < 1) {
-                    eliminarDelCarrito(index);
-                    return;
-                }
-                
-                if (carrito[index].controlStock && carrito[index].stock < nuevaCantidad) {
-                    mostrarError(`Stock insuficiente. Solo quedan ${carrito[index].stock} unidades.`);
-                    return;
-                }
-                
-                carrito[index].cantidad = nuevaCantidad;
-                carrito[index].subtotal = nuevaCantidad * carrito[index].precioVenta;
-                
-                actualizarCarrito();
-                guardarCarritoLocal();
-            }
-        }
-        
-        function eliminarDelCarrito(index) {
-            if (carrito[index]) {
-                carrito.splice(index, 1);
-                actualizarCarrito();
-                guardarCarritoLocal();
-            }
-        }
-        
-        function vaciarCarrito() {
-            if (carrito.length === 0) {
-                mostrarError('El carrito ya está vacío');
-                return;
-            }
-            
-            if (confirm(`¿Estás seguro de vaciar el carrito? Se eliminarán ${carrito.length} productos.`)) {
-                carrito = [];
-                document.getElementById('descuentoGlobal').value = '0';
-                actualizarCarrito();
-                guardarCarritoLocal();
-                mostrarExito('Carrito vaciado correctamente');
-            }
-        }
-        
-        function aplicarDescuentoItem(index, porcentaje) {
-            if (carrito[index]) {
-                porcentaje = Math.min(Math.max(parseFloat(porcentaje) || 0, 0), 100);
-                const item = carrito[index];
-                const descuento = (item.cantidad * item.precioVenta * porcentaje) / 100;
-                
-                item.descuento = descuento;
-                item.descuentoPorcentaje = porcentaje;
-                item.subtotal = (item.cantidad * item.precioVenta) - descuento;
-                
-                actualizarCarrito();
-                guardarCarritoLocal();
-            }
-        }
-        
-        function aplicarDescuentoGlobal() {
-            actualizarCarrito();
-        }
-        
-        // Métodos de pago
-        function actualizarPago() {
-            const metodoPago = document.getElementById('selectPago').value;
-            
-            // Ocultar todos los métodos
-            document.querySelectorAll('.metodo-pago').forEach(div => {
-                div.style.display = 'none';
-            });
-            
-            // Mostrar método seleccionado
-            const metodoCapitalizado = metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
-            document.getElementById(`pago${metodoCapitalizado}`).style.display = 'block';
-            
-            // Actualizar cliente si es cuenta corriente
-            if (metodoPago === 'cuenta_corriente') {
-                actualizarCliente();
-            }
-        }
-        
-        function calcularCambio() {
-            const montoRecibido = parseFloat(document.getElementById('montoRecibido').value) || 0;
-            const total = parseFloat(document.getElementById('total').textContent.replace('$', '')) || 0;
-            
-            const cambio = montoRecibido - total;
-            document.getElementById('cambio').value = cambio > 0 ? cambio.toFixed(2) : '0.00';
-            
-            // Cambiar color según si hay cambio positivo, negativo o exacto
-            const cambioElement = document.getElementById('cambio');
-            if (cambio > 0) {
-                cambioElement.style.color = 'var(--secondary)';
-                cambioElement.style.fontWeight = 'bold';
-            } else if (cambio < 0) {
-                cambioElement.style.color = 'var(--danger)';
-                cambioElement.style.fontWeight = 'bold';
-            } else {
-                cambioElement.style.color = 'var(--gray)';
-                cambioElement.style.fontWeight = 'normal';
-            }
-        }
-        
-        function calcularMixto() {
-            const efectivo = parseFloat(document.getElementById('mixtoEfectivo').value) || 0;
-            const tarjeta = parseFloat(document.getElementById('mixtoTarjeta').value) || 0;
-            const transferencia = parseFloat(document.getElementById('mixtoTransferencia').value) || 0;
-            const qr = parseFloat(document.getElementById('mixtoQR').value) || 0;
-            
-            const totalMixto = efectivo + tarjeta + transferencia + qr;
-            document.getElementById('totalMixto').value = totalMixto.toFixed(2);
-        }
-        
-        function validarPago(metodo, total) {
-            switch(metodo) {
-                case 'efectivo':
-                    const montoRecibido = parseFloat(document.getElementById('montoRecibido').value) || 0;
-                    if (montoRecibido < total) {
-                        return { valido: false, mensaje: 'El monto recibido es menor al total' };
-                    }
-                    break;
-                    
-                case 'mixto':
-                    const totalMixto = parseFloat(document.getElementById('totalMixto').value) || 0;
-                    if (Math.abs(totalMixto - total) > 0.01) {
-                        return { valido: false, mensaje: `La suma de los montos (${totalMixto}) no coincide con el total (${total})` };
-                    }
-                    break;
-                    
-                case 'cuenta_corriente':
-                    const clienteId = document.getElementById('selectCliente').value;
-                    if (!clienteId) {
-                        return { valido: false, mensaje: 'Seleccione un cliente para cuenta corriente' };
-                    }
-                    const cliente = clientesCache.get(clienteId);
-                    if (!cliente) {
-                        return { valido: false, mensaje: 'Cliente no encontrado' };
-                    }
-                    break;
-            }
-            
-            return { valido: true, mensaje: '' };
-        }
-        
-        function obtenerDatosPago(metodo) {
-            switch(metodo) {
-                case 'efectivo':
-                    return {
-                        montoRecibido: parseFloat(document.getElementById('montoRecibido').value) || 0,
-                        cambio: parseFloat(document.getElementById('cambio').value) || 0
-                    };
-                    
-                case 'tarjeta':
-                    return {
-                        numero: document.getElementById('tarjetaNumero').value,
-                        tipo: document.getElementById('tarjetaTipo').value,
-                        cuotas: document.getElementById('tarjetaCuotas').value
-                    };
-                    
-                case 'transferencia':
-                    return {
-                        comprobante: document.getElementById('transferenciaComprobante').value,
-                        banco: document.getElementById('transferenciaBanco').value
-                    };
-                    
-                case 'qr':
-                    return {
-                        plataforma: document.getElementById('qrPlataforma').value,
-                        transaccion: document.getElementById('qrTransaccion').value
-                    };
-                    
-                case 'mixto':
-                    return {
-                        efectivo: parseFloat(document.getElementById('mixtoEfectivo').value) || 0,
-                        tarjeta: parseFloat(document.getElementById('mixtoTarjeta').value) || 0,
-                        transferencia: parseFloat(document.getElementById('mixtoTransferencia').value) || 0,
-                        qr: parseFloat(document.getElementById('mixtoQR').value) || 0
-                    };
-                    
-                case 'cuenta_corriente':
-                    return {
-                        clienteId: document.getElementById('selectCliente').value,
-                        clienteNombre: document.getElementById('selectCliente').options[document.getElementById('selectCliente').selectedIndex].text
-                    };
-                    
-                default:
-                    return {};
-            }
-        }
-        
-        // Scanner de código de barras
-        let scannerStream = null;
-        
-        async function abrirScanner() {
-            try {
-                const scanner = document.getElementById('barcodeScanner');
-                scanner.style.display = 'block';
-                
-                // Solicitar permisos de cámara
-                scannerStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
-                });
-                
-                const video = document.getElementById('barcodeVideo');
-                video.srcObject = scannerStream;
-                await video.play();
-                
-                // Configurar QuaggaJS
-                Quagga.init({
-                    inputStream: {
-                        name: "Live",
-                        type: "LiveStream",
-                        target: video,
-                        constraints: {
-                            facingMode: "environment"
-                        }
-                    },
-                    decoder: {
-                        readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader"]
-                    }
-                }, function(err) {
-                    if (err) {
-                        console.error('Error inicializando Quagga:', err);
-                        iniciarScannerAlternativo();
-                        return;
-                    }
-                    
-                    Quagga.start();
-                    
-                    Quagga.onDetected(function(result) {
-                        const codigo = result.codeResult.code;
-                        buscarProductoPorCodigo(codigo);
-                        cerrarScanner();
-                    });
-                });
-                
-            } catch (error) {
-                console.error('Error al abrir scanner:', error);
-                iniciarScannerAlternativo();
-            }
-        }
-        
-        function iniciarScannerAlternativo() {
-            const codigo = prompt('Ingresa el código de barras manualmente:');
-            if (codigo && codigo.trim() !== '') {
-                buscarProductoPorCodigo(codigo.trim());
-            }
-        }
-        
-        function buscarProductoPorCodigo(codigo) {
-            for (let producto of productosCache.values()) {
-                if (producto.codigo === codigo) {
-                    agregarAlCarrito(producto);
-                    mostrarExito(`Producto agregado: ${producto.nombre}`);
-                    return;
-                }
-            }
-            
-            mostrarError(`No se encontró producto con código: ${codigo}`);
-        }
-        
-        function cerrarScanner() {
-            const scanner = document.getElementById('barcodeScanner');
-            scanner.style.display = 'none';
-            
-            // Detener Quagga
-            Quagga.stop();
-            
-            // Detener stream de cámara
-            if (scannerStream) {
-                scannerStream.getTracks().forEach(track => track.stop());
-                scannerStream = null;
-            }
-        }
-        
-        // Modo emergencia
-        function continuarSinConexion() {
-            document.getElementById('emergencyMode').style.display = 'none';
-            mostrarExito('Continuando en modo offline');
-        }
-        
-        function verVentasPendientes() {
-            // Implementar vista de ventas pendientes
-            mostrarInfo('Funcionalidad en desarrollo');
-        }
-        
-        // Presupuestos
-        function crearPresupuesto() {
-            if (carrito.length === 0) {
-                mostrarError('El carrito está vacío');
-                return;
-            }
-            
-            // Implementar creación de presupuesto
-            mostrarInfo('Funcionalidad de presupuestos en desarrollo');
-        }
-        
-        function reimprimirUltimo() {
-            if (!ultimaVenta) {
-                mostrarError('No hay ventas recientes para reimprimir');
-                return;
-            }
-            
-            if (confirm(`¿Reimprimir ticket de venta #${ultimaVenta.numeroFactura}?`)) {
-                imprimirTicket(ultimaVenta);
-            }
-        }
-        
-        function exportarVentaPDF() {
-            if (carrito.length === 0) {
-                mostrarError('El carrito está vacío');
-                return;
-            }
-            
-            // Implementar exportación a PDF
-            mostrarInfo('Exportando venta a PDF...');
-        }
-        
-        function congelarPrecios() {
-            if (carrito.length === 0) {
-                mostrarError('El carrito está vacío');
-                return;
-            }
-            
-            carrito.forEach(item => {
-                item.congelado = !item.congelado;
-            });
-            
-            mostrarExito('Precios congelados en el carrito actual');
-        }
-        
-        // Modales
         function mostrarModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
-                
-                // Cargar contenido específico del modal
-                switch(modalId) {
-                    case 'modalProductos':
-                        cargarModalProductos();
-                        break;
-                    case 'modalClientes':
-                        cargarModalClientes();
-                        break;
-                    case 'modalNuevoProducto':
-                        cargarOpcionesNuevoProducto();
-                        break;
-                    case 'modalNuevoCliente':
-                        cargarOpcionesNuevoCliente();
-                        break;
-                    case 'modalNuevoProveedor':
-                        cargarOpcionesNuevoProveedor();
-                        break;
-                }
             }
         }
         
@@ -4457,7 +3771,7 @@
         }
         
         // ============================================
-        // FUNCIONES DE ALMACENAMIENTO LOCAL
+        // ALMACENAMIENTO LOCAL
         // ============================================
         
         async function cargarConfiguracionLocal() {
@@ -4475,6 +3789,20 @@
                         mensajeTicket: '¡Gracias por su compra!',
                         caja: '1'
                     };
+                }
+            } catch (error) {
+                console.error('Error cargando configuración:', error);
+            }
+        }
+        
+        async function cargarConfiguracionSistema() {
+            try {
+                if (!sucursalActual) return;
+                
+                const configDoc = await db.collection('configuracion').doc('sistema').get();
+                if (configDoc.exists) {
+                    configuracionSistema = { ...configuracionSistema, ...configDoc.data() };
+                    localStorage.setItem('configuracion_sistema', JSON.stringify(configuracionSistema));
                 }
             } catch (error) {
                 console.error('Error cargando configuración:', error);
@@ -4630,8 +3958,85 @@
         }
         
         // ============================================
-        // TIMER DE INACTIVIDAD
+        // FUNCIONES DE UTILIDAD
         // ============================================
+        
+        function formatFecha(fecha, formato = 'DD/MM/YYYY HH:mm') {
+            const date = fecha instanceof Date ? fecha : (fecha && fecha.toDate ? fecha.toDate() : new Date(fecha));
+            
+            const pad = (n) => n.toString().padStart(2, '0');
+            
+            const replacements = {
+                'YYYY': date.getFullYear(),
+                'MM': pad(date.getMonth() + 1),
+                'DD': pad(date.getDate()),
+                'HH': pad(date.getHours()),
+                'mm': pad(date.getMinutes()),
+                'ss': pad(date.getSeconds())
+            };
+            
+            return formato.replace(/YYYY|MM|DD|HH|mm|ss/g, match => replacements[match]);
+        }
+        
+        function mostrarError(mensaje) {
+            alert(`❌ ${mensaje}`);
+        }
+        
+        function mostrarExito(mensaje) {
+            alert(`✅ ${mensaje}`);
+        }
+        
+        function mostrarInfo(mensaje) {
+            alert(`ℹ️ ${mensaje}`);
+        }
+        
+        function configurarFormularios() {
+            // Formulario nuevo producto
+            document.getElementById('formNuevoProducto')?.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await guardarNuevoProducto();
+            });
+            
+            // Formulario nuevo cliente
+            document.getElementById('formNuevoCliente')?.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await guardarNuevoCliente();
+            });
+        }
+        
+        function inicializarListenersTiempoReal() {
+            // Listener para cambios en productos
+            if (sucursalActual) {
+                const productosListener = db.collection('productos')
+                    .where('sucursalId', '==', sucursalActual.id)
+                    .where('estado', '==', 'activo')
+                    .onSnapshot(async (snapshot) => {
+                        snapshot.docChanges().forEach(change => {
+                            const producto = { id: change.doc.id, ...change.doc.data() };
+                            
+                            if (change.type === 'added' || change.type === 'modified') {
+                                productosCache.set(producto.id, producto);
+                            } else if (change.type === 'removed') {
+                                productosCache.delete(producto.id);
+                            }
+                        });
+                        
+                        actualizarContadores();
+                        
+                        // Actualizar UI si está en la vista de productos
+                        if (document.getElementById('productosView').classList.contains('active')) {
+                            cargarTablaProductosGestion();
+                        }
+                        
+                        // Actualizar búsqueda de POS si está activa
+                        if (document.getElementById('posView').classList.contains('active')) {
+                            buscarProductos();
+                        }
+                    });
+                
+                listenersActivos.push(productosListener);
+            }
+        }
         
         function setupInactivityTimer(timeout) {
             let inactivityTimer;
@@ -4657,10 +4062,6 @@
             
             resetTimer();
         }
-        
-        // ============================================
-        // PWA CONFIGURATION
-        // ============================================
         
         function configurarPWA() {
             if ('serviceWorker' in navigator) {
@@ -4708,177 +4109,224 @@
             });
         }
         
-        // ============================================
-        // FUNCIONES DE INICIALIZACIÓN RESTANTES
-        // ============================================
-        
-        // Función para mostrar login
-        function mostrarLogin() {
-            window.location.href = 'login.html';
-        }
-        
-        // Función para cargar productos en vista POS
-        function cargarProductosEnVista() {
-            const productosGrid = document.getElementById('productosGrid');
-            productosGrid.innerHTML = '';
-            
-            let productosArray = Array.from(productosCache.values());
-            
-            // Mostrar solo los primeros 50 para performance
-            productosArray.slice(0, 50).forEach(producto => {
-                const productoCard = document.createElement('div');
-                productoCard.className = 'producto-card';
-                productoCard.onclick = () => agregarAlCarrito(producto);
-                
-                const stockClass = producto.stock <= producto.stockMinimo ? 'stock-bajo' : 'stock-normal';
-                
-                productoCard.innerHTML = `
-                    <div class="producto-codigo">${producto.codigo}</div>
-                    <div class="producto-nombre">${producto.nombre}</div>
-                    <div class="producto-precio">$${producto.precioVenta.toFixed(2)}</div>
-                    <div class="producto-stock ${stockClass}">
-                        ${producto.controlStock ? `Stock: ${producto.stock}` : 'Sin control'}
-                    </div>
-                `;
-                
-                productosGrid.appendChild(productoCard);
-            });
-        }
-        
-        function cargarClientesEnSelect() {
-            const selectCliente = document.getElementById('selectCliente');
-            
-            // Limpiar opciones excepto la primera
-            while (selectCliente.options.length > 1) {
-                selectCliente.remove(1);
-            }
-            
-            clientesCache.forEach(cliente => {
-                const option = document.createElement('option');
-                option.value = cliente.id;
-                option.textContent = `${cliente.nombre}${cliente.documento ? ` - ${cliente.documento}` : ''}`;
-                selectCliente.appendChild(option);
-            });
-        }
-        
-        function actualizarCliente() {
-            const clienteId = document.getElementById('selectCliente').value;
-            const clienteInfo = document.getElementById('clienteInfo');
-            
-            if (clienteId) {
-                const cliente = clientesCache.get(clienteId);
-                if (cliente) {
-                    document.getElementById('clienteNombre').textContent = cliente.nombre;
-                    document.getElementById('clienteDocumento').textContent = cliente.documento ? `Doc: ${cliente.documento}` : '';
-                    document.getElementById('clienteSaldo').textContent = `$${(cliente.saldo || 0).toFixed(2)}`;
-                    document.getElementById('clienteLimiteCredito').textContent = cliente.limiteCredito ? `Límite: $${cliente.limiteCredito.toFixed(2)}` : '';
-                    
-                    // Actualizar límite disponible para cuenta corriente
-                    const limiteDisponible = (cliente.limiteCredito || 0) - (cliente.saldo || 0);
-                    document.getElementById('limiteDisponible').value = limiteDisponible.toFixed(2);
-                    
-                    clienteInfo.style.display = 'block';
-                    return;
+        async function logout() {
+            try {
+                // Cerrar turno si está abierto
+                if (turnoActual && turnoActual.estado === 'abierto') {
+                    if (confirm('Tienes un turno abierto. ¿Deseas cerrarlo antes de salir?')) {
+                        const efectivoFinal = prompt('Ingrese el efectivo final en caja:', '0');
+                        if (efectivoFinal !== null) {
+                            await db.collection('turnos').doc(turnoActual.id).update({
+                                cierre: new Date(),
+                                estado: 'cerrado',
+                                efectivoFinal: parseFloat(efectivoFinal),
+                                observaciones: 'Cerrado al salir del sistema'
+                            });
+                        }
+                    }
                 }
+                
+                // Guardar estado del sistema
+                guardarCarritoLocal();
+                guardarEstadoSistema();
+                
+                // Detener todos los listeners
+                listenersActivos.forEach(unsubscribe => unsubscribe());
+                listenersActivos = [];
+                
+                // Cerrar sesión en Firebase
+                await auth.signOut();
+                localStorage.removeItem('user_token');
+                
+                // Mostrar login
+                mostrarLogin();
+                
+            } catch (error) {
+                console.error('Error cerrando sesión:', error);
+                mostrarError('Error al cerrar sesión');
             }
-            
-            clienteInfo.style.display = 'none';
         }
         
-        // Búsqueda de productos
-        function buscarProductos() {
-            const query = document.getElementById('buscarProducto').value.toLowerCase();
-            const productosGrid = document.getElementById('productosGrid');
-            productosGrid.innerHTML = '';
+        function continuarSinConexion() {
+            document.getElementById('emergencyMode').style.display = 'none';
+            mostrarExito('Continuando en modo offline');
+        }
+        
+        function verVentasPendientes() {
+            if (ventasPendientes.length === 0) {
+                mostrarInfo('No hay ventas pendientes de sincronizar');
+                return;
+            }
+            
+            let mensaje = `Ventas pendientes de sincronizar: ${ventasPendientes.length}\n\n`;
+            ventasPendientes.forEach((venta, index) => {
+                mensaje += `${index + 1}. Factura ${venta.numeroFactura} - $${venta.total.toFixed(2)} - ${formatFecha(venta.fecha)}\n`;
+            });
+            
+            alert(mensaje);
+        }
+        
+        // ============================================
+        // FUNCIONES DE GESTIÓN (SIMPLIFICADAS)
+        // ============================================
+        
+        async function cargarTablaProductosGestion() {
+            const tabla = document.getElementById('tablaProductosGestion');
+            tabla.innerHTML = '';
             
             let productosArray = Array.from(productosCache.values());
             
-            if (query) {
-                productosArray = productosArray.filter(producto => 
-                    producto.nombre.toLowerCase().includes(query) ||
-                    producto.codigo.toLowerCase().includes(query) ||
-                    producto.categoria.toLowerCase().includes(query)
-                );
-            }
-            
-            // Mostrar resultados limitados para performance
-            productosArray.slice(0, 50).forEach(producto => {
-                const productoCard = document.createElement('div');
-                productoCard.className = 'producto-card';
-                productoCard.onclick = () => agregarAlCarrito(producto);
+            // Mostrar productos
+            productosArray.forEach(producto => {
+                const fila = document.createElement('tr');
                 
-                const stockClass = producto.stock <= producto.stockMinimo ? 'stock-bajo' : 'stock-normal';
+                const stockClass = producto.stock <= producto.stockMinimo ? 'badge-danger' : 'badge-success';
+                const estadoClass = producto.estado === 'activo' ? 'badge-success' : 'badge-danger';
                 
-                productoCard.innerHTML = `
-                    <div class="producto-codigo">${producto.codigo}</div>
-                    <div class="producto-nombre">${producto.nombre}</div>
-                    <div class="producto-precio">$${producto.precioVenta.toFixed(2)}</div>
-                    <div class="producto-stock ${stockClass}">
-                        ${producto.controlStock ? `Stock: ${producto.stock}` : 'Sin control'}
-                    </div>
+                fila.innerHTML = `
+                    <td>${producto.codigo}</td>
+                    <td>${producto.nombre}</td>
+                    <td>${producto.categoria || 'General'}</td>
+                    <td>$${producto.precioCosto?.toFixed(2) || '0.00'}</td>
+                    <td>$${producto.precioVenta?.toFixed(2) || '0.00'}</td>
+                    <td><span class="badge ${stockClass}">${producto.controlStock ? producto.stock : 'Sin control'}</span></td>
+                    <td>${producto.proveedorNombre || '-'}</td>
+                    <td><span class="badge ${estadoClass}">${producto.estado}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="editarProducto('${producto.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
                 `;
                 
-                productosGrid.appendChild(productoCard);
+                tabla.appendChild(fila);
             });
         }
         
-        // Inicializar actualización de pago
-        actualizarPago();
-        
-        // Función helper para actualizar contador de facturas
-        async function actualizarContadorFacturas(transaction) {
-            if (!sucursalActual) return;
+        async function cargarTablaClientesGestion() {
+            const tabla = document.getElementById('tablaClientesGestion');
+            tabla.innerHTML = '';
             
-            const contadorRef = db.collection('contadores_facturas').doc(`sucursal_${sucursalActual.id}`);
-            const contadorDoc = await transaction.get(contadorRef);
+            let clientesArray = Array.from(clientesCache.values());
             
-            if (!contadorDoc.exists) {
-                transaction.set(contadorRef, { proximo: 1 });
-            } else {
-                transaction.update(contadorRef, {
-                    proximo: firebase.firestore.FieldValue.increment(1)
-                });
-            }
+            // Mostrar clientes
+            clientesArray.forEach(cliente => {
+                const fila = document.createElement('tr');
+                
+                const estadoClass = cliente.estado === 'activo' ? 'badge-success' : 
+                                   cliente.estado === 'moroso' ? 'badge-danger' : 'badge-warning';
+                
+                fila.innerHTML = `
+                    <td>${cliente.nombre}</td>
+                    <td>${cliente.documento || '-'}</td>
+                    <td>${cliente.email || '-'}</td>
+                    <td>${cliente.telefono || '-'}</td>
+                    <td>$${(cliente.saldo || 0).toFixed(2)}</td>
+                    <td>$${(cliente.limiteCredito || 0).toFixed(2)}</td>
+                    <td>${cliente.ultimaCompra ? formatFecha(cliente.ultimaCompra, 'DD/MM/YYYY') : '-'}</td>
+                    <td><span class="badge ${estadoClass}">${cliente.estado}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="editarCliente('${cliente.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tabla.appendChild(fila);
+            });
         }
         
-        // Función helper para generar número de pedido
-        async function generarNumeroPedido() {
-            const timestamp = Date.now();
-            return `PED-${sucursalActual.codigo || '001'}-${timestamp}`;
-        }
-        
-        // Función helper para generar número de nota de crédito
-        async function generarNumeroNotaCredito(transaction) {
-            const contadorRef = db.collection('contadores_notas_credito').doc(`sucursal_${sucursalActual.id}`);
-            const contadorDoc = await transaction.get(contadorRef);
-            
-            let proximoNumero = 1;
-            if (contadorDoc.exists) {
-                proximoNumero = (contadorDoc.data().proximo || 0) + 1;
-                transaction.update(contadorRef, { proximo: proximoNumero });
-            } else {
-                transaction.set(contadorRef, { proximo: 1 });
-            }
-            
-            return `NC-${proximoNumero.toString().padStart(8, '0')}`;
-        }
-        
-        // Función helper para cargar configuración del sistema
-        async function cargarConfiguracionSistema() {
+        async function cargarTablaVentas() {
             try {
                 if (!sucursalActual) return;
                 
-                const configDoc = await db.collection('configuracion').doc(sucursalActual.id).get();
-                if (configDoc.exists) {
-                    configuracionSistema = { ...configuracionSistema, ...configDoc.data() };
-                    localStorage.setItem('configuracion_sistema', JSON.stringify(configuracionSistema));
-                }
+                const ventasSnapshot = await db.collection('ventas')
+                    .where('sucursalId', '==', sucursalActual.id)
+                    .orderBy('fecha', 'desc')
+                    .limit(50)
+                    .get();
+                
+                const tabla = document.getElementById('tablaVentas');
+                tabla.innerHTML = '';
+                
+                ventasSnapshot.forEach(doc => {
+                    const venta = doc.data();
+                    const fila = document.createElement('tr');
+                    
+                    const estadoClass = venta.anulada ? 'badge-danger' : 
+                                      venta.estado === 'completada' ? 'badge-success' : 'badge-warning';
+                    const estadoTexto = venta.anulada ? 'Anulada' : 
+                                       venta.estado === 'completada' ? 'Completada' : venta.estado;
+                    
+                    fila.innerHTML = `
+                        <td>${venta.numeroFactura}</td>
+                        <td>${formatFecha(venta.fecha, 'DD/MM/YYYY HH:mm')}</td>
+                        <td>${venta.clienteNombre}</td>
+                        <td>${venta.items.length}</td>
+                        <td>$${venta.subtotal.toFixed(2)}</td>
+                        <td>$${venta.iva.toFixed(2)}</td>
+                        <td>$${venta.total.toFixed(2)}</td>
+                        <td>${venta.metodoPago}</td>
+                        <td>${venta.usuarioNombre}</td>
+                        <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline" onclick="verDetalleVenta('${doc.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    tabla.appendChild(fila);
+                });
+                
             } catch (error) {
-                console.error('Error cargando configuración:', error);
+                console.error('Error cargando ventas:', error);
             }
         }
         
-        // Función helper para actualizar info del turno
+        async function cargarHistorialTurnos() {
+            try {
+                if (!sucursalActual) return;
+                
+                const turnosSnapshot = await db.collection('turnos')
+                    .where('sucursalId', '==', sucursalActual.id)
+                    .orderBy('apertura', 'desc')
+                    .limit(20)
+                    .get();
+                
+                const tabla = document.getElementById('tablaTurnos');
+                tabla.innerHTML = '';
+                
+                turnosSnapshot.forEach(doc => {
+                    const turno = doc.data();
+                    const fila = document.createElement('tr');
+                    
+                    fila.innerHTML = `
+                        <td>${formatFecha(turno.fecha, 'DD/MM/YYYY')}</td>
+                        <td>${turno.tipo}</td>
+                        <td>${turno.usuarioNombre}</td>
+                        <td>${formatFecha(turno.apertura, 'HH:mm')}</td>
+                        <td>${turno.cierre ? formatFecha(turno.cierre, 'HH:mm') : '-'}</td>
+                        <td>${turno.ventasCount || 0}</td>
+                        <td>$${(turno.totalVentas || 0).toFixed(2)}</td>
+                        <td>$${(turno.efectivoInicial || 0).toFixed(2)}</td>
+                        <td>$${(turno.efectivoFinal || 0).toFixed(2)}</td>
+                        <td><span class="badge ${turno.estado === 'abierto' ? 'badge-success' : 'badge-info'}">${turno.estado}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline" onclick="verDetalleTurno('${doc.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    tabla.appendChild(fila);
+                });
+                
+            } catch (error) {
+                console.error('Error cargando historial de turnos:', error);
+            }
+        }
+        
         function actualizarInfoTurno(turno) {
             const infoTurno = document.getElementById('infoTurnoActual');
             if (!turno) {
@@ -4896,12 +4344,12 @@
             `;
         }
         
-        // Función helper para cargar resumen del turno
         async function cargarResumenTurno(turnoId) {
             try {
                 const ventasSnapshot = await db.collection('ventas')
                     .where('turnoId', '==', turnoId)
                     .where('anulada', '==', false)
+                    .where('estado', '==', 'completada')
                     .get();
                 
                 let resumen = {
@@ -4941,133 +4389,31 @@
             }
         }
         
-        // Función helper para cargar historial de turnos
-        async function cargarHistorialTurnos() {
+        // ============================================
+        // FUNCIONES DE CONFIGURACIÓN
+        // ============================================
+        
+        async function cargarProveedoresCache() {
             try {
                 if (!sucursalActual) return;
                 
-                const turnosSnapshot = await db.collection('turnos')
+                const snapshot = await db.collection('proveedores')
                     .where('sucursalId', '==', sucursalActual.id)
-                    .orderBy('apertura', 'desc')
-                    .limit(20)
+                    .where('estado', '==', 'activo')
+                    .orderBy('nombre')
+                    .limit(100)
                     .get();
                 
-                const tablaTurnos = document.getElementById('tablaTurnos');
-                tablaTurnos.innerHTML = '';
-                
-                turnosSnapshot.forEach(doc => {
-                    const turno = doc.data();
-                    const fila = document.createElement('tr');
-                    
-                    fila.innerHTML = `
-                        <td>${formatFecha(turno.fecha, 'DD/MM/YYYY')}</td>
-                        <td>${turno.tipo}</td>
-                        <td>${turno.usuarioNombre}</td>
-                        <td>${formatFecha(turno.apertura, 'HH:mm')}</td>
-                        <td>${turno.cierre ? formatFecha(turno.cierre, 'HH:mm') : '-'}</td>
-                        <td>${turno.ventasCount || 0}</td>
-                        <td>$${(turno.totalVentas || 0).toFixed(2)}</td>
-                        <td>$${(turno.efectivoInicial || 0).toFixed(2)}</td>
-                        <td>$${(turno.efectivoFinal || 0).toFixed(2)}</td>
-                        <td><span class="badge ${turno.estado === 'abierto' ? 'badge-success' : 'badge-info'}">${turno.estado}</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-outline" onclick="verDetalleTurno('${doc.id}')">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </td>
-                    `;
-                    
-                    tablaTurnos.appendChild(fila);
+                proveedoresCache.clear();
+                snapshot.forEach(doc => {
+                    proveedoresCache.set(doc.id, { id: doc.id, ...doc.data() });
                 });
                 
             } catch (error) {
-                console.error('Error cargando historial de turnos:', error);
+                console.error('Error cargando proveedores:', error);
             }
         }
         
-        // Función placeholder para ver detalle de turno
-        function verDetalleTurno(turnoId) {
-            mostrarInfo(`Ver detalle del turno ${turnoId}`);
-        }
-        
-        // Función placeholder para cargar tabla de productos en gestión
-        async function cargarTablaProductosGestion() {
-            const tabla = document.getElementById('tablaProductosGestion');
-            tabla.innerHTML = '';
-            
-            let productosArray = Array.from(productosCache.values());
-            
-            // Aplicar filtros si existen
-            const filtroCategoria = document.getElementById('filtroCategoria')?.value;
-            const filtroStock = document.getElementById('filtroStock')?.value;
-            
-            if (filtroCategoria) {
-                productosArray = productosArray.filter(p => p.categoria === filtroCategoria);
-            }
-            
-            if (filtroStock === 'bajo') {
-                productosArray = productosArray.filter(p => p.controlStock && p.stock <= p.stockMinimo);
-            } else if (filtroStock === 'sin') {
-                productosArray = productosArray.filter(p => p.controlStock && p.stock <= 0);
-            } else if (filtroStock === 'con') {
-                productosArray = productosArray.filter(p => p.controlStock && p.stock > 0);
-            }
-            
-            // Mostrar productos
-            productosArray.forEach(producto => {
-                const fila = document.createElement('tr');
-                
-                const stockClass = producto.stock <= producto.stockMinimo ? 'badge-danger' : 'badge-success';
-                const estadoClass = producto.estado === 'activo' ? 'badge-success' : 'badge-danger';
-                
-                fila.innerHTML = `
-                    <td>${producto.codigo}</td>
-                    <td>${producto.nombre}</td>
-                    <td>${producto.categoria || 'General'}</td>
-                    <td>$${producto.precioCosto?.toFixed(2) || '0.00'}</td>
-                    <td>$${producto.precioVenta?.toFixed(2) || '0.00'}</td>
-                    <td><span class="badge ${stockClass}">${producto.controlStock ? producto.stock : 'Sin control'}</span></td>
-                    <td>${producto.proveedorNombre || '-'}</td>
-                    <td><span class="badge ${estadoClass}">${producto.estado}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline" onclick="editarProducto('${producto.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline" onclick="ajustarStock('${producto.id}')">
-                            <i class="fas fa-boxes"></i>
-                        </button>
-                    </td>
-                `;
-                
-                tabla.appendChild(fila);
-            });
-        }
-        
-        // Función placeholder para filtrar productos en gestión
-        function filtrarProductosGestion() {
-            cargarTablaProductosGestion();
-        }
-        
-        // Función placeholder para cargar categorías en select
-        function cargarCategoriasEnSelect() {
-            // Implementar extracción de categorías únicas de productos
-            const categorias = new Set();
-            productosCache.forEach(p => {
-                if (p.categoria) categorias.add(p.categoria);
-            });
-            
-            const selectCategoria = document.getElementById('filtroCategoria');
-            if (selectCategoria) {
-                categorias.forEach(categoria => {
-                    const option = document.createElement('option');
-                    option.value = categoria;
-                    option.textContent = categoria;
-                    selectCategoria.appendChild(option);
-                });
-            }
-        }
-        
-        // Función placeholder para cargar proveedores en select
         function cargarProveedoresEnSelect() {
             const selectProveedor = document.getElementById('filtroProveedor');
             if (selectProveedor) {
@@ -5080,250 +4426,136 @@
             }
         }
         
-        // Función placeholder para cargar tabla de clientes
-        async function cargarTablaClientesGestion() {
-            // Implementar similar a cargarTablaProductosGestion
+        async function cargarCategoriasCache() {
+            // Extraer categorías únicas de productos
+            const categorias = new Set();
+            productosCache.forEach(p => {
+                if (p.categoria) categorias.add(p.categoria);
+            });
+            
+            return Array.from(categorias);
         }
         
-        // Función placeholder para cargar tabla de ventas
-        async function cargarTablaVentas() {
-            // Implementar similar a cargarTablaProductosGestion
+        function cargarCategoriasEnSelect() {
+            const selectCategoria = document.getElementById('filtroCategoria');
+            if (selectCategoria) {
+                // Limpiar opciones existentes
+                while (selectCategoria.options.length > 1) {
+                    selectCategoria.remove(1);
+                }
+                
+                const categorias = new Set();
+                productosCache.forEach(p => {
+                    if (p.categoria) categorias.add(p.categoria);
+                });
+                
+                categorias.forEach(categoria => {
+                    const option = document.createElement('option');
+                    option.value = categoria;
+                    option.textContent = categoria;
+                    selectCategoria.appendChild(option);
+                });
+            }
         }
         
-        // Función placeholder para cargar tabla de proveedores
-        async function cargarTablaProveedores() {
-            // Implementar similar a cargarTablaProductosGestion
+        // ============================================
+        // FUNCIONES HELPER
+        // ============================================
+        
+        async function actualizarContadorFacturas(transaction) {
+            if (!sucursalActual) return;
+            
+            const contadorRef = db.collection('contadores_facturas').doc(`sucursal_${sucursalActual.id}`);
+            const contadorDoc = await transaction.get(contadorRef);
+            
+            if (!contadorDoc.exists) {
+                transaction.set(contadorRef, { proximo: 1 });
+            } else {
+                transaction.update(contadorRef, {
+                    proximo: firebase.firestore.FieldValue.increment(1)
+                });
+            }
         }
         
-        // Función placeholder para cargar tabla de pedidos
-        async function cargarTablaPedidos() {
-            // Implementar similar a cargarTablaProductosGestion
-        }
-        
-        // Función placeholder para actualizar reportes
-        async function actualizarReportes() {
-            // Implementar generación de gráficos y tablas de reportes
-        }
-        
-        // Función placeholder para cargar configuración UI
-        async function cargarConfiguracionUI() {
-            // Implementar carga de configuración en formularios
-        }
-        
-        // Función placeholder para procesar importación de productos
-        async function procesarImportacionProductos() {
-            const fileInput = document.getElementById('fileImportarProductos');
-            if (!fileInput.files.length) {
-                mostrarError('Seleccione un archivo Excel');
+        function exportarVentaPDF() {
+            if (carrito.length === 0) {
+                mostrarError('El carrito está vacío');
                 return;
             }
             
-            await importarProductosDesdeExcel(fileInput.files[0]);
+            // Calcular totales
+            const subtotal = carrito.reduce((sum, item) => sum + (item.cantidad * item.precioVenta - item.descuento), 0);
+            const descuentoGlobal = parseFloat(document.getElementById('descuentoGlobal').value) || 0;
+            const descuentoGlobalMonto = (subtotal * descuentoGlobal) / 100;
+            const subtotalConDescuento = subtotal - descuentoGlobalMonto;
+            const iva = subtotalConDescuento * IVA_PORCENTAJE;
+            const total = subtotalConDescuento + iva;
+            
+            // Crear contenido del PDF
+            const contenido = `
+                <h2>Presupuesto / Venta</h2>
+                <p><strong>Fecha:</strong> ${formatFecha(new Date(), 'DD/MM/YYYY HH:mm')}</p>
+                <p><strong>Cliente:</strong> ${document.getElementById('selectCliente').options[document.getElementById('selectCliente').selectedIndex].text}</p>
+                <hr>
+                <h3>Productos:</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="border: 1px solid #ddd; padding: 8px;">Producto</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">Cantidad</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">Precio</th>
+                            <th style="border: 1px solid #ddd; padding: 8px;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${carrito.map(item => `
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${item.nombre}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${item.cantidad}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">$${item.precioVenta.toFixed(2)}</td>
+                                <td style="border: 1px solid #ddd; padding: 8px;">$${(item.cantidad * item.precioVenta - item.descuento).toFixed(2)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <hr>
+                <h3>Totales:</h3>
+                <p><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</p>
+                <p><strong>Descuento (${descuentoGlobal}%):</strong> $${descuentoGlobalMonto.toFixed(2)}</p>
+                <p><strong>IVA (${IVA_PORCENTAJE * 100}%):</strong> $${iva.toFixed(2)}</p>
+                <p><strong>TOTAL:</strong> $${total.toFixed(2)}</p>
+            `;
+            
+            // Crear ventana para imprimir
+            const ventana = window.open('', '_blank');
+            ventana.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Presupuesto - ${formatFecha(new Date(), 'DD-MM-YYYY')}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h2, h3 { color: #333; }
+                        table { margin: 20px 0; }
+                        hr { margin: 20px 0; border: none; border-top: 1px solid #ddd; }
+                    </style>
+                </head>
+                <body>
+                    ${contenido}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                        };
+                    <\/script>
+                </body>
+                </html>
+            `);
+            ventana.document.close();
         }
         
-        // Función placeholder para exportar productos a Excel
-        async function exportarProductosExcel() {
-            mostrarInfo('Exportando productos a Excel...');
-        }
-        
-        // Función placeholder para exportar clientes a Excel
-        async function exportarClientesExcel() {
-            mostrarInfo('Exportando clientes a Excel...');
-        }
-        
-        // Función placeholder para exportar ventas a Excel
-        async function exportarVentasExcel() {
-            mostrarInfo('Exportando ventas a Excel...');
-        }
-        
-        // Función placeholder para exportar reporte a Excel
-        async function exportarReporteExcel() {
-            mostrarInfo('Exportando reporte a Excel...');
-        }
-        
-        // Función placeholder para filtrar ventas por hoy
-        function filtrarVentasHoy() {
-            mostrarInfo('Filtrando ventas de hoy...');
-        }
-        
-        // Función placeholder para filtrar ventas por mes
-        function filtrarVentasMes() {
-            mostrarInfo('Filtrando ventas del mes...');
-        }
-        
-        // Función placeholder para cambiar tab de proveedores
-        function cambiarTabProveedores(tab) {
-            // Implementar cambio de tabs
-        }
-        
-        // Función placeholder para cambiar tab de configuración
-        function cambiarTabConfiguracion(tab) {
-            // Implementar cambio de tabs
-        }
-        
-        // Función placeholder para test de impresión
-        function testImpresion() {
-            mostrarInfo('Probando impresión...');
-        }
-        
-        // Función placeholder para restaurar backup
-        async function restaurarBackup() {
-            mostrarInfo('Restaurando backup...');
-        }
-        
-        // Función placeholder para guardar nuevo producto
-        async function guardarNuevoProducto() {
-            mostrarInfo('Guardando nuevo producto...');
-        }
-        
-        // Función placeholder para guardar nuevo cliente
-        async function guardarNuevoCliente() {
-            mostrarInfo('Guardando nuevo cliente...');
-        }
-        
-        // Función placeholder para guardar nuevo proveedor
-        async function guardarNuevoProveedor() {
-            mostrarInfo('Guardando nuevo proveedor...');
-        }
-        
-        // Función placeholder para editar producto
-        function editarProducto(productoId) {
-            mostrarInfo(`Editando producto ${productoId}`);
-        }
-        
-        // Función placeholder para ajustar stock
-        function ajustarStock(productoId) {
-            mostrarInfo(`Ajustando stock de producto ${productoId}`);
-        }
-        
-        // Función placeholder para cargar modal productos
-        function cargarModalProductos() {
-            // Implementar carga de productos en modal
-        }
-        
-        // Función placeholder para cargar modal clientes
-        function cargarModalClientes() {
-            // Implementar carga de clientes en modal
-        }
-        
-        // Función placeholder para cargar opciones nuevo producto
-        function cargarOpcionesNuevoProducto() {
-            // Implementar carga de opciones en formulario
-        }
-        
-        // Función placeholder para cargar opciones nuevo cliente
-        function cargarOpcionesNuevoCliente() {
-            // Implementar carga de opciones en formulario
-        }
-        
-        // Función placeholder para cargar opciones nuevo proveedor
-        function cargarOpcionesNuevoProveedor() {
-            // Implementar carga de opciones en formulario
-        }
-        
-        // Función placeholder para cargar productos de proveedor
-        function cargarProductosProveedor() {
-            // Implementar carga de productos por proveedor
-        }
-        
-        // Función placeholder para agregar fila de pedido
-        function agregarFilaPedido() {
-            // Implementar agregar fila a tabla de pedidos
-        }
-        
-        // Función placeholder para sugerir pedido por stock bajo
-        function sugerirPedidoStockBajo() {
-            // Implementar sugerencia de productos con stock bajo
-        }
-        
-        // Función placeholder para calcular precio desde margen
-        function calcularPrecioDesdeMargen() {
-            // Implementar cálculo de precio de venta desde margen
-        }
-        
-        // Función placeholder para cargar deuda de cliente
-        function cargarDeudaCliente() {
-            // Implementar carga de deuda de cliente
-        }
-        
-        // Función placeholder para calcular desglose
-        function calcularDesglose() {
-            // Implementar cálculo de desglose de efectivo
-        }
-        
-        // Función placeholder para calcular diferencia de arqueo
-        function calcularDiferenciaArqueo() {
-            // Implementar cálculo de diferencia en arqueo
-        }
-        
-        // Función placeholder para guardar arqueo de caja
-        async function guardarArqueoCaja() {
-            mostrarInfo('Guardando arqueo de caja...');
-        }
-        
-        // Función placeholder para calcular previsualización de ajuste
-        function calcularPrevisualizacionAjuste() {
-            // Implementar previsualización de ajuste de precios
-        }
-        
-        // Función placeholder para aplicar cambio masivo de precios
-        async function aplicarCambioMasivoPrecios() {
-            mostrarInfo('Aplicando cambio masivo de precios...');
-        }
-        
-        // Función placeholder para actualizar opciones de ajuste
-        function actualizarOpcionesAjuste() {
-            // Implementar actualización de opciones de ajuste
-        }
-        
-        // Función placeholder para actualizar filtro de ajuste
-        function actualizarFiltroAjuste() {
-            // Implementar actualización de filtro de ajuste
-        }
-        
-        // Función placeholder para guardar y enviar pedido por WhatsApp
-        async function guardarYEnviarPedidoWhatsApp() {
-            mostrarInfo('Guardando y enviando pedido por WhatsApp...');
-        }
-        
-        // Función placeholder para actualizar precio de pedido
-        function actualizarPrecioPedido(element) {
-            // Implementar actualización de precio en pedido
-        }
-        
-        // Función placeholder para calcular subtotal de pedido
-        function calcularSubtotalPedido(element) {
-            // Implementar cálculo de subtotal en pedido
-        }
-        
-        // Función placeholder para eliminar fila de pedido
-        function eliminarFilaPedido(button) {
-            // Implementar eliminación de fila de pedido
-        }
-        
-        // Función placeholder para generar reporte mensual
-        async function generarReporteMensual() {
-            mostrarInfo('Generando reporte mensual...');
-        }
-        
-        // Función placeholder para generar reporte anual
-        async function generarReporteAnual() {
-            mostrarInfo('Generando reporte anual...');
-        }
-        
-        // Función placeholder para filtrar clientes
-        function filtrarClientes() {
-            // Implementar filtrado de clientes
-        }
-        
-        // Función placeholder para filtrar proveedores
-        function filtrarProveedores() {
-            // Implementar filtrado de proveedores
-        }
-        
-        // Función placeholder para filtrar ventas
-        function filtrarVentas() {
-            // Implementar filtrado de ventas
+        // Inicializar actualización de pago
+        if (document.getElementById('selectPago')) {
+            actualizarPago();
         }
         
         console.log('Sistema POS completamente inicializado');
