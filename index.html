@@ -218,5 +218,105 @@
 
     <!-- Script principal -->
     <script src="app.js"></script>
+
+<!-- Modal para clientes -->
+<div id="clienteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-plus"></i> Nuevo Cliente</h3>
+            <button class="modal-close" onclick="cerrarClienteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="formCliente" onsubmit="guardarCliente(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nombre *</label>
+                        <input type="text" id="clienteNombre" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Documento</label>
+                        <input type="text" id="clienteDocumento" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="tel" id="clienteTelefono" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="clienteEmail" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <input type="text" id="clienteDireccion" class="form-control">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de Cliente</label>
+                        <select id="clienteTipo" class="form-control">
+                            <option value="consumidor">Consumidor Final</option>
+                            <option value="responsable">Responsable Inscripto</option>
+                            <option value="monotributo">Monotributista</option>
+                            <option value="exento">Exento</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Límite de Crédito</label>
+                        <input type="number" id="clienteLimite" class="form-control" value="0" min="0" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="flex gap-2 mt-4">
+                    <button type="button" class="btn btn-outline" onclick="cerrarClienteModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para productos rápidos -->
+<div id="productosModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-boxes"></i> Productos</h3>
+            <button class="modal-close" onclick="cerrarProductosModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="search-box" style="margin-bottom: 20px;">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="buscarProductoModal" class="search-input" 
+                       placeholder="Buscar producto por código o nombre...">
+            </div>
+            <div class="quick-products" id="quickProductsGrid">
+                <!-- Productos cargados dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación rápida -->
+<div id="confirmModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-body text-center">
+            <div class="mb-4">
+                <i class="fas fa-question-circle" style="font-size: 3rem; color: var(--warning);"></i>
+            </div>
+            <h4 id="confirmTitle">¿Confirmar acción?</h4>
+            <p id="confirmMessage">Esta acción no se puede deshacer.</p>
+            <div class="flex gap-2 mt-4">
+                <button class="btn btn-outline" style="flex: 1;" onclick="cerrarConfirmModal()">Cancelar</button>
+                <button class="btn btn-primary" style="flex: 1;" id="confirmActionBtn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
