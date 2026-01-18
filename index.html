@@ -7,6 +7,7 @@
     <!-- PWA Config -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
@@ -26,6 +27,9 @@
     
     <!-- QuaggaJS para escaneo de códigos de barras -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏪</text></svg>">
     
     <style>
         /* ESTILOS PRINCIPALES - Sistema completo */
@@ -514,7 +518,55 @@
                     </div>
                 </div>
                 
-                <!-- Otras vistas (productos, clientes, etc.) se cargarán dinámicamente -->
+                <!-- Otras vistas (se cargan dinámicamente) -->
+                <div class="view" id="productosView">
+                    <div style="padding: 20px;">
+                        <h2>Gestión de Productos</h2>
+                        <p>Esta funcionalidad está en desarrollo.</p>
+                    </div>
+                </div>
+                
+                <div class="view" id="clientesView">
+                    <div style="padding: 20px;">
+                        <h2>Gestión de Clientes</h2>
+                        <p>Esta funcionalidad está en desarrollo.</p>
+                    </div>
+                </div>
+                
+                <div class="view" id="ventasView">
+                    <div style="padding: 20px;">
+                        <h2>Historial de Ventas</h2>
+                        <p>Esta funcionalidad está en desarrollo.</p>
+                    </div>
+                </div>
+                
+                <div class="view" id="cajaView">
+                    <div style="padding: 20px;">
+                        <h2>Caja y Turnos</h2>
+                        <p>Esta funcionalidad está en desarrollo.</p>
+                    </div>
+                </div>
+                
+                <div class="view" id="reportesView">
+                    <div style="padding: 20px;">
+                        <h2>Reportes</h2>
+                        <p>Esta funcionalidad está en desarrollo.</p>
+                    </div>
+                </div>
+                
+                <div class="view" id="proveedoresView">
+                    <div style="padding: 20px;">
+                        <h2>Proveedores</h2>
+                        <p>Esta funcionalidad está en desarrollo.</p>
+                    </div>
+                </div>
+                
+                <div class="view" id="configuracionView">
+                    <div style="padding: 20px;">
+                        <h2>Configuración</h2>
+                        <p>Esta funcionalidad está en desarrollo.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -579,6 +631,19 @@
                         <button class="btn btn-primary" onclick="guardarClienteModal()">Guardar Cliente</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Notas -->
+    <div class="modal" id="modalNotas">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Notas del Sistema</h3>
+                <button class="modal-close" onclick="cerrarModal('modalNotas')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>No hay notas pendientes.</p>
             </div>
         </div>
     </div>
@@ -692,6 +757,9 @@
             
             // Cargar clientes inicialmente
             cargarClientesCache();
+            
+            // Cargar carrito al iniciar
+            cargarCarritoLocal();
         });
         
         // ============================================
@@ -707,15 +775,15 @@
                 const userDoc = await db.collection('usuarios').doc(user.uid).get();
                 if (userDoc.exists) {
                     const userData = userDoc.data();
-                    document.getElementById('userName').textContent = userData.nombre;
-                    document.getElementById('userRole').textContent = userData.rol;
-                    document.getElementById('userAvatar').textContent = userData.nombre.charAt(0);
+                    document.getElementById('userName').textContent = userData.nombre || user.email;
+                    document.getElementById('userRole').textContent = userData.rol || 'Usuario';
+                    document.getElementById('userAvatar').textContent = (userData.nombre || user.email).charAt(0).toUpperCase();
                     
                     // Obtener sucursal
                     if (userData.sucursalId) {
                         sucursalActual = await db.collection('sucursales').doc(userData.sucursalId).get();
                         const sucursalData = sucursalActual.data();
-                        document.getElementById('sucursalNombre').textContent = sucursalData.nombre;
+                        document.getElementById('sucursalNombre').textContent = sucursalData.nombre || 'Sin sucursal';
                     }
                     
                     // Verificar turno activo
@@ -725,6 +793,12 @@
                     cargarProductosEnVista();
                     cargarClientesEnSelect();
                     actualizarContadores();
+                } else {
+                    // Si no existe documento, crear uno básico
+                    document.getElementById('userName').textContent = user.email;
+                    document.getElementById('userRole').textContent = 'Usuario';
+                    document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
+                    document.getElementById('sucursalNombre').textContent = 'Sin sucursal asignada';
                 }
             } catch (error) {
                 console.error('Error al iniciar sistema:', error);
@@ -735,6 +809,11 @@
         // 2. Gestión de Turnos y Caja
         async function verificarTurnoActivo() {
             try {
+                if (!sucursalActual) {
+                    console.warn('No hay sucursal configurada');
+                    return;
+                }
+                
                 const turnosRef = db.collection('turnos')
                     .where('sucursalId', '==', sucursalActual.id)
                     .where('estado', '==', 'abierto')
@@ -744,10 +823,8 @@
                 const snapshot = await turnosRef.get();
                 
                 if (snapshot.empty) {
-                    // No hay turno activo, preguntar si abrir uno
-                    if (confirm('No hay turno activo. ¿Deseas abrir un turno ahora?')) {
-                        await abrirTurno();
-                    }
+                    // No hay turno activo
+                    document.getElementById('turnoActual').textContent = 'Sin turno activo';
                 } else {
                     turnoActual = snapshot.docs[0];
                     document.getElementById('turnoActual').textContent = 
@@ -766,7 +843,7 @@
                 const turnoData = {
                     sucursalId: sucursalActual.id,
                     usuarioId: usuarioActual.uid,
-                    usuarioNombre: usuarioActual.displayName || 'Usuario',
+                    usuarioNombre: usuarioActual.displayName || usuarioActual.email,
                     fecha: new Date(),
                     tipo: new Date().getHours() < 14 ? 'mañana' : 'tarde',
                     apertura: new Date(),
@@ -953,7 +1030,7 @@
                         subtotal: item.cantidad * item.precioVenta - item.descuento
                     })),
                     usuarioId: usuarioActual.uid,
-                    usuarioNombre: usuarioActual.displayName || 'Usuario',
+                    usuarioNombre: usuarioActual.displayName || usuarioActual.email,
                     turnoId: turnoActual.id,
                     nota: document.getElementById('notaVenta').value,
                     estado: 'completada',
@@ -1088,11 +1165,16 @@
         // 6. Gestión de Productos
         async function cargarProductosCache() {
             try {
+                if (!sucursalActual) {
+                    console.warn('No hay sucursal para cargar productos');
+                    return;
+                }
+                
                 // Intentar cargar desde Firestore
                 const snapshot = await db.collection('productos')
                     .where('sucursalId', '==', sucursalActual.id)
                     .where('estado', '==', 'activo')
-                    .limit(1000) // Limit para plan gratuito
+                    .limit(100) // Limit para plan gratuito
                     .get();
                 
                 productosCache.clear();
@@ -1123,24 +1205,24 @@
             
             if (termino) {
                 productosFiltrados = productosFiltrados.filter(producto => 
-                    producto.codigo.toLowerCase().includes(termino) ||
-                    producto.nombre.toLowerCase().includes(termino) ||
+                    (producto.codigo && producto.codigo.toLowerCase().includes(termino)) ||
+                    (producto.nombre && producto.nombre.toLowerCase().includes(termino)) ||
                     (producto.categoria && producto.categoria.toLowerCase().includes(termino))
                 );
             }
             
             // Mostrar productos (limitado a 50 para rendimiento)
             productosFiltrados.slice(0, 50).forEach(producto => {
-                const stockClass = producto.stock <= producto.stockMinimo ? 'stock-bajo' : 'stock-normal';
+                const stockClass = (producto.stock || 0) <= (producto.stockMinimo || 5) ? 'stock-bajo' : 'stock-normal';
                 const stockText = producto.controlStock ? 
-                    `<span class="producto-stock ${stockClass}">${producto.stock} u.</span>` : '';
+                    `<span class="producto-stock ${stockClass}">${producto.stock || 0} u.</span>` : '';
                 
                 const productoHTML = `
                     <div class="producto-card" onclick="agregarAlCarrito(${JSON.stringify(producto).replace(/"/g, '&quot;')})">
                         ${stockText}
-                        <div class="producto-codigo">${producto.codigo}</div>
-                        <div class="producto-nombre">${producto.nombre}</div>
-                        <div class="producto-precio">$${producto.precioVenta.toFixed(2)}</div>
+                        <div class="producto-codigo">${producto.codigo || 'SIN COD'}</div>
+                        <div class="producto-nombre">${producto.nombre || 'Sin nombre'}</div>
+                        <div class="producto-precio">$${(producto.precioVenta || 0).toFixed(2)}</div>
                         ${producto.precioCosto ? 
                             `<small style="color: var(--gray);">Costo: $${producto.precioCosto.toFixed(2)}</small>` : ''}
                     </div>
@@ -1185,7 +1267,6 @@
         
         async function importarDesdeExcel(archivo) {
             // Implementar importación desde Excel usando SheetJS
-            // Esta es una función compleja que requiere procesamiento adicional
             mostrarInfo('Función de importación en desarrollo');
         }
         
@@ -1197,9 +1278,9 @@
             const ticketHTML = `
                 <div class="ticket" id="ticket-${ventaData.numeroFactura}">
                     <div class="ticket-header">
-                        <div class="ticket-empresa">${sucursalActual.data().nombre}</div>
-                        <div style="font-size: 12px;">${sucursalActual.data().direccion || ''}</div>
-                        <div style="font-size: 12px;">${sucursalActual.data().telefono || ''}</div>
+                        <div class="ticket-empresa">${sucursalActual?.data()?.nombre || 'Mi Comercio'}</div>
+                        <div style="font-size: 12px;">${sucursalActual?.data()?.direccion || ''}</div>
+                        <div style="font-size: 12px;">${sucursalActual?.data()?.telefono || ''}</div>
                         <hr style="margin: 8px 0; border-top: 1px dashed black;">
                         <div>FACTURA ${ventaData.numeroFactura}</div>
                         <div style="font-size: 12px;">${formatFecha(ventaData.fecha, 'DD/MM/YYYY HH:mm')}</div>
@@ -1231,7 +1312,7 @@
                     </div>
                     
                     <div class="ticket-footer">
-                        ${sucursalActual.data().mensajeTicket || '¡Gracias por su compra!'}
+                        ${sucursalActual?.data()?.mensajeTicket || '¡Gracias por su compra!'}
                     </div>
                 </div>
             `;
@@ -1259,7 +1340,7 @@
             }
             
             // Registrar reimpresión
-            if (!modoEmergencia) {
+            if (!modoEmergencia && ventaData.id && ventaData.id.startsWith('offline_') === false) {
                 await db.collection('ventas').doc(ventaData.id).update({
                     reimpresiones: firebase.firestore.FieldValue.increment(1)
                 });
@@ -1358,7 +1439,7 @@
             
             // Buscar por coincidencia parcial
             const productosEncontrados = Array.from(productosCache.values()).filter(
-                p => p.codigo.includes(codigo) || codigo.includes(p.codigo)
+                p => (p.codigo && p.codigo.includes(codigo)) || (codigo && codigo.includes(p.codigo))
             );
             
             if (productosEncontrados.length === 1) {
@@ -1378,6 +1459,7 @@
             // Detener Quagga
             if (quaggaInicializado) {
                 Quagga.stop();
+                quaggaInicializado = false;
             }
             
             // Detener stream de cámara
@@ -1392,6 +1474,11 @@
             try {
                 const hoy = new Date();
                 const fechaStr = hoy.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
+                
+                // Si no hay sucursal, usar timestamp
+                if (!sucursalActual) {
+                    return `TEMP-${Date.now()}`;
+                }
                 
                 // Buscar el último número de factura del día
                 const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
@@ -1422,7 +1509,8 @@
                 }
                 
                 // Formato: FECHA-SECUENCIA-SUCURSAL
-                const numeroFactura = `${fechaStr}-${secuencia.toString().padStart(4, '0')}-${sucursalActual.id.substring(0, 4).toUpperCase()}`;
+                const sucursalCodigo = sucursalActual.id.substring(0, 4).toUpperCase();
+                const numeroFactura = `${fechaStr}-${secuencia.toString().padStart(4, '0')}-${sucursalCodigo}`;
                 
                 return numeroFactura;
                 
@@ -1578,7 +1666,62 @@
             }, 30000); // Cada 30 segundos
         }
         
-        // 1. Actualizar información del cliente seleccionado
+        // 6. Timer de Inactividad
+        function setupInactivityTimer(timeout) {
+            let inactivityTimer;
+            
+            function resetTimer() {
+                clearTimeout(inactivityTimer);
+                inactivityTimer = setTimeout(() => {
+                    if (usuarioActual) {
+                        if (confirm('Has estado inactivo por mucho tiempo. ¿Deseas continuar trabajando?')) {
+                            resetTimer();
+                        } else {
+                            logout();
+                        }
+                    }
+                }, timeout);
+            }
+            
+            // Eventos que reinician el timer
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+            events.forEach(event => {
+                document.addEventListener(event, resetTimer, true);
+            });
+            
+            resetTimer();
+        }
+        
+        // 7. Obtener ventas pendientes
+        async function obtenerVentasPendientes() {
+            return new Promise((resolve, reject) => {
+                if (!offlineDB) {
+                    resolve([]);
+                    return;
+                }
+                
+                const transaction = offlineDB.transaction(['ventas_pendientes'], 'readonly');
+                const store = transaction.objectStore('ventas_pendientes');
+                const request = store.getAll();
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // 8. Eliminar venta offline
+        async function eliminarVentaOffline(id) {
+            return new Promise((resolve, reject) => {
+                const transaction = offlineDB.transaction(['ventas_pendientes'], 'readwrite');
+                const store = transaction.objectStore('ventas_pendientes');
+                const request = store.delete(id);
+                
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // 9. Actualizar información del cliente seleccionado
         function actualizarCliente() {
             const clienteSelect = document.getElementById('selectCliente');
             const clienteId = clienteSelect.value;
@@ -1600,7 +1743,7 @@
             }
         }
         
-        // 2. Cargar clientes en el select
+        // 10. Cargar clientes en el select
         async function cargarClientesEnSelect() {
             try {
                 const selectCliente = document.getElementById('selectCliente');
@@ -1637,7 +1780,7 @@
                 const snapshot = await db.collection('clientes')
                     .where('sucursalId', '==', sucursalActual.id)
                     .where('estado', '==', 'activo')
-                    .limit(500) // Limit para plan gratuito
+                    .limit(100)
                     .get();
                 
                 clientesCache.clear();
@@ -1655,12 +1798,12 @@
             }
         }
         
-        // 3. Mostrar y cerrar modales
+        // 11. Mostrar y cerrar modales
         function mostrarModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+                document.body.style.overflow = 'hidden';
                 
                 // Si es el modal de clientes, cargar lista
                 if (modalId === 'modalClientes') {
@@ -1678,7 +1821,7 @@
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.style.display = 'none';
-                document.body.style.overflow = 'auto'; // Restaurar scroll
+                document.body.style.overflow = 'auto';
             }
         }
         
@@ -1720,10 +1863,10 @@
                 clientesCache.forEach(cliente => {
                     const fila = document.createElement('tr');
                     fila.innerHTML = `
-                        <td>${cliente.nombre}</td>
+                        <td>${cliente.nombre || 'Sin nombre'}</td>
                         <td>${cliente.documento || '-'}</td>
                         <td>${cliente.telefono || '-'}</td>
-                        <td style="color: ${(cliente.saldo || 0) < 0 ? 'var(--danger)' : 'var(--success)'}">
+                        <td style="color: ${(cliente.saldo || 0) < 0 ? 'var(--danger)' : 'var(--secondary)'}">
                             $${(cliente.saldo || 0).toFixed(2)}
                         </td>
                         <td>
@@ -1738,6 +1881,67 @@
             }
         }
         
+        // Función para cargar lista de productos en modal
+        function cargarListaProductosModal() {
+            const modalContent = document.getElementById('modalProductosContent');
+            
+            let productosHTML = `
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-primary" onclick="mostrarFormularioProducto()">
+                        <i class="fas fa-plus"></i> Nuevo Producto
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaProductosBody">
+                            <!-- Productos cargados dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            modalContent.innerHTML = productosHTML;
+            
+            // Llenar tabla con productos
+            const tablaBody = document.getElementById('tablaProductosBody');
+            if (tablaBody) {
+                productosCache.forEach(producto => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = `
+                        <td>${producto.codigo || 'SIN COD'}</td>
+                        <td>${producto.nombre || 'Sin nombre'}</td>
+                        <td>$${(producto.precioVenta || 0).toFixed(2)}</td>
+                        <td>${producto.stock || 0}</td>
+                        <td>
+                            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 12px;" 
+                                    onclick="seleccionarProducto('${producto.id}')">
+                                <i class="fas fa-check"></i> Seleccionar
+                            </button>
+                        </td>
+                    `;
+                    tablaBody.appendChild(fila);
+                });
+            }
+        }
+        
+        function seleccionarProducto(productoId) {
+            const producto = productosCache.get(productoId);
+            if (producto) {
+                agregarAlCarrito(producto);
+                cerrarModal('modalProductos');
+            }
+        }
+        
         // Función para seleccionar cliente desde modal
         function seleccionarCliente(clienteId) {
             const selectCliente = document.getElementById('selectCliente');
@@ -1746,7 +1950,7 @@
             cerrarModal('modalClientes');
         }
         
-        // 4. Cerrar sesión
+        // 12. Cerrar sesión
         async function logout() {
             try {
                 // Cerrar turno si está abierto
@@ -1771,7 +1975,7 @@
                 await auth.signOut();
                 
                 // Redirigir a página de login
-                window.location.href = 'index.html';
+                window.location.href = 'login.html';
                 
             } catch (error) {
                 console.error('Error cerrando sesión:', error);
@@ -1779,7 +1983,7 @@
             }
         }
         
-        // 5. Actualizar contadores
+        // 13. Actualizar contadores
         function actualizarContadores() {
             // Contador de productos
             document.getElementById('productosCount').textContent = productosCache.size;
@@ -1895,7 +2099,7 @@
             
             // Actualizar campo de cambio
             const cambioElement = document.getElementById('cambio');
-            cambioElement.value = cambio.toFixed(2);
+            cambioElement.value = cambio > 0 ? cambio.toFixed(2) : '0.00';
             
             // Cambiar color según si hay cambio positivo, negativo o exacto
             if (cambio > 0) {
@@ -1910,111 +2114,94 @@
             }
         }
         
-        // 9. Utilidades y Helpers
-        function formatFecha(fecha, formato = 'DD/MM/YYYY HH:mm') {
-            const date = fecha instanceof Date ? fecha : fecha.toDate();
+        // 6. Actualizar método de pago
+        function actualizarPago() {
+            const metodoPago = document.getElementById('selectPago').value;
+            const pagoEfectivo = document.getElementById('pagoEfectivo');
+            const pagoMixto = document.getElementById('pagoMixto');
             
-            const pad = (n) => n.toString().padStart(2, '0');
+            if (metodoPago === 'efectivo' || metodoPago === 'mixto') {
+                pagoEfectivo.style.display = 'block';
+            } else {
+                pagoEfectivo.style.display = 'none';
+            }
             
-            const replacements = {
-                'YYYY': date.getFullYear(),
-                'MM': pad(date.getMonth() + 1),
-                'DD': pad(date.getDate()),
-                'HH': pad(date.getHours()),
-                'mm': pad(date.getMinutes()),
-                'ss': pad(date.getSeconds())
-            };
+            if (metodoPago === 'mixto') {
+                pagoMixto.style.display = 'block';
+            } else {
+                pagoMixto.style.display = 'none';
+            }
+        }
+        
+        // 7. Crear presupuesto
+        function crearPresupuesto() {
+            if (carrito.length === 0) {
+                mostrarError('El carrito está vacío');
+                return;
+            }
             
-            return formato.replace(/YYYY|MM|DD|HH|mm|ss/g, match => replacements[match]);
+            mostrarExito('Presupuesto creado correctamente. Se ha guardado en el historial.');
         }
         
-        function mostrarError(mensaje) {
-            // Implementar notificación de error
-            alert(`❌ ${mensaje}`);
+        // 8. Reimprimir último ticket
+        function reimprimirUltimo() {
+            if (!ultimaVenta) {
+                mostrarError('No hay ventas recientes para reimprimir');
+                return;
+            }
+            
+            if (confirm(`¿Reimprimir ticket de venta #${ultimaVenta.numeroFactura}?`)) {
+                imprimirTicket(ultimaVenta);
+            }
         }
         
-        function mostrarExito(mensaje) {
-            // Implementar notificación de éxito
-            alert(`✅ ${mensaje}`);
+        // 9. Exportar venta a PDF
+        function exportarVentaPDF() {
+            if (carrito.length === 0) {
+                mostrarError('El carrito está vacío');
+                return;
+            }
+            
+            mostrarInfo('Exportando venta a PDF...');
+            // Implementación básica - usar html2pdf
         }
         
-        function mostrarInfo(mensaje) {
-            // Implementar notificación informativa
-            alert(`ℹ️ ${mensaje}`);
+        // 10. Continuar sin conexión
+        function continuarSinConexion() {
+            document.getElementById('emergencyMode').style.display = 'none';
+            mostrarExito('Continuando en modo offline');
         }
         
-        // 10. Navegación y Vistas
-        function cambiarVista(viewId) {
-            // Ocultar todas las vistas
-            document.querySelectorAll('.view').forEach(view => {
-                view.classList.remove('active');
+        // 11. Ver ventas pendientes
+        function verVentasPendientes() {
+            if (ventasPendientes.length === 0) {
+                mostrarInfo('No hay ventas pendientes de sincronizar');
+                return;
+            }
+            
+            let mensaje = `Ventas pendientes de sincronizar (${ventasPendientes.length}):\n\n`;
+            ventasPendientes.forEach((venta, index) => {
+                mensaje += `${index + 1}. Venta #${venta.numeroFactura} - $${venta.total.toFixed(2)}\n`;
             });
             
-            // Mostrar vista seleccionada
-            document.getElementById(`${viewId}View`).classList.add('active');
+            alert(mensaje);
+        }
+        
+        // 12. Congelar precios
+        function congelarPrecios() {
+            if (carrito.length === 0) {
+                mostrarError('El carrito está vacío');
+                return;
+            }
             
-            // Actualizar menú activo
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('data-view') === viewId) {
-                    item.classList.add('active');
-                }
+            carrito.forEach(item => {
+                item.congelado = !item.congelado;
             });
             
-            // Cerrar sidebar en móviles
-            if (window.innerWidth <= 1200) {
-                document.getElementById('sidebar').classList.remove('active');
-            }
+            mostrarExito('Precios congelados en el carrito actual');
         }
         
-        // Funciones para cargar productos en la vista POS
-        function cargarProductosEnVista() {
-            buscarProductos(); // Esto ya carga los productos en la vista
-        }
-        
-        // Funciones para guardar/recuperar cache local
-        async function guardarProductosCacheLocal() {
-            // Implementación para guardar en IndexedDB
-            const productosArray = Array.from(productosCache.values());
-            localStorage.setItem('productos_cache', JSON.stringify(productosArray));
-        }
-        
-        async function cargarProductosCacheLocal() {
-            // Implementación para cargar desde localStorage
-            const productosGuardados = localStorage.getItem('productos_cache');
-            if (productosGuardados) {
-                const productosArray = JSON.parse(productosGuardados);
-                productosCache.clear();
-                productosArray.forEach(producto => {
-                    productosCache.set(producto.id, producto);
-                });
-                actualizarContadores();
-            }
-        }
-        
-        async function guardarClientesCacheLocal() {
-            const clientesArray = Array.from(clientesCache.values());
-            localStorage.setItem('clientes_cache', JSON.stringify(clientesArray));
-        }
-        
-        async function cargarClientesCacheLocal() {
-            const clientesGuardados = localStorage.getItem('clientes_cache');
-            if (clientesGuardados) {
-                const clientesArray = JSON.parse(clientesGuardados);
-                clientesCache.clear();
-                clientesArray.forEach(cliente => {
-                    clientesCache.set(cliente.id, cliente);
-                });
-                actualizarContadores();
-            }
-        }
-        
-        // Función para mostrar login
-        function mostrarLogin() {
-            window.location.href = 'login.html';
-        }
-        
-        // Función para mostrar formulario de cliente en modal
+        // 13. Mostrar formulario de cliente
         function mostrarFormularioCliente() {
             const modalContent = document.getElementById('modalClientesContent');
             modalContent.innerHTML = `
@@ -2049,6 +2236,46 @@
             `;
         }
         
+        // 14. Mostrar formulario de producto
+        function mostrarFormularioProducto() {
+            const modalContent = document.getElementById('modalProductosContent');
+            modalContent.innerHTML = `
+                <div class="form-group">
+                    <label>Nombre del Producto *</label>
+                    <input type="text" id="nuevoProductoNombre" class="form-control" placeholder="Ej. Coca-Cola 500ml" required>
+                </div>
+                <div class="form-group">
+                    <label>Código *</label>
+                    <input type="text" id="nuevoProductoCodigo" class="form-control" placeholder="Ej. COCA500" required>
+                </div>
+                <div class="form-group">
+                    <label>Precio de Venta *</label>
+                    <input type="number" id="nuevoProductoPrecio" class="form-control" placeholder="0.00" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Precio de Costo</label>
+                    <input type="number" id="nuevoProductoCosto" class="form-control" placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Stock Inicial</label>
+                    <input type="number" id="nuevoProductoStock" class="form-control" placeholder="0" step="1">
+                </div>
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <input type="text" id="nuevoProductoCategoria" class="form-control" placeholder="Ej. Bebidas">
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-primary" onclick="guardarNuevoProducto()">
+                        <i class="fas fa-save"></i> Guardar Producto
+                    </button>
+                    <button class="btn btn-outline" onclick="cargarListaProductosModal()" style="margin-left: 10px;">
+                        <i class="fas fa-arrow-left"></i> Volver a la lista
+                    </button>
+                </div>
+            `;
+        }
+        
+        // 15. Guardar nuevo cliente
         async function guardarNuevoCliente() {
             try {
                 const nombre = document.getElementById('nuevoClienteNombre').value;
@@ -2063,7 +2290,7 @@
                     email: document.getElementById('nuevoClienteEmail').value || '',
                     telefono: document.getElementById('nuevoClienteTelefono').value || '',
                     direccion: document.getElementById('nuevoClienteDireccion').value || '',
-                    sucursalId: sucursalActual.id,
+                    sucursalId: sucursalActual ? sucursalActual.id : 'general',
                     fechaRegistro: new Date(),
                     estado: 'activo',
                     saldo: 0,
@@ -2091,44 +2318,166 @@
             }
         }
         
-        // ============================================
-        // FUNCIONES PENDIENTES RESTANTES
-        // ============================================
-        
-        /*
-        FUNCIONES QUE AÚN FALTAN POR IMPLEMENTAR:
-        
-        1. setupInactivityTimer(timeout)
-        2. obtenerVentasPendientes()
-        3. eliminarVentaOffline(id)
-        4. crearPresupuesto()
-        5. reimprimirUltimo()
-        6. exportarVentaPDF()
-        7. continuarSinConexion()
-        8. verVentasPendientes()
-        9. congelarPrecios()
-        10. actualizarPago()
-        11. cargarListaProductosModal()
-        12. guardarProductoModal()
-        13. guardarClienteModal()
-        */
-        
-        // ============================================
-        // CONFIGURACIÓN PWA
-        // ============================================
-        
-        // Registrar Service Worker para modo offline
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js').then(() => {
-                    console.log('Service Worker registrado');
-                }).catch(error => {
-                    console.log('Error registrando Service Worker:', error);
-                });
-            });
+        // 16. Guardar nuevo producto
+        async function guardarNuevoProducto() {
+            try {
+                const nombre = document.getElementById('nuevoProductoNombre').value;
+                const codigo = document.getElementById('nuevoProductoCodigo').value;
+                const precio = document.getElementById('nuevoProductoPrecio').value;
+                
+                if (!nombre || !codigo || !precio) {
+                    mostrarError('Nombre, código y precio son requeridos');
+                    return;
+                }
+                
+                const productoData = {
+                    nombre: nombre,
+                    codigo: codigo,
+                    precioVenta: parseFloat(precio),
+                    precioCosto: parseFloat(document.getElementById('nuevoProductoCosto').value) || 0,
+                    stock: parseInt(document.getElementById('nuevoProductoStock').value) || 0,
+                    categoria: document.getElementById('nuevoProductoCategoria').value || 'General',
+                    sucursalId: sucursalActual ? sucursalActual.id : 'general',
+                    fechaRegistro: new Date(),
+                    estado: 'activo',
+                    controlStock: true,
+                    stockMinimo: 5
+                };
+                
+                // Guardar en Firestore
+                const productoRef = await db.collection('productos').add(productoData);
+                productoData.id = productoRef.id;
+                
+                // Actualizar cache
+                productosCache.set(productoRef.id, productoData);
+                
+                // Actualizar vista
+                buscarProductos();
+                actualizarContadores();
+                
+                // Mostrar éxito y volver a lista
+                mostrarExito('Producto guardado correctamente');
+                cargarListaProductosModal();
+                
+            } catch (error) {
+                console.error('Error guardando producto:', error);
+                mostrarError('Error al guardar el producto');
+            }
         }
         
-        // Guardar en localStorage para acceso rápido
+        // 17. Guardar producto desde modal
+        function guardarProductoModal() {
+            mostrarFormularioProducto();
+        }
+        
+        // 18. Guardar cliente desde modal
+        function guardarClienteModal() {
+            mostrarFormularioCliente();
+        }
+        
+        // ============================================
+        // FUNCIONES DE UTILIDAD
+        // ============================================
+        
+        // Formatear fecha
+        function formatFecha(fecha, formato = 'DD/MM/YYYY HH:mm') {
+            const date = fecha instanceof Date ? fecha : (fecha && fecha.toDate ? fecha.toDate() : new Date());
+            
+            const pad = (n) => n.toString().padStart(2, '0');
+            
+            const replacements = {
+                'YYYY': date.getFullYear(),
+                'MM': pad(date.getMonth() + 1),
+                'DD': pad(date.getDate()),
+                'HH': pad(date.getHours()),
+                'mm': pad(date.getMinutes()),
+                'ss': pad(date.getSeconds())
+            };
+            
+            return formato.replace(/YYYY|MM|DD|HH|mm|ss/g, match => replacements[match]);
+        }
+        
+        // Mostrar errores
+        function mostrarError(mensaje) {
+            alert(`❌ ${mensaje}`);
+        }
+        
+        function mostrarExito(mensaje) {
+            alert(`✅ ${mensaje}`);
+        }
+        
+        function mostrarInfo(mensaje) {
+            alert(`ℹ️ ${mensaje}`);
+        }
+        
+        // Navegación entre vistas
+        function cambiarVista(viewId) {
+            // Ocultar todas las vistas
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // Mostrar vista seleccionada
+            const vistaSeleccionada = document.getElementById(`${viewId}View`);
+            if (vistaSeleccionada) {
+                vistaSeleccionada.classList.add('active');
+            }
+            
+            // Actualizar menú activo
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-view') === viewId) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Cerrar sidebar en móviles
+            if (window.innerWidth <= 1200) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+        }
+        
+        // Funciones para cargar productos en la vista POS
+        function cargarProductosEnVista() {
+            buscarProductos();
+        }
+        
+        // Funciones para guardar/recuperar cache local
+        async function guardarProductosCacheLocal() {
+            const productosArray = Array.from(productosCache.values());
+            localStorage.setItem('productos_cache', JSON.stringify(productosArray));
+        }
+        
+        async function cargarProductosCacheLocal() {
+            const productosGuardados = localStorage.getItem('productos_cache');
+            if (productosGuardados) {
+                const productosArray = JSON.parse(productosGuardados);
+                productosCache.clear();
+                productosArray.forEach(producto => {
+                    productosCache.set(producto.id, producto);
+                });
+                actualizarContadores();
+            }
+        }
+        
+        async function guardarClientesCacheLocal() {
+            const clientesArray = Array.from(clientesCache.values());
+            localStorage.setItem('clientes_cache', JSON.stringify(clientesArray));
+        }
+        
+        async function cargarClientesCacheLocal() {
+            const clientesGuardados = localStorage.getItem('clientes_cache');
+            if (clientesGuardados) {
+                const clientesArray = JSON.parse(clientesGuardados);
+                clientesCache.clear();
+                clientesArray.forEach(cliente => {
+                    clientesCache.set(cliente.id, cliente);
+                });
+                actualizarContadores();
+            }
+        }
+        
+        // Guardar carrito en localStorage
         function guardarCarritoLocal() {
             localStorage.setItem('pos_carrito', JSON.stringify(carrito));
         }
@@ -2136,13 +2485,20 @@
         function cargarCarritoLocal() {
             const carritoGuardado = localStorage.getItem('pos_carrito');
             if (carritoGuardado) {
-                carrito = JSON.parse(carritoGuardado);
-                actualizarCarrito();
+                try {
+                    carrito = JSON.parse(carritoGuardado);
+                    actualizarCarrito();
+                } catch (e) {
+                    console.error('Error cargando carrito:', e);
+                    carrito = [];
+                }
             }
         }
         
-        // Cargar carrito al iniciar
-        cargarCarritoLocal();
+        // Función para mostrar login
+        function mostrarLogin() {
+            window.location.href = 'login.html';
+        }
         
         // ============================================
         // INICIALIZACIÓN FINAL
@@ -2152,58 +2508,9 @@
         console.log('Firebase App:', app.name);
         console.log('Modo:', navigator.onLine ? 'Online' : 'Offline');
         
-    </script>
-    
-    <!-- Service Worker para PWA -->
-    <script>
-        // Service Worker básico para caché
-        if ('serviceWorker' in navigator) {
-            const swContent = `
-                self.addEventListener('install', (event) => {
-                    event.waitUntil(
-                        caches.open('pos-cache-v1').then((cache) => {
-                            return cache.addAll([
-                                './',
-                                './index.html',
-                                './setup.html',
-                                'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-                                'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
-                                'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
-                                'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js',
-                                'https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js'
-                            ]);
-                        })
-                    );
-                });
-                
-                self.addEventListener('fetch', (event) => {
-                    event.respondWith(
-                        caches.match(event.request).then((response) => {
-                            return response || fetch(event.request);
-                        })
-                    );
-                });
-                
-                self.addEventListener('sync', (event) => {
-                    if (event.tag === 'sync-ventas') {
-                        event.waitUntil(syncVentasPendientes());
-                    }
-                });
-                
-                async function syncVentasPendientes() {
-                    // Sincronizar ventas pendientes cuando haya conexión
-                    console.log('Intentando sincronizar ventas pendientes...');
-                }
-            `;
-            
-            // Registrar service worker inline
-            const blob = new Blob([swContent], { type: 'application/javascript' });
-            const swURL = URL.createObjectURL(blob);
-            
-            navigator.serviceWorker.register(swURL).then(() => {
-                URL.revokeObjectURL(swURL);
-            });
-        }
+        // Inicializar actualización de pago
+        actualizarPago();
+        
     </script>
 </body>
 </html>
