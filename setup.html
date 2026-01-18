@@ -47,6 +47,7 @@
         .loading { text-align: center; padding: 40px; }
         .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #4f46e5; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .auto-test { display: inline-block; margin-left: 10px; font-size: 14px; color: #10b981; }
         @media (max-width: 768px) {
             .form-row { flex-direction: column; gap: 0; }
             .content { padding: 20px; }
@@ -76,25 +77,25 @@
             <!-- Paso 1: Configuración Firebase -->
             <div class="step-content active" id="content1">
                 <h2>Configuración de Firebase</h2>
-                <p class="form-group">Ingresa la configuración de tu proyecto Firebase. Esta configuración es necesaria para conectar el sistema con la base de datos en la nube.</p>
+                <p class="form-group">Las credenciales de Firebase ya están configuradas. Haz clic en "Probar Conexión" para verificar.</p>
                 
                 <div class="form-group">
-                    <label>Configuración Firebase (desde Firebase Console):</label>
-                    <textarea id="firebaseConfig" placeholder='{
-
-  apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
-  authDomain: "whatsappau-30dc1.firebaseapp.com",
-  projectId: "whatsappau-30dc1",
-  storageBucket: "whatsappau-30dc1.firebasestorage.app",
-  messagingSenderId: "456068013185",
-  appId: "1:456068013185:web:5bdd49337fb622e56f0180"
-}'></textarea>
-                    <small>Obtén estos datos en: Firebase Console → Configuración del proyecto → Aplicaciones web</small>
+                    <label>Configuración Firebase:</label>
+                    <textarea id="firebaseConfig" readonly>{
+  "apiKey": "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
+  "authDomain": "whatsappau-30dc1.firebaseapp.com",
+  "projectId": "whatsappau-30dc1",
+  "storageBucket": "whatsappau-30dc1.firebasestorage.app",
+  "messagingSenderId": "456068013185",
+  "appId": "1:456068013185:web:5bdd49337fb622e56f0180"
+}</textarea>
+                    <small>Credenciales preconfiguradas para tu proyecto Firebase</small>
                 </div>
                 
                 <div class="form-group">
                     <label>Verificar configuración:</label>
                     <button type="button" onclick="testFirebaseConnection()" style="background: #10b981; color: white; padding: 12px 24px; width: auto;">Probar Conexión Firebase</button>
+                    <span class="auto-test" id="autoTestMsg" style="display: none;">✓ Probando automáticamente...</span>
                     <div id="connectionResult" style="margin-top: 10px;"></div>
                 </div>
             </div>
@@ -255,7 +256,7 @@
                     <p id="setupStep">Inicializando base de datos</p>
                 </div>
                 
-                <div class="alert" id="setupSuccess" style="display: none;">
+                <div class="alert alert-success" id="setupSuccess" style="display: none;">
                     <h3>✅ Configuración Completada</h3>
                     <p>El sistema ha sido configurado exitosamente. Ahora puedes:</p>
                     <ol style="margin-left: 20px; margin-top: 10px;">
@@ -268,7 +269,7 @@
                     </div>
                 </div>
                 
-                <div class="alert" id="setupError" style="display: none;">
+                <div class="alert alert-error" id="setupError" style="display: none;">
                     <h3>❌ Error en la Configuración</h3>
                     <p id="errorMessage">Ha ocurrido un error durante la configuración.</p>
                     <button type="button" onclick="retrySetup()" style="background: #dc2626; color: white; margin-top: 10px;">Reintentar Configuración</button>
@@ -290,10 +291,51 @@
         let firebaseApp = null;
         let firestore = null;
         let auth = null;
-        let configData = {};
+        let configData = {
+            firebaseConfig: {
+                apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
+                authDomain: "whatsappau-30dc1.firebaseapp.com",
+                projectId: "whatsappau-30dc1",
+                storageBucket: "whatsappau-30dc1.firebasestorage.app",
+                messagingSenderId: "456068013185",
+                appId: "1:456068013185:web:5bdd49337fb622e56f0180"
+            }
+        };
         
         // Inicializar progreso
         document.getElementById('progress').style.width = `${(currentStep/totalSteps)*100}%`;
+        
+        // Función para probar conexión automáticamente al cargar
+        async function autoTestConnection() {
+            document.getElementById('autoTestMsg').style.display = 'inline-block';
+            document.getElementById('autoTestMsg').textContent = '⏳ Probando conexión...';
+            
+            try {
+                // Intentar inicializar Firebase
+                firebaseApp = firebase.initializeApp(configData.firebaseConfig);
+                auth = firebase.auth();
+                firestore = firebase.firestore();
+                
+                // Probar conexión con Firestore
+                await firestore.collection('test').doc('test').set({
+                    test: true,
+                    timestamp: new Date()
+                });
+                
+                await firestore.collection('test').doc('test').delete();
+                
+                document.getElementById('autoTestMsg').textContent = '✓ Conexión exitosa';
+                document.getElementById('connectionResult').innerHTML = 
+                    '<div style="color: #10b981;">✅ Conexión establecida con Firebase. Puedes continuar.</div>';
+                
+                return true;
+            } catch(error) {
+                document.getElementById('autoTestMsg').textContent = '✗ Error de conexión';
+                document.getElementById('connectionResult').innerHTML = 
+                    `<div style="color: #dc2626;">❌ Error: ${error.message}</div>`;
+                return false;
+            }
+        }
         
         // Navegación entre pasos
         function updateSteps() {
@@ -341,15 +383,9 @@
         function validateStep(step) {
             switch(step) {
                 case 1:
-                    const configText = document.getElementById('firebaseConfig').value;
-                    if (!configText.trim()) {
-                        alert('Por favor, ingresa la configuración de Firebase');
-                        return false;
-                    }
-                    try {
-                        JSON.parse(configText);
-                    } catch(e) {
-                        alert('La configuración de Firebase no es un JSON válido');
+                    // Validar que Firebase esté conectado
+                    if (!firebaseApp) {
+                        alert('Por favor, verifica la conexión con Firebase primero');
                         return false;
                     }
                     return true;
@@ -433,31 +469,26 @@
         
         // Probar conexión con Firebase
         async function testFirebaseConnection() {
-            const configText = document.getElementById('firebaseConfig').value;
             const resultDiv = document.getElementById('connectionResult');
-            
-            if (!configText.trim()) {
-                resultDiv.innerHTML = '<div style="color: #dc2626;">❌ Por favor, ingresa la configuración de Firebase</div>';
-                return;
-            }
-            
-            let config;
-            try {
-                config = JSON.parse(configText);
-            } catch(e) {
-                resultDiv.innerHTML = `<div style="color: #dc2626;">❌ JSON inválido: ${e.message}</div>`;
-                return;
-            }
             
             resultDiv.innerHTML = '<div style="color: #f59e0b;">⏳ Conectando con Firebase...</div>';
             
             try {
+                // Si ya tenemos una app, limpiarla primero
+                if (firebaseApp) {
+                    try {
+                        await firebaseApp.delete();
+                    } catch(e) {
+                        console.log('Limpiando app anterior...');
+                    }
+                }
+                
                 // Intentar inicializar Firebase
-                firebaseApp = firebase.initializeApp(config);
+                firebaseApp = firebase.initializeApp(configData.firebaseConfig);
                 auth = firebase.auth();
                 firestore = firebase.firestore();
                 
-                // Probar autenticación anónima (solo para prueba)
+                // Probar conexión
                 await firestore.collection('test').doc('test').set({
                     test: true,
                     timestamp: new Date()
@@ -467,12 +498,19 @@
                 
                 resultDiv.innerHTML = '<div style="color: #10b981;">✅ Conexión exitosa con Firebase</div>';
                 
-                // Guardar configuración para uso posterior
-                configData.firebaseConfig = config;
+                // Habilitar siguiente paso si está en paso 1
+                if (currentStep === 1) {
+                    setTimeout(() => {
+                        nextStep();
+                    }, 1000);
+                }
+                
+                return true;
                 
             } catch(error) {
                 resultDiv.innerHTML = `<div style="color: #dc2626;">❌ Error de conexión: ${error.message}</div>`;
                 console.error('Firebase error:', error);
+                return false;
             }
         }
         
@@ -532,6 +570,10 @@
                     <span><strong>Email Admin:</strong></span>
                     <span>${admin.email}</span>
                 </div>
+                <div class="summary-item">
+                    <span><strong>Firebase:</strong></span>
+                    <span>✅ Conectado</span>
+                </div>
             `;
             
             // Guardar datos para el setup
@@ -550,12 +592,10 @@
             document.getElementById('prevBtn').style.display = 'none';
             
             try {
-                // Paso 1: Inicializar Firebase si no está inicializado
+                // Paso 1: Verificar Firebase
+                updateSetupStep('Verificando conexión con Firebase...');
                 if (!firebaseApp) {
-                    updateSetupStep('Inicializando Firebase...');
-                    firebaseApp = firebase.initializeApp(configData.firebaseConfig);
-                    auth = firebase.auth();
-                    firestore = firebase.firestore();
+                    throw new Error('No hay conexión con Firebase. Por favor, vuelve al paso 1.');
                 }
                 
                 // Paso 2: Crear usuario administrador
@@ -566,6 +606,11 @@
                 const userCredential = await auth.createUserWithEmailAndPassword(adminEmail, adminPassword);
                 const adminUser = userCredential.user;
                 
+                // Actualizar perfil del usuario
+                await adminUser.updateProfile({
+                    displayName: configData.admin.nombre
+                });
+                
                 // Paso 3: Crear colecciones base
                 updateSetupStep('Creando estructura de datos...');
                 
@@ -574,7 +619,10 @@
                     version: '1.0',
                     setupDate: new Date(),
                     setupCompleted: true,
-                    setupBlocked: true // Bloquear setup futuro
+                    setupBlocked: true,
+                    empresaId: 'principal',
+                    empresaNombre: configData.empresa.nombre,
+                    ultimaActualizacion: new Date()
                 });
                 
                 // Crear documento de empresa
@@ -582,13 +630,15 @@
                     ...configData.empresa,
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    status: 'active'
+                    status: 'active',
+                    configuracionCompleta: true
                 });
                 
                 // Crear sucursal principal
-                const sucursalRef = firestore.collection('sucursales').doc();
-                await sucursalRef.set({
+                const sucursalId = 'sucursal_' + Date.now();
+                await firestore.collection('sucursales').doc(sucursalId).set({
                     ...configData.sucursal,
+                    id: sucursalId,
                     empresaId: 'principal',
                     empresaNombre: configData.empresa.nombre,
                     createdAt: new Date(),
@@ -604,36 +654,23 @@
                     ...configData.admin,
                     uid: adminUser.uid,
                     empresaId: 'principal',
-                    sucursalId: sucursalRef.id,
+                    sucursalId: sucursalId,
                     rol: 'admin_general',
                     permisos: ['all'],
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     status: 'active',
-                    lastLogin: null
+                    lastLogin: null,
+                    emailVerified: false
                 });
                 
-                // Crear colecciones base vacías con sus estructuras
-                const collections = [
-                    'productos', 'clientes', 'ventas', 'presupuestos', 
-                    'cajas', 'turnos', 'pagos', 'proveedores', 'pedidos',
-                    'stock_movimientos', 'notas_internas', 'sync_queue'
-                ];
+                // Crear configuraciones iniciales
+                updateSetupStep('Configurando parámetros del sistema...');
                 
-                for (const collection of collections) {
-                    updateSetupStep(`Creando colección: ${collection}...`);
-                    // Solo crear un documento de estructura para cada colección
-                    await firestore.collection(collection).doc('_estructura').set({
-                        description: `Estructura para ${collection}`,
-                        createdAt: new Date(),
-                        version: '1.0'
-                    });
-                }
-                
-                // Crear configuración de ticket
+                // Configuración de tickets
                 await firestore.collection('config_tickets').doc('principal').set({
                     empresaId: 'principal',
-                    sucursalId: sucursalRef.id,
+                    sucursalId: sucursalId,
                     encabezado: configData.empresa.nombre,
                     direccion: configData.sucursal.direccion || configData.empresa.direccion,
                     telefono: configData.sucursal.telefono || configData.empresa.telefono,
@@ -643,30 +680,37 @@
                     updatedAt: new Date()
                 });
                 
-                // Crear primer turno
-                const turnoRef = firestore.collection('turnos').doc();
-                await turnoRef.set({
-                    sucursalId: sucursalRef.id,
-                    usuarioId: adminUser.uid,
-                    usuarioNombre: configData.admin.nombre,
-                    fecha: new Date(),
-                    tipo: 'setup',
-                    apertura: new Date(),
-                    cierre: null,
-                    estado: 'cerrado',
-                    ventasCount: 0,
-                    totalVentas: 0,
-                    efectivoInicial: 0,
-                    efectivoFinal: 0,
-                    observaciones: 'Turno de configuración inicial'
+                // Configuración de facturación
+                await firestore.collection('config_facturacion').doc('principal').set({
+                    empresaId: 'principal',
+                    sucursalId: sucursalId,
+                    prefijo: configData.sucursal.prefijo,
+                    numeroActual: parseInt(configData.sucursal.numero) - 1,
+                    formato: 'A',
+                    createdAt: new Date(),
+                    updatedAt: new Date()
                 });
                 
+                // Crear categorías por defecto
+                const categorias = [
+                    { nombre: 'General', descripcion: 'Productos generales', color: '#4f46e5', orden: 1 },
+                    { nombre: 'Ofertas', descripcion: 'Productos en oferta', color: '#10b981', orden: 2 },
+                    { nombre: 'Nuevos', descripcion: 'Productos nuevos', color: '#f59e0b', orden: 3 }
+                ];
+                
+                for (const categoria of categorias) {
+                    await firestore.collection('categorias').doc().set({
+                        ...categoria,
+                        empresaId: 'principal',
+                        sucursalId: sucursalId,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        status: 'active'
+                    });
+                }
+                
                 // Paso 4: Bloquear setup futuro
-                updateSetupStep('Bloqueando configuración futura...');
-                await firestore.collection('config').doc('system').update({
-                    setupBlocked: true,
-                    lastUpdate: new Date()
-                });
+                updateSetupStep('Finalizando configuración...');
                 
                 // Crear registro de setup
                 await firestore.collection('system_logs').doc().set({
@@ -682,6 +726,13 @@
                     }
                 });
                 
+                // Enviar email de verificación (opcional)
+                try {
+                    await adminUser.sendEmailVerification();
+                } catch(emailError) {
+                    console.log('No se pudo enviar email de verificación:', emailError);
+                }
+                
                 // Ocultar loading y mostrar éxito
                 document.getElementById('loadingSetup').style.display = 'none';
                 document.getElementById('setupSuccess').style.display = 'block';
@@ -693,7 +744,13 @@
                 
                 // Guardar en localStorage que el setup está completo
                 localStorage.setItem('pos_system_setup_completed', 'true');
-                localStorage.setItem('pos_system_sucursal_id', sucursalRef.id);
+                localStorage.setItem('pos_system_sucursal_id', sucursalId);
+                localStorage.setItem('pos_system_empresa_id', 'principal');
+                
+                // Redirigir automáticamente después de 5 segundos
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 5000);
                 
             } catch(error) {
                 console.error('Setup error:', error);
@@ -718,10 +775,7 @@
         // Verificar si el setup ya fue completado
         async function checkExistingSetup() {
             try {
-                const configText = document.getElementById('firebaseConfig').value;
-                if (!configText.trim()) return;
-                
-                const config = JSON.parse(configText);
+                const config = configData.firebaseConfig;
                 const tempApp = firebase.initializeApp(config, 'TempCheck');
                 const tempFirestore = firebase.firestore(tempApp);
                 
@@ -743,11 +797,16 @@
             }
         }
         
-        // Event listeners
-        document.getElementById('firebaseConfig').addEventListener('blur', checkExistingSetup);
-        
         // Inicializar
-        updateSteps();
+        document.addEventListener('DOMContentLoaded', async function() {
+            updateSteps();
+            
+            // Probar conexión automáticamente
+            await autoTestConnection();
+            
+            // Verificar si ya existe setup
+            await checkExistingSetup();
+        });
     </script>
 </body>
 </html>
