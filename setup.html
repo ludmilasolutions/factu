@@ -433,7 +433,7 @@
                         </div>
                         
                         <div class="text-center mt-4">
-                            <button type="button" class="btn btn-primary" onclick="testFirebaseConnection()">
+                            <button type="button" class="btn btn-primary" id="testConnectionBtn">
                                 <i class="fas fa-plug"></i> Verificar Conexión
                             </button>
                         </div>
@@ -981,6 +981,64 @@
             ]
         };
         
+        // Función para probar conexión a Firebase
+        async function testFirebaseConnection() {
+            const resultDiv = document.getElementById('connectionResult');
+            const btn = document.getElementById('testConnectionBtn');
+            
+            if (!btn) return;
+            
+            // Cambiar estado del botón
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Probando...';
+            
+            try {
+                // Inicializar Firebase con la configuración predefinida
+                if (firebase.apps.length === 0) {
+                    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG, 'SetupTest');
+                } else {
+                    firebaseApp = firebase.app('SetupTest');
+                }
+                
+                auth = firebase.auth(firebaseApp);
+                db = firebase.firestore(firebaseApp);
+                
+                // Probar conexión intentando obtener un documento
+                await db.collection('test').limit(1).get();
+                
+                // Si llegamos aquí, la conexión es exitosa
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <strong>¡Conexión exitosa!</strong> Base de datos conectada correctamente.
+                    </div>
+                `;
+                resultDiv.style.display = 'block';
+                
+                // Restaurar botón
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plug"></i> Verificar Conexión';
+                
+                return true;
+            } catch (error) {
+                console.error('Error de conexión a Firebase:', error);
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle"></i>
+                        <strong>Error de conexión:</strong> ${error.message}<br>
+                        <small>Asegúrese de haber habilitado Firestore Database y Authentication en Firebase Console.</small>
+                    </div>
+                `;
+                resultDiv.style.display = 'block';
+                
+                // Restaurar botón
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plug"></i> Verificar Conexión';
+                
+                return false;
+            }
+        }
+        
         // Inicializar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
             initializeSetup();
@@ -993,6 +1051,12 @@
             // Configurar eventos de los botones
             document.getElementById('btnNext').addEventListener('click', nextStep);
             document.getElementById('btnPrev').addEventListener('click', prevStep);
+            
+            // Configurar evento para el botón de prueba de conexión
+            const testBtn = document.getElementById('testConnectionBtn');
+            if (testBtn) {
+                testBtn.addEventListener('click', testFirebaseConnection);
+            }
             
             // Configurar eventos para validación de contraseña
             const passwordInput = document.getElementById('adminPassword');
@@ -1226,42 +1290,6 @@
                 return true;
             } else {
                 matchDiv.innerHTML = '<span class="text-danger small"><i class="fas fa-times-circle"></i> Las contraseñas no coinciden</span>';
-                return false;
-            }
-        }
-        
-        async function testFirebaseConnection() {
-            const resultDiv = document.getElementById('connectionResult');
-            
-            try {
-                // Inicializar Firebase con la configuración predefinida
-                firebaseApp = firebase.initializeApp(FIREBASE_CONFIG, 'SetupTest');
-                auth = firebase.auth(firebaseApp);
-                db = firebase.firestore(firebaseApp);
-                
-                // Probar conexión intentando obtener un documento
-                await db.collection('test').limit(1).get();
-                
-                // Si llegamos aquí, la conexión es exitosa
-                resultDiv.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <strong>¡Conexión exitosa!</strong> Base de datos conectada correctamente.
-                    </div>
-                `;
-                resultDiv.style.display = 'block';
-                
-                return true;
-            } catch (error) {
-                console.error('Error de conexión a Firebase:', error);
-                resultDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-times-circle"></i>
-                        <strong>Error de conexión:</strong> ${error.message}<br>
-                        <small>Asegúrese de haber habilitado Firestore Database y Authentication en Firebase Console.</small>
-                    </div>
-                `;
-                resultDiv.style.display = 'block';
                 return false;
             }
         }
@@ -1709,6 +1737,14 @@
                 }
             }, 5000);
         }
+        
+        // Exportar funciones globales
+        window.testFirebaseConnection = testFirebaseConnection;
+        window.addUser = addUser;
+        window.removeUser = removeUser;
+        window.updateUserField = updateUserField;
+        window.skipAdditionalUsers = skipAdditionalUsers;
+        window.completeSetup = completeSetup;
     </script>
 </body>
 </html>
