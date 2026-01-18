@@ -1710,8 +1710,11 @@
                     createdCount++;
                     
                 } catch (error) {
-                    console.warn(`No se pudo crear usuario ${user.email}:`, error.message);
-                }
+    console.warn(
+        "No se pudo crear usuario " + user.email + ":",
+        error.message
+    );
+}
             }
             
             setupMessages.innerHTML += `<div class="alert alert-success"><i class="fas fa-check-circle"></i> ${createdCount} usuario(s) creado(s) correctamente</div>`;
