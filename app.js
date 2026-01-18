@@ -225,6 +225,8 @@ function mostrarSelectorSucursal(sucursales) {
     const selector = document.getElementById('sucursalSelector');
     const select = document.getElementById('selectSucursalLogin');
     
+    if (!selector || !select) return;
+    
     select.innerHTML = '<option value="">Seleccionar sucursal</option>';
     sucursales.forEach(sucursal => {
         select.innerHTML += `<option value="${sucursal}">${sucursal}</option>`;
@@ -235,6 +237,8 @@ function mostrarSelectorSucursal(sucursales) {
 
 async function seleccionarSucursal() {
     const select = document.getElementById('selectSucursalLogin');
+    if (!select) return;
+    
     const sucursal = select.value;
     
     if (!sucursal) {
@@ -1043,18 +1047,24 @@ async function intentarSincronizar() {
 // ============================================
 
 function mostrarLogin() {
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('mainSystem').style.display = 'none';
+    const loginScreen = document.getElementById('loginScreen');
+    const mainSystem = document.getElementById('mainSystem');
+    
+    if (loginScreen) loginScreen.style.display = 'flex';
+    if (mainSystem) mainSystem.style.display = 'none';
 }
 
 function mostrarSistemaPrincipal() {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('mainSystem').style.display = 'flex';
+    const loginScreen = document.getElementById('loginScreen');
+    const mainSystem = document.getElementById('mainSystem');
+    
+    if (loginScreen) loginScreen.style.display = 'none';
+    if (mainSystem) mainSystem.style.display = 'flex';
 }
 
 function mostrarCargando(mensaje) {
-    // Implementar spinner o modal de carga
     console.log('⏳ ' + mensaje);
+    // Puedes implementar un spinner aquí
 }
 
 function mostrarAlerta(mensaje, tipo = 'info') {
@@ -1066,11 +1076,25 @@ function mostrarAlerta(mensaje, tipo = 'info') {
         ${mensaje}
     `;
     
+    alerta.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
     document.body.appendChild(alerta);
     
     // Remover después de 5 segundos
     setTimeout(() => {
-        alerta.remove();
+        alerta.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+            if (alerta.parentNode) {
+                alerta.remove();
+            }
+        }, 300);
     }, 5000);
 }
 
@@ -1173,25 +1197,20 @@ function configurarEventosUI() {
         });
     }
     
-    // Cierre de modal
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) {
-            cerrarModal();
-        }
-    });
+    // Configurar evento para el botón de login en la pantalla de login
+    const loginButton = document.getElementById('loginButton');
+    if (loginButton) {
+        loginButton.addEventListener('click', login);
+    }
     
-    // Tecla Escape para cerrar modal
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            cerrarModal();
-            cerrarScanner();
-        }
-    });
-    
-    // Buscar productos
-    const buscarInput = document.getElementById('buscarProducto');
-    if (buscarInput) {
-        buscarInput.addEventListener('input', buscarProductos);
+    // También permitir login con Enter
+    const loginPassword = document.getElementById('loginPassword');
+    if (loginPassword) {
+        loginPassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
     }
 }
 
@@ -1439,7 +1458,15 @@ function inicializarVistaPOS() {
     cargarCarritoLocal();
     
     // Configurar eventos
-    document.getElementById('selectPago')?.addEventListener('change', cambiarMetodoPago);
+    const selectPago = document.getElementById('selectPago');
+    if (selectPago) {
+        selectPago.addEventListener('change', cambiarMetodoPago);
+    }
+    
+    const buscarProducto = document.getElementById('buscarProducto');
+    if (buscarProducto) {
+        buscarProducto.addEventListener('input', buscarProductos);
+    }
 }
 
 function cargarProductosEnGrid() {
@@ -1540,6 +1567,10 @@ function buscarProductos() {
 async function abrirScanner() {
     try {
         const scanner = document.getElementById('barcodeScanner');
+        if (!scanner) {
+            mostrarAlerta('Elemento del scanner no encontrado', 'danger');
+            return;
+        }
         scanner.style.display = 'flex';
         
         // Intentar usar la API de escaneo nativa si está disponible
@@ -1547,17 +1578,24 @@ async function abrirScanner() {
             await iniciarScannerNativo();
         } else {
             // Mostrar input manual
-            document.getElementById('manualBarcode').focus();
+            const manualInput = document.getElementById('manualBarcode');
+            if (manualInput) {
+                manualInput.focus();
+            }
         }
         
     } catch (error) {
         console.error('Error abriendo scanner:', error);
-        document.getElementById('manualBarcode').focus();
+        const manualInput = document.getElementById('manualBarcode');
+        if (manualInput) {
+            manualInput.focus();
+        }
     }
 }
 
 async function iniciarScannerNativo() {
     const videoContainer = document.getElementById('scannerVideoContainer');
+    if (!videoContainer) return;
     
     // Solicitar permisos de cámara
     const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -1620,15 +1658,20 @@ function procesarCodigoBarras(codigo) {
 }
 
 function procesarCodigoManual() {
-    const codigo = document.getElementById('manualBarcode').value.trim();
+    const manualInput = document.getElementById('manualBarcode');
+    if (!manualInput) return;
+    
+    const codigo = manualInput.value.trim();
     if (codigo) {
         procesarCodigoBarras(codigo);
-        document.getElementById('manualBarcode').value = '';
+        manualInput.value = '';
     }
 }
 
 function cerrarScanner() {
     const scanner = document.getElementById('barcodeScanner');
+    if (!scanner) return;
+    
     scanner.style.display = 'none';
     
     // Detener stream de video si existe
@@ -1645,6 +1688,10 @@ function cerrarScanner() {
 async function imprimirTicket(ventaData) {
     try {
         const ticketContainer = document.getElementById('ticketContainer');
+        if (!ticketContainer) {
+            console.warn('Contenedor de ticket no encontrado');
+            return;
+        }
         
         // Datos de la empresa
         const empresa = configuracion.empresa || {};
@@ -1711,7 +1758,15 @@ async function imprimirTicket(ventaData) {
         };
         
         // Generar PDF
-        await html2pdf().from(ticketContainer).set(printOptions).save();
+        if (typeof html2pdf !== 'undefined') {
+            await html2pdf().from(ticketContainer).set(printOptions).save();
+        } else {
+            // Abrir ventana de impresión si html2pdf no está disponible
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(ticketHTML);
+            printWindow.document.close();
+            printWindow.print();
+        }
         
         // Registrar reimpresión si es reimpresión
         if (ventaData.reimpresion) {
@@ -1822,8 +1877,11 @@ function initConnectionMonitor() {
         const estaOnline = navigator.onLine;
         
         if (onlineIndicator) {
-            onlineIndicator.querySelector('i').className = estaOnline ? 'fas fa-wifi' : 'fas fa-wifi-slash';
-            onlineIndicator.querySelector('span').textContent = estaOnline ? 'Online' : 'Offline';
+            const icon = onlineIndicator.querySelector('i');
+            const text = onlineIndicator.querySelector('span');
+            
+            if (icon) icon.className = estaOnline ? 'fas fa-wifi' : 'fas fa-wifi-slash';
+            if (text) text.textContent = estaOnline ? 'Online' : 'Offline';
             onlineIndicator.style.color = estaOnline ? 'var(--secondary)' : 'var(--danger)';
         }
         
@@ -2011,9 +2069,6 @@ function actualizarEnIndexedDB(storeName, key, data) {
 // FUNCIONES RESTANTES (SIMPLIFICADAS POR ESPACIO)
 // ============================================
 
-// Nota: Las siguientes funciones están simplificadas debido a restricciones de longitud.
-// En un sistema real, cada una tendría implementación completa.
-
 async function cargarClientes() {
     try {
         const snapshot = await db.collection('clientes')
@@ -2110,14 +2165,17 @@ function cambiarMetodoPago() {
     const metodo = document.getElementById('selectPago')?.value;
     
     // Ocultar todos
-    document.getElementById('pagoEfectivo')?.style.display = 'none';
-    document.getElementById('pagoCuentaCorriente')?.style.display = 'none';
+    const pagoEfectivo = document.getElementById('pagoEfectivo');
+    const pagoCuentaCorriente = document.getElementById('pagoCuentaCorriente');
+    
+    if (pagoEfectivo) pagoEfectivo.style.display = 'none';
+    if (pagoCuentaCorriente) pagoCuentaCorriente.style.display = 'none';
     
     // Mostrar seleccionado
-    if (metodo === 'efectivo') {
-        document.getElementById('pagoEfectivo')?.style.display = 'block';
-    } else if (metodo === 'cuenta_corriente') {
-        document.getElementById('pagoCuentaCorriente')?.style.display = 'block';
+    if (metodo === 'efectivo' && pagoEfectivo) {
+        pagoEfectivo.style.display = 'block';
+    } else if (metodo === 'cuenta_corriente' && pagoCuentaCorriente) {
+        pagoCuentaCorriente.style.display = 'block';
     }
 }
 
@@ -2175,7 +2233,10 @@ async function cargarVistaConfiguracion() {
 
 function inicializarVistaProductos() {}
 function inicializarVistaClientes() {}
-function mostrarModalCliente() {}
+
+function mostrarModalCliente() {
+    mostrarAlerta('Funcionalidad de clientes en desarrollo', 'info');
+}
 
 function crearPresupuesto() {
     mostrarAlerta('Funcionalidad de presupuestos en desarrollo', 'info');
@@ -2190,11 +2251,19 @@ function reimprimirUltimo() {
 }
 
 function cerrarModal() {
-    document.getElementById('modalBase').style.display = 'none';
+    const modalBase = document.getElementById('modalBase');
+    if (modalBase) {
+        modalBase.style.display = 'none';
+    }
 }
 
 function mostrarTodosProductos() {
-    buscarProductos(); // Mostrar todos
+    // Limpiar búsqueda y mostrar todos
+    const buscarInput = document.getElementById('buscarProducto');
+    if (buscarInput) {
+        buscarInput.value = '';
+        buscarProductos();
+    }
 }
 
 function actualizarInfoCliente() {
@@ -2207,16 +2276,11 @@ async function exportarBackup() {
 }
 
 async function importarBackup() {
-    document.getElementById('fileImport').click();
-}
-
-document.getElementById('fileImport')?.addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        mostrarAlerta('Importando backup...', 'info');
-        // Implementar importación
+    const fileImport = document.getElementById('fileImport');
+    if (fileImport) {
+        fileImport.click();
     }
-});
+}
 
 // ============================================
 // INICIALIZACIÓN FINAL
