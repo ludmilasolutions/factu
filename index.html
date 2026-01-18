@@ -2167,6 +2167,11 @@
         // CONFIGURACIÓN PRINCIPAL Y VARIABLES GLOBALES
         // ============================================
         
+        // Verificar si el sistema está configurado
+        if (!localStorage.getItem('firebase_config') && !localStorage.getItem('sistema_configurado')) {
+            window.location.href = 'setup.html';
+        }
+        
         // Firebase configuration
         const firebaseConfig = JSON.parse(localStorage.getItem('firebase_config')) || {
             apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
@@ -2181,6 +2186,11 @@
         const app = firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        
+        // Habilitar persistencia para modo offline
+        db.enablePersistence().catch((err) => {
+            console.log('Persistencia no soportada:', err.code);
+        });
         
         // Variables globales del sistema
         let usuarioActual = null;
@@ -2198,18 +2208,18 @@
         
         // Configuración IndexedDB para modo offline
         const DB_NAME = 'pos_offline_db';
-        const DB_VERSION = 2;
+        const DB_VERSION = 3;
         let offlineDB = null;
         
         // Constantes del sistema
         const IVA_PORCENTAJE = 0.21;
-        const LIMITE_PRODUCTOS_PAGINA = 50;
-        const LIMITE_VENTAS_PAGINA = 30;
+        const LIMITE_PRODUCTOS_PAGINA = 100;
+        const LIMITE_VENTAS_PAGINA = 50;
         const ROLES = {
-            ADMIN: 'admin',
+            ADMIN_GENERAL: 'admin_general',
+            ADMIN_SUCURSAL: 'admin_sucursal',
             VENDEDOR: 'vendedor',
-            CAJERO: 'cajero',
-            SUPERVISOR: 'supervisor'
+            CAJERO: 'cajero'
         };
         
         // ============================================
@@ -2258,16 +2268,8 @@
             // Inicializar listeners de tiempo real
             inicializarListenersTiempoReal();
             
-            // Configurar eventos de PWA
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                    }, function(err) {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
-                });
-            }
+            // Configurar PWA
+            configurarPWA();
             
             // Configurar eventos antes de recargar/cerrar página
             window.addEventListener('beforeunload', function (e) {
@@ -2278,6 +2280,9 @@
                     guardarEstadoSistema();
                 }
             });
+            
+            // Verificar si hay ventas pendientes de sincronizar
+            verificarVentasPendientes();
             
             console.log('Sistema POS inicializado correctamente');
         });
@@ -2308,9 +2313,10 @@
                         if (sucursalDoc.exists) {
                             sucursalActual = {
                                 id: sucursalDoc.id,
-                                data: () => sucursalDoc.data()
+                                ...sucursalDoc.data()
                             };
-                            document.getElementById('sucursalNombre').textContent = sucursalDoc.data().nombre || 'Sin sucursal';
+                            document.getElementById('sucursalNombre').textContent = sucursalActual.nombre || 'Sin sucursal';
+                            document.getElementById('empresaNombre').textContent = sucursalActual.nombre || 'Mi Comercio';
                         }
                     }
                     
@@ -2342,6 +2348,9 @@
             } catch (error) {
                 console.error('Error al iniciar sistema:', error);
                 mostrarError('Error al cargar datos del usuario');
+                // Intentar modo offline
+                modoEmergencia = true;
+                document.getElementById('emergencyMode').style.display = 'flex';
             }
         }
         
@@ -2370,6 +2379,9 @@
                 
             } catch (error) {
                 console.error('Error cargando datos iniciales:', error);
+                // Cargar datos desde cache offline
+                await cargarProductosCacheLocal();
+                await cargarClientesCacheLocal();
             }
         }
         
@@ -2396,13 +2408,15 @@
                     document.getElementById('btnCerrarTurno').disabled = true;
                     actualizarInfoTurno(null);
                 } else {
-                    turnoActual = snapshot.docs[0];
-                    const turnoData = turnoActual.data();
+                    turnoActual = {
+                        id: snapshot.docs[0].id,
+                        ...snapshot.docs[0].data()
+                    };
                     document.getElementById('turnoActual').textContent = 
-                        `Turno ${turnoData.tipo} - ${formatFecha(turnoData.apertura)}`;
+                        `Turno ${turnoActual.tipo} - ${formatFecha(turnoActual.apertura)}`;
                     document.getElementById('btnAbrirTurno').disabled = true;
                     document.getElementById('btnCerrarTurno').disabled = false;
-                    actualizarInfoTurno(turnoData);
+                    actualizarInfoTurno(turnoActual);
                     
                     // Cargar resumen del turno
                     await cargarResumenTurno(turnoActual.id);
@@ -2434,7 +2448,7 @@
                 
                 const turnoData = {
                     sucursalId: sucursalActual.id,
-                    sucursalNombre: sucursalActual.data().nombre,
+                    sucursalNombre: sucursalActual.nombre,
                     usuarioId: usuarioActual.uid,
                     usuarioNombre: usuarioActual.displayName || usuarioActual.email,
                     fecha: new Date(),
@@ -2453,7 +2467,10 @@
                 };
                 
                 const turnoRef = await db.collection('turnos').add(turnoData);
-                turnoActual = await turnoRef.get();
+                turnoActual = {
+                    id: turnoRef.id,
+                    ...turnoData
+                };
                 
                 // Actualizar interfaz
                 document.getElementById('turnoActual').textContent = 
@@ -2505,7 +2522,7 @@
                 });
                 
                 // Calcular diferencia de caja
-                const efectivoInicial = turnoActual.data().efectivoInicial || 0;
+                const efectivoInicial = turnoActual.efectivoInicial || 0;
                 const ventasEfectivo = desglose.efectivo || 0;
                 const diferencia = parseFloat(efectivoFinal) - (efectivoInicial + ventasEfectivo);
                 
@@ -2671,6 +2688,11 @@
             if (document.getElementById('selectPago').value === 'mixto') {
                 calcularMixto();
             }
+            
+            // Actualizar límite disponible si es cuenta corriente
+            if (document.getElementById('selectPago').value === 'cuenta_corriente') {
+                actualizarCliente();
+            }
         }
         
         // 4. Procesamiento de Ventas con Transacciones
@@ -2680,8 +2702,8 @@
                 return;
             }
             
-            // Validar turno activo
-            if (!turnoActual) {
+            // Validar turno activo (solo si no está en modo emergencia)
+            if (!modoEmergencia && !turnoActual) {
                 mostrarError('No hay turno activo. Abre un turno primero.');
                 return;
             }
@@ -2732,121 +2754,68 @@
                 return;
             }
             
+            // Generar número de factura
+            const numeroFactura = await generarNumeroFactura();
+            
+            // Crear objeto de venta
+            const ventaData = {
+                sucursalId: sucursalActual.id,
+                sucursalNombre: sucursalActual.nombre,
+                numeroFactura: numeroFactura,
+                fecha: new Date(),
+                clienteId: clienteId || null,
+                clienteNombre: clienteNombre,
+                clienteDocumento: clienteData ? clienteData.documento : null,
+                subtotal: subtotal,
+                descuentoGlobal: descuentoGlobalMonto,
+                descuentoItems: carrito.reduce((sum, item) => sum + item.descuento, 0),
+                descuentoTotal: descuentoGlobalMonto + carrito.reduce((sum, item) => sum + item.descuento, 0),
+                iva: iva,
+                total: total,
+                metodoPago: metodoPago,
+                datosPago: obtenerDatosPago(metodoPago),
+                items: carrito.map(item => ({
+                    productoId: item.id,
+                    codigo: item.codigo,
+                    nombre: item.nombre,
+                    cantidad: item.cantidad,
+                    precioUnitario: item.precioVenta,
+                    descuento: item.descuento,
+                    descuentoPorcentaje: item.descuentoPorcentaje,
+                    subtotal: item.cantidad * item.precioVenta - item.descuento,
+                    costo: item.precioCosto,
+                    controlStock: item.controlStock
+                })),
+                usuarioId: usuarioActual.uid,
+                usuarioNombre: usuarioActual.displayName || usuarioActual.email,
+                turnoId: turnoActual ? turnoActual.id : null,
+                nota: document.getElementById('notaVenta').value,
+                estado: 'completada',
+                syncStatus: modoEmergencia ? 'pendiente' : 'synced',
+                anulada: false,
+                fechaAnulacion: null,
+                reimpresiones: 0,
+                caja: configuracionSistema.caja || '1'
+            };
+            
             try {
-                // Iniciar transacción
-                const resultado = await db.runTransaction(async (transaction) => {
-                    // Generar número de factura
-                    const numeroFactura = await generarNumeroFacturaTransaccion(transaction);
-                    
-                    // Verificar stock antes de proceder
-                    for (const item of carrito) {
-                        if (item.controlStock) {
-                            const productoRef = db.collection('productos').doc(item.id);
-                            const productoDoc = await transaction.get(productoRef);
-                            
-                            if (productoDoc.exists) {
-                                const productoData = productoDoc.data();
-                                const stockActual = productoData.stock || 0;
-                                
-                                if (stockActual < item.cantidad) {
-                                    throw new Error(`Stock insuficiente para ${item.nombre}. Stock actual: ${stockActual}`);
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Crear objeto de venta
-                    const ventaData = {
-                        sucursalId: sucursalActual.id,
-                        sucursalNombre: sucursalActual.data().nombre,
-                        numeroFactura: numeroFactura,
-                        fecha: new Date(),
-                        clienteId: clienteId || null,
-                        clienteNombre: clienteNombre,
-                        clienteDocumento: clienteData ? clienteData.documento : null,
-                        subtotal: subtotal,
-                        descuentoGlobal: descuentoGlobalMonto,
-                        descuentoItems: carrito.reduce((sum, item) => sum + item.descuento, 0),
-                        descuentoTotal: descuentoGlobalMonto + carrito.reduce((sum, item) => sum + item.descuento, 0),
-                        iva: iva,
-                        total: total,
-                        metodoPago: metodoPago,
-                        datosPago: obtenerDatosPago(metodoPago),
-                        items: carrito.map(item => ({
-                            productoId: item.id,
-                            codigo: item.codigo,
-                            nombre: item.nombre,
-                            cantidad: item.cantidad,
-                            precioUnitario: item.precioVenta,
-                            descuento: item.descuento,
-                            descuentoPorcentaje: item.descuentoPorcentaje,
-                            subtotal: item.cantidad * item.precioVenta - item.descuento,
-                            costo: item.precioCosto,
-                            controlStock: item.controlStock
-                        })),
-                        usuarioId: usuarioActual.uid,
-                        usuarioNombre: usuarioActual.displayName || usuarioActual.email,
-                        turnoId: turnoActual.id,
-                        nota: document.getElementById('notaVenta').value,
-                        estado: 'completada',
-                        syncStatus: 'synced',
-                        anulada: false,
-                        fechaAnulacion: null,
-                        reimpresiones: 0,
-                        caja: configuracionSistema.caja || '1'
-                    };
-                    
-                    // Guardar venta
-                    const ventaRef = db.collection('ventas').doc();
-                    transaction.set(ventaRef, ventaData);
-                    
-                    // Actualizar stock de productos
-                    for (const item of carrito) {
-                        if (item.controlStock) {
-                            const productoRef = db.collection('productos').doc(item.id);
-                            transaction.update(productoRef, {
-                                stock: firebase.firestore.FieldValue.increment(-item.cantidad),
-                                ultimaVenta: new Date(),
-                                vendidosTotal: firebase.firestore.FieldValue.increment(item.cantidad)
-                            });
-                        }
-                    }
-                    
-                    // Actualizar turno
-                    const turnoRef = db.collection('turnos').doc(turnoActual.id);
-                    transaction.update(turnoRef, {
-                        ventasCount: firebase.firestore.FieldValue.increment(1),
-                        totalVentas: firebase.firestore.FieldValue.increment(total),
-                        [`desglosePagos.${metodoPago}`]: firebase.firestore.FieldValue.increment(total)
-                    });
-                    
-                    // Actualizar saldo del cliente si es cuenta corriente
-                    if (metodoPago === 'cuenta_corriente' && clienteId) {
-                        const clienteRef = db.collection('clientes').doc(clienteId);
-                        transaction.update(clienteRef, {
-                            saldo: firebase.firestore.FieldValue.increment(total),
-                            ultimaCompra: new Date(),
-                            comprasTotal: firebase.firestore.FieldValue.increment(1)
-                        });
-                    }
-                    
-                    // Actualizar contadores
-                    await actualizarContadoresTransaccion(transaction);
-                    
-                    return {
-                        ventaId: ventaRef.id,
-                        ventaData: ventaData
-                    };
-                });
+                if (modoEmergencia) {
+                    // Guardar venta offline
+                    await guardarVentaOffline(ventaData);
+                    ventasPendientes.push(ventaData);
+                    mostrarExito('Venta guardada localmente. Se sincronizará cuando haya conexión.');
+                } else {
+                    // Procesar online con transacción
+                    await procesarVentaOnline(ventaData);
+                }
                 
                 // Guardar última venta
-                ultimaVenta = {
-                    id: resultado.ventaId,
-                    ...resultado.ventaData
-                };
+                ultimaVenta = ventaData;
                 
-                // Imprimir ticket
-                await imprimirTicket(ultimaVenta);
+                // Imprimir ticket si no está en modo emergencia
+                if (!modoEmergencia) {
+                    await imprimirTicket(ventaData);
+                }
                 
                 // Limpiar carrito
                 carrito = [];
@@ -2866,16 +2835,11 @@
                 }
                 
                 // Mostrar confirmación
-                mostrarExito(`Venta #${ultimaVenta.numeroFactura} procesada correctamente`);
+                mostrarExito(`Venta #${ventaData.numeroFactura} procesada correctamente`);
                 
                 // Actualizar resumen del turno
                 if (turnoActual) {
                     await cargarResumenTurno(turnoActual.id);
-                }
-                
-                // Sincronizar si estaba en modo offline
-                if (modoEmergencia) {
-                    await intentarSincronizar();
                 }
                 
             } catch (error) {
@@ -2884,29 +2848,104 @@
             }
         }
         
-        async function generarNumeroFacturaTransaccion(transaction) {
+        async function procesarVentaOnline(ventaData) {
+            return await db.runTransaction(async (transaction) => {
+                // Verificar stock antes de proceder
+                for (const item of ventaData.items) {
+                    if (item.controlStock) {
+                        const productoRef = db.collection('productos').doc(item.productoId);
+                        const productoDoc = await transaction.get(productoRef);
+                        
+                        if (productoDoc.exists) {
+                            const productoData = productoDoc.data();
+                            const stockActual = productoData.stock || 0;
+                            
+                            if (stockActual < item.cantidad) {
+                                throw new Error(`Stock insuficiente para ${item.nombre}. Stock actual: ${stockActual}`);
+                            }
+                        }
+                    }
+                }
+                
+                // Guardar venta
+                const ventaRef = db.collection('ventas').doc();
+                transaction.set(ventaRef, ventaData);
+                
+                // Actualizar stock de productos
+                for (const item of ventaData.items) {
+                    if (item.controlStock) {
+                        const productoRef = db.collection('productos').doc(item.productoId);
+                        transaction.update(productoRef, {
+                            stock: firebase.firestore.FieldValue.increment(-item.cantidad),
+                            ultimaVenta: new Date(),
+                            vendidosTotal: firebase.firestore.FieldValue.increment(item.cantidad)
+                        });
+                    }
+                }
+                
+                // Actualizar turno
+                if (ventaData.turnoId) {
+                    const turnoRef = db.collection('turnos').doc(ventaData.turnoId);
+                    transaction.update(turnoRef, {
+                        ventasCount: firebase.firestore.FieldValue.increment(1),
+                        totalVentas: firebase.firestore.FieldValue.increment(ventaData.total),
+                        [`desglosePagos.${ventaData.metodoPago}`]: firebase.firestore.FieldValue.increment(ventaData.total)
+                    });
+                }
+                
+                // Actualizar saldo del cliente si es cuenta corriente
+                if (ventaData.metodoPago === 'cuenta_corriente' && ventaData.clienteId) {
+                    const clienteRef = db.collection('clientes').doc(ventaData.clienteId);
+                    transaction.update(clienteRef, {
+                        saldo: firebase.firestore.FieldValue.increment(ventaData.total),
+                        ultimaCompra: new Date(),
+                        comprasTotal: firebase.firestore.FieldValue.increment(1)
+                    });
+                }
+                
+                // Actualizar contador de facturas
+                await actualizarContadorFacturas(transaction);
+            });
+        }
+        
+        async function generarNumeroFactura() {
             // Obtener prefijo de sucursal
-            const sucursalPrefijo = sucursalActual.data().codigo || '001';
+            const sucursalPrefijo = sucursalActual.codigo || '001';
             
-            // Obtener contador de facturas
-            const contadorRef = db.collection('contadores_facturas').doc(`sucursal_${sucursalActual.id}`);
-            const contadorDoc = await transaction.get(contadorRef);
-            
-            let proximoNumero = 1;
-            
-            if (contadorDoc.exists) {
-                const contadorData = contadorDoc.data();
-                proximoNumero = (contadorData.proximo || 0) + 1;
-                transaction.update(contadorRef, { proximo: proximoNumero });
-            } else {
-                transaction.set(contadorRef, { proximo: 1 });
+            if (modoEmergencia) {
+                // Generar número temporal para offline
+                const timestamp = Date.now();
+                return `OFF-${sucursalPrefijo}-${timestamp}`;
             }
             
-            // Formato: PuntoVenta-Número (ej: 0001-00000001)
-            const puntoVenta = configuracionSistema.puntoVenta || '0001';
-            const numeroFactura = proximoNumero.toString().padStart(8, '0');
-            
-            return `${puntoVenta}-${numeroFactura}`;
+            try {
+                // Obtener contador de facturas
+                const contadorRef = db.collection('contadores_facturas').doc(`sucursal_${sucursalActual.id}`);
+                const contadorDoc = await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(contadorRef);
+                    
+                    let proximoNumero = 1;
+                    if (doc.exists) {
+                        proximoNumero = (doc.data().proximo || 0) + 1;
+                        transaction.update(contadorRef, { proximo: proximoNumero });
+                    } else {
+                        transaction.set(contadorRef, { proximo: 1 });
+                    }
+                    
+                    return { proximoNumero };
+                });
+                
+                // Formato: PuntoVenta-Número (ej: 0001-00000001)
+                const puntoVenta = configuracionSistema.puntoVenta || '0001';
+                const numeroFactura = contadorDoc.proximoNumero.toString().padStart(8, '0');
+                
+                return `${puntoVenta}-${numeroFactura}`;
+            } catch (error) {
+                console.error('Error generando número de factura:', error);
+                // Fallback a timestamp
+                const timestamp = Date.now();
+                return `TMP-${timestamp}`;
+            }
         }
         
         // 5. Sistema Offline con IndexedDB
@@ -2925,7 +2964,7 @@
                     
                     // Crear object stores
                     if (!db.objectStoreNames.contains('ventas_pendientes')) {
-                        const ventasStore = db.createObjectStore('ventas_pendientes', { keyPath: 'id' });
+                        const ventasStore = db.createObjectStore('ventas_pendientes', { keyPath: 'id', autoIncrement: true });
                         ventasStore.createIndex('fecha', 'fecha', { unique: false });
                         ventasStore.createIndex('syncStatus', 'syncStatus', { unique: false });
                     }
@@ -2941,17 +2980,8 @@
                         clientesStore.createIndex('documento', 'documento', { unique: true });
                     }
                     
-                    if (!db.objectStoreNames.contains('proveedores_cache')) {
-                        db.createObjectStore('proveedores_cache', { keyPath: 'id' });
-                    }
-                    
                     if (!db.objectStoreNames.contains('config_local')) {
                         db.createObjectStore('config_local', { keyPath: 'key' });
-                    }
-                    
-                    if (!db.objectStoreNames.contains('backups')) {
-                        const backupsStore = db.createObjectStore('backups', { keyPath: 'id' });
-                        backupsStore.createIndex('fecha', 'fecha', { unique: false });
                     }
                 };
             });
@@ -2961,107 +2991,66 @@
             return new Promise((resolve, reject) => {
                 const transaction = offlineDB.transaction(['ventas_pendientes'], 'readwrite');
                 const store = transaction.objectStore('ventas_pendientes');
-                const request = store.add(ventaData);
+                const request = store.add({
+                    ...ventaData,
+                    fecha: new Date(),
+                    syncStatus: 'pendiente'
+                });
                 
                 request.onsuccess = () => resolve();
                 request.onerror = () => reject(request.error);
             });
         }
         
-        async function intentarSincronizar() {
-            if (modoEmergencia) return;
-            
+        async function verificarVentasPendientes() {
             try {
-                const ventasPendientes = await obtenerVentasPendientes();
+                const transaction = offlineDB.transaction(['ventas_pendientes'], 'readonly');
+                const store = transaction.objectStore('ventas_pendientes');
+                const request = store.getAll();
                 
+                request.onsuccess = () => {
+                    ventasPendientes = request.result || [];
+                    document.getElementById('pendingSalesCount').textContent = ventasPendientes.length;
+                    
+                    // Intentar sincronizar si hay conexión
+                    if (ventasPendientes.length > 0 && !modoEmergencia) {
+                        intentarSincronizar();
+                    }
+                };
+            } catch (error) {
+                console.error('Error verificando ventas pendientes:', error);
+            }
+        }
+        
+        async function intentarSincronizar() {
+            try {
                 for (const venta of ventasPendientes) {
-                    // Verificar si la venta ya existe online (por número de factura)
-                    const ventaExistente = await db.collection('ventas')
-                        .where('numeroFactura', '==', venta.numeroFactura)
-                        .where('sucursalId', '==', venta.sucursalId)
-                        .limit(1)
-                        .get();
+                    // Intentar procesar la venta online
+                    await procesarVentaOnline(venta);
                     
-                    if (!ventaExistente.empty) {
-                        // Venta ya existe, eliminar del offline
-                        await eliminarVentaOffline(venta.id);
-                        continue;
-                    }
-                    
-                    // Intentar subir a Firestore
-                    try {
-                        const { id, syncStatus, ...ventaData } = venta;
-                        
-                        // Verificar stock antes de subir
-                        let stockValido = true;
-                        for (const item of ventaData.items) {
-                            if (item.controlStock) {
-                                const productoDoc = await db.collection('productos').doc(item.productoId).get();
-                                if (productoDoc.exists) {
-                                    const productoData = productoDoc.data();
-                                    if ((productoData.stock || 0) < item.cantidad) {
-                                        stockValido = false;
-                                        console.warn(`Stock insuficiente para ${item.nombre}`);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        
-                        if (!stockValido) {
-                            ventaData.estado = 'pendiente_revision';
-                            ventaData.error = 'stock_insuficiente';
-                        }
-                        
-                        const ventaRef = await db.collection('ventas').add(ventaData);
-                        
-                        // Actualizar stock si la venta es válida
-                        if (stockValido) {
-                            for (const item of ventaData.items) {
-                                if (item.controlStock) {
-                                    await db.collection('productos').doc(item.productoId).update({
-                                        stock: firebase.firestore.FieldValue.increment(-item.cantidad),
-                                        vendidosTotal: firebase.firestore.FieldValue.increment(item.cantidad)
-                                    });
-                                }
-                            }
-                            
-                            // Actualizar turno si existe
-                            if (ventaData.turnoId) {
-                                await db.collection('turnos').doc(ventaData.turnoId).update({
-                                    ventasCount: firebase.firestore.FieldValue.increment(1),
-                                    totalVentas: firebase.firestore.FieldValue.increment(ventaData.total),
-                                    [`desglosePagos.${ventaData.metodoPago}`]: firebase.firestore.FieldValue.increment(ventaData.total)
-                                });
-                            }
-                            
-                            // Eliminar del almacenamiento local
-                            await eliminarVentaOffline(id);
-                            
-                            console.log(`Venta ${id} sincronizada correctamente`);
-                        }
-                        
-                    } catch (error) {
-                        console.error(`Error sincronizando venta ${venta.id}:`, error);
-                        // Marcar venta con error pero mantener en local
-                        await actualizarVentaOffline(venta.id, { 
-                            syncStatus: 'error',
-                            error: error.message 
-                        });
-                    }
+                    // Eliminar del almacenamiento local
+                    await eliminarVentaOffline(venta.id);
                 }
                 
-                // Actualizar contador de ventas pendientes
-                const ventasRestantes = await obtenerVentasPendientes();
-                document.getElementById('pendingSalesCount').textContent = ventasRestantes.length;
+                ventasPendientes = [];
+                document.getElementById('pendingSalesCount').textContent = '0';
                 
-                if (ventasPendientes.length > 0) {
-                    mostrarExito(`${ventasPendientes.length} ventas sincronizadas`);
-                }
+                mostrarExito('Ventas pendientes sincronizadas correctamente');
                 
             } catch (error) {
-                console.error('Error en sincronización:', error);
+                console.error('Error sincronizando ventas:', error);
             }
+        }
+        
+        async function eliminarVentaOffline(id) {
+            return new Promise((resolve, reject) => {
+                const transaction = offlineDB.transaction(['ventas_pendientes'], 'readwrite');
+                const store = transaction.objectStore('ventas_pendientes');
+                const request = store.delete(id);
+                
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
         }
         
         // 6. Gestión de Productos Avanzada
@@ -3077,7 +3066,7 @@
                     .where('sucursalId', '==', sucursalActual.id)
                     .where('estado', '==', 'activo')
                     .orderBy('nombre')
-                    .limit(500) // Aumentado para manejar más productos
+                    .limit(1000) // Optimizado para 20k productos con paginación
                     .get();
                 
                 productosCache.clear();
@@ -3113,10 +3102,10 @@
                         let productosActualizados = 0;
                         let errores = [];
                         
-                        for (const row of jsonData) {
+                        for (const [index, row] of jsonData.entries()) {
                             try {
                                 const productoData = {
-                                    codigo: row.Codigo || row.codigo || '',
+                                    codigo: row.Codigo || row.codigo || `IMP-${Date.now()}-${index}`,
                                     nombre: row.Nombre || row.nombre || '',
                                     descripcion: row.Descripcion || row.descripcion || '',
                                     categoria: row.Categoria || row.categoria || 'General',
@@ -3132,12 +3121,12 @@
                                 };
                                 
                                 // Validar datos mínimos
-                                if (!productoData.nombre || !productoData.codigo) {
-                                    errores.push(`Fila ${productosImportados + 1}: Nombre y código son requeridos`);
+                                if (!productoData.nombre) {
+                                    errores.push(`Fila ${index + 1}: Nombre es requerido`);
                                     continue;
                                 }
                                 
-                                // Buscar si ya existe el producto
+                                // Buscar si ya existe el producto por código
                                 let productoExistente = null;
                                 for (let prod of productosCache.values()) {
                                     if (prod.codigo === productoData.codigo) {
@@ -3157,18 +3146,35 @@
                                 }
                                 
                             } catch (error) {
-                                errores.push(`Fila ${productosImportados + 1}: ${error.message}`);
+                                errores.push(`Fila ${index + 1}: ${error.message}`);
                             }
                         }
                         
                         // Recargar cache
                         await cargarProductosCache();
                         
-                        resolve({
+                        const resultado = {
                             importados: productosImportados,
                             actualizados: productosActualizados,
                             errores: errores
-                        });
+                        };
+                        
+                        // Mostrar resultado
+                        const resultadoDiv = document.getElementById('importacionResultado');
+                        resultadoDiv.style.display = 'block';
+                        resultadoDiv.innerHTML = `
+                            <h4>Resultado de la Importación</h4>
+                            <p>✅ Productos importados: ${resultado.importados}</p>
+                            <p>📝 Productos actualizados: ${resultado.actualizados}</p>
+                            ${errores.length > 0 ? `
+                                <p>❌ Errores: ${errores.length}</p>
+                                <div style="max-height: 100px; overflow-y: auto;">
+                                    ${errores.map(e => `<small style="color: var(--danger);">${e}</small><br>`).join('')}
+                                </div>
+                            ` : ''}
+                        `;
+                        
+                        resolve(resultado);
                         
                     } catch (error) {
                         reject(error);
@@ -3190,7 +3196,7 @@
                     .where('sucursalId', '==', sucursalActual.id)
                     .where('estado', '==', 'activo')
                     .orderBy('nombre')
-                    .limit(300)
+                    .limit(500)
                     .get();
                 
                 clientesCache.clear();
@@ -3441,12 +3447,6 @@
                     }
                     reporteData.porHora[hora] += venta.total;
                     
-                    // Por categoría (de productos)
-                    venta.items.forEach(item => {
-                        // Aquí necesitarías tener las categorías de los productos
-                        // Por simplicidad, se omite en este ejemplo
-                    });
-                    
                     reporteData.ventas.push(venta);
                 });
                 
@@ -3575,7 +3575,7 @@
                 }
                 
                 // Construir mensaje
-                let mensaje = `*PEDIDOS PENDIENTES - ${sucursalActual.data().nombre}*\n\n`;
+                let mensaje = `*PEDIDOS PENDIENTES - ${sucursalActual.nombre}*\n\n`;
                 mensaje += `Fecha: ${formatFecha(new Date(), 'DD/MM/YYYY')}\n\n`;
                 
                 pedidosSnapshot.forEach(doc => {
@@ -3632,7 +3632,7 @@
                     clientes: Array.from(clientesCache.values()),
                     proveedores: Array.from(proveedoresCache.values()),
                     configuracion: configuracionSistema,
-                    ventas: [] // Nota: Para un backup completo podrías incluir ventas también
+                    ventas_pendientes: ventasPendientes
                 };
                 
                 // Convertir a JSON
@@ -3819,7 +3819,7 @@
                     },
                     jsPDF: { 
                         unit: 'mm', 
-                        format: [58, 200], 
+                        format: [80, 200], 
                         orientation: 'portrait' 
                     }
                 };
@@ -3841,7 +3841,7 @@
                             <style>
                                 @media print {
                                     body { margin: 0; padding: 0; }
-                                    .ticket { width: 58mm; padding: 0; margin: 0; font-family: monospace; }
+                                    .ticket { width: 80mm; padding: 0; margin: 0; font-family: monospace; }
                                 }
                             </style>
                         </head>
@@ -3854,10 +3854,19 @@
                 }
                 
                 // Registrar reimpresión
-                if (!modoEmergencia && ventaData.id && !ventaData.id.startsWith('offline_')) {
-                    await db.collection('ventas').doc(ventaData.id).update({
-                        reimpresiones: firebase.firestore.FieldValue.increment(1)
-                    });
+                if (!modoEmergencia) {
+                    // Buscar la venta y actualizar contador
+                    const ventaSnapshot = await db.collection('ventas')
+                        .where('numeroFactura', '==', ventaData.numeroFactura)
+                        .limit(1)
+                        .get();
+                    
+                    if (!ventaSnapshot.empty) {
+                        const ventaId = ventaSnapshot.docs[0].id;
+                        await db.collection('ventas').doc(ventaId).update({
+                            reimpresiones: firebase.firestore.FieldValue.increment(1)
+                        });
+                    }
                 }
                 
             } catch (error) {
@@ -3967,9 +3976,7 @@
             document.getElementById('clientesCount').textContent = clientesCache.size;
             
             // Contador de ventas locales (offline)
-            if (ventasPendientes) {
-                document.getElementById('pendingSalesCount').textContent = ventasPendientes.length;
-            }
+            document.getElementById('pendingSalesCount').textContent = ventasPendientes.length;
             
             // Contador local
             document.getElementById('localCount').textContent = productosCache.size;
@@ -3979,7 +3986,7 @@
         async function logout() {
             try {
                 // Cerrar turno si está abierto
-                if (turnoActual && turnoActual.data().estado === 'abierto') {
+                if (turnoActual && turnoActual.estado === 'abierto') {
                     if (confirm('Tienes un turno abierto. ¿Deseas cerrarlo antes de salir?')) {
                         const efectivoFinal = prompt('Ingrese el efectivo final en caja:', '0');
                         if (efectivoFinal !== null) {
@@ -4155,7 +4162,8 @@
             });
             
             // Mostrar método seleccionado
-            document.getElementById(`pago${metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1)}`).style.display = 'block';
+            const metodoCapitalizado = metodoPago.charAt(0).toUpperCase() + metodoPago.slice(1);
+            document.getElementById(`pago${metodoCapitalizado}`).style.display = 'block';
             
             // Actualizar cliente si es cuenta corriente
             if (metodoPago === 'cuenta_corriente') {
@@ -4502,44 +4510,68 @@
         
         async function guardarProductosCacheLocal() {
             const productosArray = Array.from(productosCache.values());
-            localStorage.setItem('productos_cache', JSON.stringify(productosArray));
+            const transaction = offlineDB.transaction(['productos_cache'], 'readwrite');
+            const store = transaction.objectStore('productos_cache');
+            
+            // Limpiar store
+            store.clear();
+            
+            // Agregar productos
+            productosArray.forEach(producto => {
+                store.add(producto);
+            });
         }
         
         async function cargarProductosCacheLocal() {
-            const productosGuardados = localStorage.getItem('productos_cache');
-            if (productosGuardados) {
-                try {
-                    const productosArray = JSON.parse(productosGuardados);
+            return new Promise((resolve, reject) => {
+                const transaction = offlineDB.transaction(['productos_cache'], 'readonly');
+                const store = transaction.objectStore('productos_cache');
+                const request = store.getAll();
+                
+                request.onsuccess = () => {
                     productosCache.clear();
-                    productosArray.forEach(producto => {
+                    request.result.forEach(producto => {
                         productosCache.set(producto.id, producto);
                     });
                     actualizarContadores();
-                } catch (e) {
-                    console.error('Error cargando productos cache:', e);
-                }
-            }
+                    resolve();
+                };
+                
+                request.onerror = () => reject(request.error);
+            });
         }
         
         async function guardarClientesCacheLocal() {
             const clientesArray = Array.from(clientesCache.values());
-            localStorage.setItem('clientes_cache', JSON.stringify(clientesArray));
+            const transaction = offlineDB.transaction(['clientes_cache'], 'readwrite');
+            const store = transaction.objectStore('clientes_cache');
+            
+            // Limpiar store
+            store.clear();
+            
+            // Agregar clientes
+            clientesArray.forEach(cliente => {
+                store.add(cliente);
+            });
         }
         
         async function cargarClientesCacheLocal() {
-            const clientesGuardados = localStorage.getItem('clientes_cache');
-            if (clientesGuardados) {
-                try {
-                    const clientesArray = JSON.parse(clientesGuardados);
+            return new Promise((resolve, reject) => {
+                const transaction = offlineDB.transaction(['clientes_cache'], 'readonly');
+                const store = transaction.objectStore('clientes_cache');
+                const request = store.getAll();
+                
+                request.onsuccess = () => {
                     clientesCache.clear();
-                    clientesArray.forEach(cliente => {
+                    request.result.forEach(cliente => {
                         clientesCache.set(cliente.id, cliente);
                     });
                     actualizarContadores();
-                } catch (e) {
-                    console.error('Error cargando clientes cache:', e);
-                }
-            }
+                    resolve();
+                };
+                
+                request.onerror = () => reject(request.error);
+            });
         }
         
         // ============================================
@@ -4627,28 +4659,672 @@
         }
         
         // ============================================
+        // PWA CONFIGURATION
+        // ============================================
+        
+        function configurarPWA() {
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+                });
+            }
+            
+            // Solicitar instalación
+            let deferredPrompt;
+            
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                
+                // Mostrar botón de instalación
+                const installButton = document.createElement('button');
+                installButton.innerHTML = '📱 Instalar App';
+                installButton.className = 'btn btn-primary';
+                installButton.style.position = 'fixed';
+                installButton.style.bottom = '20px';
+                installButton.style.right = '20px';
+                installButton.style.zIndex = '1000';
+                
+                installButton.addEventListener('click', () => {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('Usuario aceptó la instalación');
+                        }
+                        deferredPrompt = null;
+                    });
+                });
+                
+                document.body.appendChild(installButton);
+                
+                // Ocultar después de 10 segundos
+                setTimeout(() => {
+                    installButton.style.display = 'none';
+                }, 10000);
+            });
+        }
+        
+        // ============================================
         // FUNCIONES DE INICIALIZACIÓN RESTANTES
         // ============================================
         
         // Función para mostrar login
         function mostrarLogin() {
-            // En un sistema real, redirigiría a login.html
-            console.log('Redirigiendo a login...');
-            // window.location.href = 'login.html';
+            window.location.href = 'login.html';
+        }
+        
+        // Función para cargar productos en vista POS
+        function cargarProductosEnVista() {
+            const productosGrid = document.getElementById('productosGrid');
+            productosGrid.innerHTML = '';
+            
+            let productosArray = Array.from(productosCache.values());
+            
+            // Mostrar solo los primeros 50 para performance
+            productosArray.slice(0, 50).forEach(producto => {
+                const productoCard = document.createElement('div');
+                productoCard.className = 'producto-card';
+                productoCard.onclick = () => agregarAlCarrito(producto);
+                
+                const stockClass = producto.stock <= producto.stockMinimo ? 'stock-bajo' : 'stock-normal';
+                
+                productoCard.innerHTML = `
+                    <div class="producto-codigo">${producto.codigo}</div>
+                    <div class="producto-nombre">${producto.nombre}</div>
+                    <div class="producto-precio">$${producto.precioVenta.toFixed(2)}</div>
+                    <div class="producto-stock ${stockClass}">
+                        ${producto.controlStock ? `Stock: ${producto.stock}` : 'Sin control'}
+                    </div>
+                `;
+                
+                productosGrid.appendChild(productoCard);
+            });
+        }
+        
+        function cargarClientesEnSelect() {
+            const selectCliente = document.getElementById('selectCliente');
+            
+            // Limpiar opciones excepto la primera
+            while (selectCliente.options.length > 1) {
+                selectCliente.remove(1);
+            }
+            
+            clientesCache.forEach(cliente => {
+                const option = document.createElement('option');
+                option.value = cliente.id;
+                option.textContent = `${cliente.nombre}${cliente.documento ? ` - ${cliente.documento}` : ''}`;
+                selectCliente.appendChild(option);
+            });
+        }
+        
+        function actualizarCliente() {
+            const clienteId = document.getElementById('selectCliente').value;
+            const clienteInfo = document.getElementById('clienteInfo');
+            
+            if (clienteId) {
+                const cliente = clientesCache.get(clienteId);
+                if (cliente) {
+                    document.getElementById('clienteNombre').textContent = cliente.nombre;
+                    document.getElementById('clienteDocumento').textContent = cliente.documento ? `Doc: ${cliente.documento}` : '';
+                    document.getElementById('clienteSaldo').textContent = `$${(cliente.saldo || 0).toFixed(2)}`;
+                    document.getElementById('clienteLimiteCredito').textContent = cliente.limiteCredito ? `Límite: $${cliente.limiteCredito.toFixed(2)}` : '';
+                    
+                    // Actualizar límite disponible para cuenta corriente
+                    const limiteDisponible = (cliente.limiteCredito || 0) - (cliente.saldo || 0);
+                    document.getElementById('limiteDisponible').value = limiteDisponible.toFixed(2);
+                    
+                    clienteInfo.style.display = 'block';
+                    return;
+                }
+            }
+            
+            clienteInfo.style.display = 'none';
+        }
+        
+        // Búsqueda de productos
+        function buscarProductos() {
+            const query = document.getElementById('buscarProducto').value.toLowerCase();
+            const productosGrid = document.getElementById('productosGrid');
+            productosGrid.innerHTML = '';
+            
+            let productosArray = Array.from(productosCache.values());
+            
+            if (query) {
+                productosArray = productosArray.filter(producto => 
+                    producto.nombre.toLowerCase().includes(query) ||
+                    producto.codigo.toLowerCase().includes(query) ||
+                    producto.categoria.toLowerCase().includes(query)
+                );
+            }
+            
+            // Mostrar resultados limitados para performance
+            productosArray.slice(0, 50).forEach(producto => {
+                const productoCard = document.createElement('div');
+                productoCard.className = 'producto-card';
+                productoCard.onclick = () => agregarAlCarrito(producto);
+                
+                const stockClass = producto.stock <= producto.stockMinimo ? 'stock-bajo' : 'stock-normal';
+                
+                productoCard.innerHTML = `
+                    <div class="producto-codigo">${producto.codigo}</div>
+                    <div class="producto-nombre">${producto.nombre}</div>
+                    <div class="producto-precio">$${producto.precioVenta.toFixed(2)}</div>
+                    <div class="producto-stock ${stockClass}">
+                        ${producto.controlStock ? `Stock: ${producto.stock}` : 'Sin control'}
+                    </div>
+                `;
+                
+                productosGrid.appendChild(productoCard);
+            });
         }
         
         // Inicializar actualización de pago
         actualizarPago();
         
-        // ============================================
-        // NOTA: Este es un sistema completo pero simplificado.
-        // En producción, se necesitaría:
-        // 1. Manejo de errores más robusto
-        // 2. Validación de datos más estricta
-        // 3. Seguridad mejorada
-        // 4. Optimización de rendimiento
-        // 5. Pruebas exhaustivas
-        // ============================================
+        // Función helper para actualizar contador de facturas
+        async function actualizarContadorFacturas(transaction) {
+            if (!sucursalActual) return;
+            
+            const contadorRef = db.collection('contadores_facturas').doc(`sucursal_${sucursalActual.id}`);
+            const contadorDoc = await transaction.get(contadorRef);
+            
+            if (!contadorDoc.exists) {
+                transaction.set(contadorRef, { proximo: 1 });
+            } else {
+                transaction.update(contadorRef, {
+                    proximo: firebase.firestore.FieldValue.increment(1)
+                });
+            }
+        }
+        
+        // Función helper para generar número de pedido
+        async function generarNumeroPedido() {
+            const timestamp = Date.now();
+            return `PED-${sucursalActual.codigo || '001'}-${timestamp}`;
+        }
+        
+        // Función helper para generar número de nota de crédito
+        async function generarNumeroNotaCredito(transaction) {
+            const contadorRef = db.collection('contadores_notas_credito').doc(`sucursal_${sucursalActual.id}`);
+            const contadorDoc = await transaction.get(contadorRef);
+            
+            let proximoNumero = 1;
+            if (contadorDoc.exists) {
+                proximoNumero = (contadorDoc.data().proximo || 0) + 1;
+                transaction.update(contadorRef, { proximo: proximoNumero });
+            } else {
+                transaction.set(contadorRef, { proximo: 1 });
+            }
+            
+            return `NC-${proximoNumero.toString().padStart(8, '0')}`;
+        }
+        
+        // Función helper para cargar configuración del sistema
+        async function cargarConfiguracionSistema() {
+            try {
+                if (!sucursalActual) return;
+                
+                const configDoc = await db.collection('configuracion').doc(sucursalActual.id).get();
+                if (configDoc.exists) {
+                    configuracionSistema = { ...configuracionSistema, ...configDoc.data() };
+                    localStorage.setItem('configuracion_sistema', JSON.stringify(configuracionSistema));
+                }
+            } catch (error) {
+                console.error('Error cargando configuración:', error);
+            }
+        }
+        
+        // Función helper para actualizar info del turno
+        function actualizarInfoTurno(turno) {
+            const infoTurno = document.getElementById('infoTurnoActual');
+            if (!turno) {
+                infoTurno.innerHTML = '<p>No hay turno activo</p>';
+                return;
+            }
+            
+            infoTurno.innerHTML = `
+                <p><strong>Turno:</strong> ${turno.tipo}</p>
+                <p><strong>Apertura:</strong> ${formatFecha(turno.apertura, 'DD/MM/YYYY HH:mm')}</p>
+                <p><strong>Caja:</strong> ${turno.caja}</p>
+                <p><strong>Efectivo Inicial:</strong> $${turno.efectivoInicial.toFixed(2)}</p>
+                <p><strong>Ventas:</strong> ${turno.ventasCount || 0}</p>
+                <p><strong>Total Ventas:</strong> $${(turno.totalVentas || 0).toFixed(2)}</p>
+            `;
+        }
+        
+        // Función helper para cargar resumen del turno
+        async function cargarResumenTurno(turnoId) {
+            try {
+                const ventasSnapshot = await db.collection('ventas')
+                    .where('turnoId', '==', turnoId)
+                    .where('anulada', '==', false)
+                    .get();
+                
+                let resumen = {
+                    total: 0,
+                    cantidad: ventasSnapshot.size,
+                    porMetodoPago: {}
+                };
+                
+                ventasSnapshot.forEach(doc => {
+                    const venta = doc.data();
+                    resumen.total += venta.total;
+                    
+                    if (!resumen.porMetodoPago[venta.metodoPago]) {
+                        resumen.porMetodoPago[venta.metodoPago] = 0;
+                    }
+                    resumen.porMetodoPago[venta.metodoPago] += venta.total;
+                });
+                
+                // Actualizar UI
+                const resumenDia = document.getElementById('resumenDia');
+                const resumenPagos = document.getElementById('resumenPagos');
+                
+                resumenDia.innerHTML = `
+                    <p><strong>Ventas:</strong> ${resumen.cantidad}</p>
+                    <p><strong>Total:</strong> $${resumen.total.toFixed(2)}</p>
+                    <p><strong>Promedio:</strong> $${(resumen.cantidad > 0 ? resumen.total / resumen.cantidad : 0).toFixed(2)}</p>
+                `;
+                
+                let pagosHTML = '';
+                for (const [metodo, total] of Object.entries(resumen.porMetodoPago)) {
+                    pagosHTML += `<p><strong>${metodo}:</strong> $${total.toFixed(2)}</p>`;
+                }
+                resumenPagos.innerHTML = pagosHTML || '<p>No hay ventas registradas</p>';
+                
+            } catch (error) {
+                console.error('Error cargando resumen:', error);
+            }
+        }
+        
+        // Función helper para cargar historial de turnos
+        async function cargarHistorialTurnos() {
+            try {
+                if (!sucursalActual) return;
+                
+                const turnosSnapshot = await db.collection('turnos')
+                    .where('sucursalId', '==', sucursalActual.id)
+                    .orderBy('apertura', 'desc')
+                    .limit(20)
+                    .get();
+                
+                const tablaTurnos = document.getElementById('tablaTurnos');
+                tablaTurnos.innerHTML = '';
+                
+                turnosSnapshot.forEach(doc => {
+                    const turno = doc.data();
+                    const fila = document.createElement('tr');
+                    
+                    fila.innerHTML = `
+                        <td>${formatFecha(turno.fecha, 'DD/MM/YYYY')}</td>
+                        <td>${turno.tipo}</td>
+                        <td>${turno.usuarioNombre}</td>
+                        <td>${formatFecha(turno.apertura, 'HH:mm')}</td>
+                        <td>${turno.cierre ? formatFecha(turno.cierre, 'HH:mm') : '-'}</td>
+                        <td>${turno.ventasCount || 0}</td>
+                        <td>$${(turno.totalVentas || 0).toFixed(2)}</td>
+                        <td>$${(turno.efectivoInicial || 0).toFixed(2)}</td>
+                        <td>$${(turno.efectivoFinal || 0).toFixed(2)}</td>
+                        <td><span class="badge ${turno.estado === 'abierto' ? 'badge-success' : 'badge-info'}">${turno.estado}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline" onclick="verDetalleTurno('${doc.id}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    tablaTurnos.appendChild(fila);
+                });
+                
+            } catch (error) {
+                console.error('Error cargando historial de turnos:', error);
+            }
+        }
+        
+        // Función placeholder para ver detalle de turno
+        function verDetalleTurno(turnoId) {
+            mostrarInfo(`Ver detalle del turno ${turnoId}`);
+        }
+        
+        // Función placeholder para cargar tabla de productos en gestión
+        async function cargarTablaProductosGestion() {
+            const tabla = document.getElementById('tablaProductosGestion');
+            tabla.innerHTML = '';
+            
+            let productosArray = Array.from(productosCache.values());
+            
+            // Aplicar filtros si existen
+            const filtroCategoria = document.getElementById('filtroCategoria')?.value;
+            const filtroStock = document.getElementById('filtroStock')?.value;
+            
+            if (filtroCategoria) {
+                productosArray = productosArray.filter(p => p.categoria === filtroCategoria);
+            }
+            
+            if (filtroStock === 'bajo') {
+                productosArray = productosArray.filter(p => p.controlStock && p.stock <= p.stockMinimo);
+            } else if (filtroStock === 'sin') {
+                productosArray = productosArray.filter(p => p.controlStock && p.stock <= 0);
+            } else if (filtroStock === 'con') {
+                productosArray = productosArray.filter(p => p.controlStock && p.stock > 0);
+            }
+            
+            // Mostrar productos
+            productosArray.forEach(producto => {
+                const fila = document.createElement('tr');
+                
+                const stockClass = producto.stock <= producto.stockMinimo ? 'badge-danger' : 'badge-success';
+                const estadoClass = producto.estado === 'activo' ? 'badge-success' : 'badge-danger';
+                
+                fila.innerHTML = `
+                    <td>${producto.codigo}</td>
+                    <td>${producto.nombre}</td>
+                    <td>${producto.categoria || 'General'}</td>
+                    <td>$${producto.precioCosto?.toFixed(2) || '0.00'}</td>
+                    <td>$${producto.precioVenta?.toFixed(2) || '0.00'}</td>
+                    <td><span class="badge ${stockClass}">${producto.controlStock ? producto.stock : 'Sin control'}</span></td>
+                    <td>${producto.proveedorNombre || '-'}</td>
+                    <td><span class="badge ${estadoClass}">${producto.estado}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="editarProducto('${producto.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="ajustarStock('${producto.id}')">
+                            <i class="fas fa-boxes"></i>
+                        </button>
+                    </td>
+                `;
+                
+                tabla.appendChild(fila);
+            });
+        }
+        
+        // Función placeholder para filtrar productos en gestión
+        function filtrarProductosGestion() {
+            cargarTablaProductosGestion();
+        }
+        
+        // Función placeholder para cargar categorías en select
+        function cargarCategoriasEnSelect() {
+            // Implementar extracción de categorías únicas de productos
+            const categorias = new Set();
+            productosCache.forEach(p => {
+                if (p.categoria) categorias.add(p.categoria);
+            });
+            
+            const selectCategoria = document.getElementById('filtroCategoria');
+            if (selectCategoria) {
+                categorias.forEach(categoria => {
+                    const option = document.createElement('option');
+                    option.value = categoria;
+                    option.textContent = categoria;
+                    selectCategoria.appendChild(option);
+                });
+            }
+        }
+        
+        // Función placeholder para cargar proveedores en select
+        function cargarProveedoresEnSelect() {
+            const selectProveedor = document.getElementById('filtroProveedor');
+            if (selectProveedor) {
+                proveedoresCache.forEach(proveedor => {
+                    const option = document.createElement('option');
+                    option.value = proveedor.id;
+                    option.textContent = proveedor.nombre;
+                    selectProveedor.appendChild(option);
+                });
+            }
+        }
+        
+        // Función placeholder para cargar tabla de clientes
+        async function cargarTablaClientesGestion() {
+            // Implementar similar a cargarTablaProductosGestion
+        }
+        
+        // Función placeholder para cargar tabla de ventas
+        async function cargarTablaVentas() {
+            // Implementar similar a cargarTablaProductosGestion
+        }
+        
+        // Función placeholder para cargar tabla de proveedores
+        async function cargarTablaProveedores() {
+            // Implementar similar a cargarTablaProductosGestion
+        }
+        
+        // Función placeholder para cargar tabla de pedidos
+        async function cargarTablaPedidos() {
+            // Implementar similar a cargarTablaProductosGestion
+        }
+        
+        // Función placeholder para actualizar reportes
+        async function actualizarReportes() {
+            // Implementar generación de gráficos y tablas de reportes
+        }
+        
+        // Función placeholder para cargar configuración UI
+        async function cargarConfiguracionUI() {
+            // Implementar carga de configuración en formularios
+        }
+        
+        // Función placeholder para procesar importación de productos
+        async function procesarImportacionProductos() {
+            const fileInput = document.getElementById('fileImportarProductos');
+            if (!fileInput.files.length) {
+                mostrarError('Seleccione un archivo Excel');
+                return;
+            }
+            
+            await importarProductosDesdeExcel(fileInput.files[0]);
+        }
+        
+        // Función placeholder para exportar productos a Excel
+        async function exportarProductosExcel() {
+            mostrarInfo('Exportando productos a Excel...');
+        }
+        
+        // Función placeholder para exportar clientes a Excel
+        async function exportarClientesExcel() {
+            mostrarInfo('Exportando clientes a Excel...');
+        }
+        
+        // Función placeholder para exportar ventas a Excel
+        async function exportarVentasExcel() {
+            mostrarInfo('Exportando ventas a Excel...');
+        }
+        
+        // Función placeholder para exportar reporte a Excel
+        async function exportarReporteExcel() {
+            mostrarInfo('Exportando reporte a Excel...');
+        }
+        
+        // Función placeholder para filtrar ventas por hoy
+        function filtrarVentasHoy() {
+            mostrarInfo('Filtrando ventas de hoy...');
+        }
+        
+        // Función placeholder para filtrar ventas por mes
+        function filtrarVentasMes() {
+            mostrarInfo('Filtrando ventas del mes...');
+        }
+        
+        // Función placeholder para cambiar tab de proveedores
+        function cambiarTabProveedores(tab) {
+            // Implementar cambio de tabs
+        }
+        
+        // Función placeholder para cambiar tab de configuración
+        function cambiarTabConfiguracion(tab) {
+            // Implementar cambio de tabs
+        }
+        
+        // Función placeholder para test de impresión
+        function testImpresion() {
+            mostrarInfo('Probando impresión...');
+        }
+        
+        // Función placeholder para restaurar backup
+        async function restaurarBackup() {
+            mostrarInfo('Restaurando backup...');
+        }
+        
+        // Función placeholder para guardar nuevo producto
+        async function guardarNuevoProducto() {
+            mostrarInfo('Guardando nuevo producto...');
+        }
+        
+        // Función placeholder para guardar nuevo cliente
+        async function guardarNuevoCliente() {
+            mostrarInfo('Guardando nuevo cliente...');
+        }
+        
+        // Función placeholder para guardar nuevo proveedor
+        async function guardarNuevoProveedor() {
+            mostrarInfo('Guardando nuevo proveedor...');
+        }
+        
+        // Función placeholder para editar producto
+        function editarProducto(productoId) {
+            mostrarInfo(`Editando producto ${productoId}`);
+        }
+        
+        // Función placeholder para ajustar stock
+        function ajustarStock(productoId) {
+            mostrarInfo(`Ajustando stock de producto ${productoId}`);
+        }
+        
+        // Función placeholder para cargar modal productos
+        function cargarModalProductos() {
+            // Implementar carga de productos en modal
+        }
+        
+        // Función placeholder para cargar modal clientes
+        function cargarModalClientes() {
+            // Implementar carga de clientes en modal
+        }
+        
+        // Función placeholder para cargar opciones nuevo producto
+        function cargarOpcionesNuevoProducto() {
+            // Implementar carga de opciones en formulario
+        }
+        
+        // Función placeholder para cargar opciones nuevo cliente
+        function cargarOpcionesNuevoCliente() {
+            // Implementar carga de opciones en formulario
+        }
+        
+        // Función placeholder para cargar opciones nuevo proveedor
+        function cargarOpcionesNuevoProveedor() {
+            // Implementar carga de opciones en formulario
+        }
+        
+        // Función placeholder para cargar productos de proveedor
+        function cargarProductosProveedor() {
+            // Implementar carga de productos por proveedor
+        }
+        
+        // Función placeholder para agregar fila de pedido
+        function agregarFilaPedido() {
+            // Implementar agregar fila a tabla de pedidos
+        }
+        
+        // Función placeholder para sugerir pedido por stock bajo
+        function sugerirPedidoStockBajo() {
+            // Implementar sugerencia de productos con stock bajo
+        }
+        
+        // Función placeholder para calcular precio desde margen
+        function calcularPrecioDesdeMargen() {
+            // Implementar cálculo de precio de venta desde margen
+        }
+        
+        // Función placeholder para cargar deuda de cliente
+        function cargarDeudaCliente() {
+            // Implementar carga de deuda de cliente
+        }
+        
+        // Función placeholder para calcular desglose
+        function calcularDesglose() {
+            // Implementar cálculo de desglose de efectivo
+        }
+        
+        // Función placeholder para calcular diferencia de arqueo
+        function calcularDiferenciaArqueo() {
+            // Implementar cálculo de diferencia en arqueo
+        }
+        
+        // Función placeholder para guardar arqueo de caja
+        async function guardarArqueoCaja() {
+            mostrarInfo('Guardando arqueo de caja...');
+        }
+        
+        // Función placeholder para calcular previsualización de ajuste
+        function calcularPrevisualizacionAjuste() {
+            // Implementar previsualización de ajuste de precios
+        }
+        
+        // Función placeholder para aplicar cambio masivo de precios
+        async function aplicarCambioMasivoPrecios() {
+            mostrarInfo('Aplicando cambio masivo de precios...');
+        }
+        
+        // Función placeholder para actualizar opciones de ajuste
+        function actualizarOpcionesAjuste() {
+            // Implementar actualización de opciones de ajuste
+        }
+        
+        // Función placeholder para actualizar filtro de ajuste
+        function actualizarFiltroAjuste() {
+            // Implementar actualización de filtro de ajuste
+        }
+        
+        // Función placeholder para guardar y enviar pedido por WhatsApp
+        async function guardarYEnviarPedidoWhatsApp() {
+            mostrarInfo('Guardando y enviando pedido por WhatsApp...');
+        }
+        
+        // Función placeholder para actualizar precio de pedido
+        function actualizarPrecioPedido(element) {
+            // Implementar actualización de precio en pedido
+        }
+        
+        // Función placeholder para calcular subtotal de pedido
+        function calcularSubtotalPedido(element) {
+            // Implementar cálculo de subtotal en pedido
+        }
+        
+        // Función placeholder para eliminar fila de pedido
+        function eliminarFilaPedido(button) {
+            // Implementar eliminación de fila de pedido
+        }
+        
+        // Función placeholder para generar reporte mensual
+        async function generarReporteMensual() {
+            mostrarInfo('Generando reporte mensual...');
+        }
+        
+        // Función placeholder para generar reporte anual
+        async function generarReporteAnual() {
+            mostrarInfo('Generando reporte anual...');
+        }
+        
+        // Función placeholder para filtrar clientes
+        function filtrarClientes() {
+            // Implementar filtrado de clientes
+        }
+        
+        // Función placeholder para filtrar proveedores
+        function filtrarProveedores() {
+            // Implementar filtrado de proveedores
+        }
+        
+        // Función placeholder para filtrar ventas
+        function filtrarVentas() {
+            // Implementar filtrado de ventas
+        }
         
         console.log('Sistema POS completamente inicializado');
         
