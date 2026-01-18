@@ -364,7 +364,7 @@
             <div class="step-indicator">
                 <div class="step active" id="step1">
                     1
-                    <div class="step-label">Firebase</div>
+                    <div class="step-label">Verificar</div>
                 </div>
                 <div class="step" id="step2">
                     2
@@ -392,94 +392,67 @@
         
         <!-- Body -->
         <div class="setup-body">
-            <!-- Step 1: Firebase Configuration -->
+            <!-- Step 1: Firebase Verification -->
             <div id="step1Content" class="step-content active">
-                <h3 class="mb-4"><i class="fas fa-fire text-warning"></i> Configuración de Firebase</h3>
-                <p class="text-muted mb-4">Configure la conexión con Firebase para almacenar los datos.</p>
+                <h3 class="mb-4"><i class="fas fa-check-circle text-success"></i> Verificación de Firebase</h3>
+                <p class="text-muted mb-4">Verificando conexión con la base de datos...</p>
                 
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle text-info"></i>
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle text-success"></i>
                     <div>
-                        <strong>¿Cómo obtener los datos de Firebase?</strong><br>
-                        1. Vaya a <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a><br>
-                        2. Cree un proyecto nuevo o seleccione uno existente<br>
-                        3. Agregue una aplicación web<br>
-                        4. Copie los datos de configuración
+                        <strong>Firebase configurado automáticamente</strong><br>
+                        La base de datos ya está preconfigurada y lista para usar.
                     </div>
                 </div>
                 
-                <form id="firebaseConfigForm">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label" for="apiKey"><i class="fas fa-key"></i> API Key</label>
-                                <input type="text" class="form-control" id="apiKey" required 
-                                       placeholder="AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label" for="authDomain"><i class="fas fa-globe"></i> Auth Domain</label>
-                                <input type="text" class="form-control" id="authDomain" required 
-                                       placeholder="ferreteria-pos.firebaseapp.com">
-                            </div>
-                        </div>
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-database"></i> Configuración de Firebase
                     </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label" for="projectId"><i class="fas fa-project-diagram"></i> Project ID</label>
-                                <input type="text" class="form-control" id="projectId" required 
-                                       placeholder="ferreteria-pos">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">API Key</label>
+                                    <input type="text" class="form-control" value="AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Project ID</label>
+                                    <input type="text" class="form-control" value="whatsappau-30dc1" readonly>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label" for="storageBucket"><i class="fas fa-database"></i> Storage Bucket</label>
-                                <input type="text" class="form-control" id="storageBucket" required 
-                                       placeholder="ferreteria-pos.appspot.com">
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle"></i>
+                            <div class="small">
+                                No se requieren cambios. La base de datos está lista para configurar su ferretería.
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label" for="messagingSenderId"><i class="fas fa-comment-alt"></i> Messaging Sender ID</label>
-                                <input type="text" class="form-control" id="messagingSenderId" required 
-                                       placeholder="123456789012">
-                            </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="button" class="btn btn-primary" onclick="testFirebaseConnection()">
+                                <i class="fas fa-plug"></i> Verificar Conexión
+                            </button>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label" for="appId"><i class="fas fa-mobile-alt"></i> App ID</label>
-                                <input type="text" class="form-control" id="appId" required 
-                                       placeholder="1:123456789012:web:abc123def456">
-                            </div>
-                        </div>
+                        
+                        <div id="connectionResult" class="mt-3" style="display: none;"></div>
                     </div>
-                    
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle text-warning"></i>
-                        <div>
-                            <strong>Configuración requerida en Firebase Console:</strong>
-                            <ul class="mb-0 mt-2">
-                                <li>Habilitar Authentication → Método Email/Contraseña</li>
-                                <li>Crear Firestore Database en modo de prueba</li>
-                                <li>Configurar reglas de seguridad (opcional al inicio)</li>
-                            </ul>
-                        </div>
+                </div>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    <div>
+                        <strong>Configuración requerida en Firebase Console:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Habilitar Authentication → Método Email/Contraseña</li>
+                            <li>Firestore Database ya está configurado</li>
+                            <li>Reglas de seguridad configuradas para desarrollo</li>
+                        </ul>
                     </div>
-                    
-                    <div class="text-center mt-4">
-                        <button type="button" class="btn btn-primary" onclick="testFirebaseConnection()">
-                            <i class="fas fa-plug"></i> Probar Conexión
-                        </button>
-                    </div>
-                    
-                    <div id="connectionResult" class="mt-3" style="display: none;"></div>
-                </form>
+                </div>
             </div>
             
             <!-- Step 2: Ferretería Configuration -->
@@ -496,9 +469,10 @@
                             <div class="card-body">
                                 <form id="storeConfigForm">
                                     <div class="form-group">
-                                        <label class="form-label" for="storeName"><i class="fas fa-signature"></i> Nombre de la Ferretería</label>
+                                        <label class="form-label" for="storeName"><i class="fas fa-signature"></i> Nombre de la Ferretería *</label>
                                         <input type="text" class="form-control" id="storeName" required 
                                                placeholder="Ej: Ferretería El Constructor">
+                                        <small class="text-muted">Este nombre aparecerá en los tickets y facturas</small>
                                     </div>
                                     
                                     <div class="row">
@@ -518,40 +492,28 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label class="form-label" for="storeCUIT"><i class="fas fa-id-card"></i> CUIT</label>
-                                                <input type="text" class="form-control" id="storeCUIT" 
-                                                       placeholder="30-12345678-9">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label class="form-label" for="storeIVA"><i class="fas fa-percentage"></i> IVA por defecto</label>
-                                                <select class="form-select" id="storeIVA">
-                                                    <option value="21">21%</option>
-                                                    <option value="10.5">10.5%</option>
-                                                    <option value="27">27%</option>
-                                                    <option value="0">0% (Exento)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
                                     <div class="form-group">
                                         <label class="form-label" for="storeEmail"><i class="fas fa-envelope"></i> Email de contacto</label>
                                         <input type="email" class="form-control" id="storeEmail" 
                                                placeholder="contacto@ferreteria.com">
                                     </div>
                                     
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <div class="small">
+                                            <strong>Nota:</strong> Los datos fiscales (CUIT, condición IVA) no son obligatorios ya que el sistema no está vinculado a AFIP. 
+                                            Puede agregarlos más tarde si lo desea.
+                                        </div>
+                                    </div>
+                                    
                                     <div class="form-group">
-                                        <label class="form-label"><i class="fas fa-hashtag"></i> Configuración de facturación</label>
+                                        <label class="form-label"><i class="fas fa-hashtag"></i> Configuración del sistema</label>
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
                                                     <label>Punto de venta</label>
                                                     <input type="text" class="form-control" id="puntoVenta" value="0001">
+                                                    <small class="text-muted">Número interno para facturación</small>
                                                 </div>
                                             </div>
                                             <div class="col-md-6">
@@ -561,6 +523,17 @@
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label" for="storeIVA"><i class="fas fa-percentage"></i> IVA por defecto</label>
+                                        <select class="form-select" id="storeIVA">
+                                            <option value="21">21%</option>
+                                            <option value="10.5">10.5%</option>
+                                            <option value="27">27%</option>
+                                            <option value="0" selected>0% (Sin IVA - Consumidor Final)</option>
+                                        </select>
+                                        <small class="text-muted">Puede cambiar este valor por producto</small>
                                     </div>
                                 </form>
                             </div>
@@ -606,6 +579,24 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <i class="fas fa-cash-register"></i> Configuración de Caja
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label class="form-label small">Número de caja</label>
+                                    <input type="text" class="form-control form-control-sm" id="cajaNumero" value="1">
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="autoImprimir" checked>
+                                    <label class="form-check-label small" for="autoImprimir">
+                                        Imprimir tickets automáticamente
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -632,13 +623,13 @@
                             <div class="card-body">
                                 <form id="adminAccountForm">
                                     <div class="form-group">
-                                        <label class="form-label" for="adminName"><i class="fas fa-user"></i> Nombre completo</label>
+                                        <label class="form-label" for="adminName"><i class="fas fa-user"></i> Nombre completo *</label>
                                         <input type="text" class="form-control" id="adminName" required 
                                                placeholder="Ej: Juan Pérez">
                                     </div>
                                     
                                     <div class="form-group">
-                                        <label class="form-label" for="adminEmail"><i class="fas fa-envelope"></i> Email</label>
+                                        <label class="form-label" for="adminEmail"><i class="fas fa-envelope"></i> Email *</label>
                                         <input type="email" class="form-control" id="adminEmail" required 
                                                placeholder="admin@ferreteria.com">
                                         <small class="text-muted">Será el usuario para iniciar sesión</small>
@@ -647,14 +638,14 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label class="form-label" for="adminPassword"><i class="fas fa-lock"></i> Contraseña</label>
+                                                <label class="form-label" for="adminPassword"><i class="fas fa-lock"></i> Contraseña *</label>
                                                 <input type="password" class="form-control" id="adminPassword" required>
-                                                <small class="text-muted">Mínimo 8 caracteres</small>
+                                                <small class="text-muted">Mínimo 6 caracteres</small>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label class="form-label" for="adminConfirmPassword"><i class="fas fa-lock"></i> Confirmar</label>
+                                                <label class="form-label" for="adminConfirmPassword"><i class="fas fa-lock"></i> Confirmar *</label>
                                                 <input type="password" class="form-control" id="adminConfirmPassword" required>
                                                 <div class="mt-1" id="passwordMatch"></div>
                                             </div>
@@ -819,6 +810,10 @@
                                         <td id="summaryBranch">-</td>
                                     </tr>
                                     <tr>
+                                        <th>IVA por defecto:</th>
+                                        <td id="summaryIVA">-</td>
+                                    </tr>
+                                    <tr>
                                         <th>Administrador:</th>
                                         <td id="summaryAdmin">-</td>
                                     </tr>
@@ -857,6 +852,10 @@
                                             <li>configuracion</li>
                                         </ul>
                                     </div>
+                                </div>
+                                <div class="alert alert-success mt-2">
+                                    <i class="fas fa-check-circle"></i>
+                                    <div class="small">Base de datos: <strong>whatsappau-30dc1</strong></div>
                                 </div>
                             </div>
                         </div>
@@ -950,13 +949,23 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // Configuración de Firebase predefinida
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
+            authDomain: "whatsappau-30dc1.firebaseapp.com",
+            projectId: "whatsappau-30dc1",
+            storageBucket: "whatsappau-30dc1.firebasestorage.app",
+            messagingSenderId: "456068013185",
+            appId: "1:456068013185:web:5bdd49337fb622e56f0180"
+        };
+        
         // Variables globales
         let currentStep = 1;
         let firebaseApp = null;
         let db = null;
         let auth = null;
         let config = {
-            firebase: {},
+            firebase: FIREBASE_CONFIG,
             store: {},
             admin: {},
             additionalUsers: [],
@@ -997,6 +1006,9 @@
                 confirmPasswordInput.addEventListener('input', checkPasswordMatch);
             }
             
+            // Probar conexión automáticamente
+            setTimeout(() => testFirebaseConnection(), 1000);
+            
             // Actualizar UI
             updateUI();
         }
@@ -1006,27 +1018,20 @@
             if (savedConfig) {
                 try {
                     const loadedConfig = JSON.parse(savedConfig);
+                    // Mantener la configuración de Firebase predefinida
+                    loadedConfig.firebase = FIREBASE_CONFIG;
                     config = { ...config, ...loadedConfig };
                     
                     // Rellenar formularios con datos guardados
-                    if (config.firebase) {
-                        document.getElementById('apiKey').value = config.firebase.apiKey || '';
-                        document.getElementById('authDomain').value = config.firebase.authDomain || '';
-                        document.getElementById('projectId').value = config.firebase.projectId || '';
-                        document.getElementById('storageBucket').value = config.firebase.storageBucket || '';
-                        document.getElementById('messagingSenderId').value = config.firebase.messagingSenderId || '';
-                        document.getElementById('appId').value = config.firebase.appId || '';
-                    }
-                    
                     if (config.store) {
                         document.getElementById('storeName').value = config.store.name || '';
                         document.getElementById('storeAddress').value = config.store.address || '';
                         document.getElementById('storePhone').value = config.store.phone || '';
-                        document.getElementById('storeCUIT').value = config.store.cuit || '';
-                        document.getElementById('storeIVA').value = config.store.iva || '21';
                         document.getElementById('storeEmail').value = config.store.email || '';
                         document.getElementById('puntoVenta').value = config.store.puntoVenta || '0001';
                         document.getElementById('sucursal').value = config.store.sucursal || 'Principal';
+                        document.getElementById('storeIVA').value = config.store.iva || '0';
+                        document.getElementById('cajaNumero').value = config.store.cajaNumero || '1';
                     }
                     
                     if (config.admin) {
@@ -1038,10 +1043,6 @@
                         renderAdditionalUsers();
                     }
                     
-                    // Probar conexión automáticamente si hay configuración de Firebase
-                    if (config.firebase && config.firebase.apiKey) {
-                        setTimeout(() => testFirebaseConnection(), 500);
-                    }
                 } catch (e) {
                     console.error('Error cargando configuración:', e);
                 }
@@ -1049,25 +1050,19 @@
         }
         
         function saveConfig() {
-            // Guardar configuración actual
-            config.firebase = {
-                apiKey: document.getElementById('apiKey').value,
-                authDomain: document.getElementById('authDomain').value,
-                projectId: document.getElementById('projectId').value,
-                storageBucket: document.getElementById('storageBucket').value,
-                messagingSenderId: document.getElementById('messagingSenderId').value,
-                appId: document.getElementById('appId').value
-            };
+            // Guardar configuración actual (manteniendo Firebase predefinido)
+            config.firebase = FIREBASE_CONFIG;
             
             config.store = {
                 name: document.getElementById('storeName').value,
                 address: document.getElementById('storeAddress').value,
                 phone: document.getElementById('storePhone').value,
-                cuit: document.getElementById('storeCUIT').value,
-                iva: document.getElementById('storeIVA').value,
                 email: document.getElementById('storeEmail').value,
+                iva: document.getElementById('storeIVA').value,
                 puntoVenta: document.getElementById('puntoVenta').value,
-                sucursal: document.getElementById('sucursal').value
+                sucursal: document.getElementById('sucursal').value,
+                cajaNumero: document.getElementById('cajaNumero').value,
+                autoImprimir: document.getElementById('autoImprimir').checked
             };
             
             config.admin = {
@@ -1155,7 +1150,7 @@
         function validateCurrentStep() {
             switch(currentStep) {
                 case 1:
-                    return validateFirebaseConfig();
+                    return true; // Firebase ya está configurado
                 case 2:
                     return validateStoreConfig();
                 case 3:
@@ -1165,18 +1160,6 @@
                 default:
                     return true;
             }
-        }
-        
-        function validateFirebaseConfig() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const projectId = document.getElementById('projectId').value.trim();
-            
-            if (!apiKey || !projectId) {
-                showAlert('Por favor complete los campos requeridos de Firebase', 'danger');
-                return false;
-            }
-            
-            return true;
         }
         
         function validateStoreConfig() {
@@ -1209,8 +1192,8 @@
             }
             
             // Validar contraseña
-            if (adminPassword.length < 8) {
-                showAlert('La contraseña debe tener al menos 8 caracteres', 'danger');
+            if (adminPassword.length < 6) {
+                showAlert('La contraseña debe tener al menos 6 caracteres', 'danger');
                 return false;
             }
             
@@ -1251,23 +1234,8 @@
             const resultDiv = document.getElementById('connectionResult');
             
             try {
-                // Obtener configuración
-                const firebaseConfig = {
-                    apiKey: document.getElementById('apiKey').value,
-                    authDomain: document.getElementById('authDomain').value,
-                    projectId: document.getElementById('projectId').value,
-                    storageBucket: document.getElementById('storageBucket').value,
-                    messagingSenderId: document.getElementById('messagingSenderId').value,
-                    appId: document.getElementById('appId').value
-                };
-                
-                // Verificar que todos los campos estén completos
-                if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-                    throw new Error('Configuración incompleta');
-                }
-                
-                // Inicializar Firebase
-                firebaseApp = firebase.initializeApp(firebaseConfig, 'SetupTest');
+                // Inicializar Firebase con la configuración predefinida
+                firebaseApp = firebase.initializeApp(FIREBASE_CONFIG, 'SetupTest');
                 auth = firebase.auth(firebaseApp);
                 db = firebase.firestore(firebaseApp);
                 
@@ -1278,7 +1246,7 @@
                 resultDiv.innerHTML = `
                     <div class="alert alert-success">
                         <i class="fas fa-check-circle"></i>
-                        <strong>¡Conexión exitosa!</strong> Firebase está configurado correctamente.
+                        <strong>¡Conexión exitosa!</strong> Base de datos conectada correctamente.
                     </div>
                 `;
                 resultDiv.style.display = 'block';
@@ -1289,7 +1257,8 @@
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
                         <i class="fas fa-times-circle"></i>
-                        <strong>Error de conexión:</strong> ${error.message}
+                        <strong>Error de conexión:</strong> ${error.message}<br>
+                        <small>Asegúrese de haber habilitado Firestore Database y Authentication en Firebase Console.</small>
                     </div>
                 `;
                 resultDiv.style.display = 'block';
@@ -1438,6 +1407,9 @@
             document.getElementById('summaryBranch').textContent = 
                 config.store && config.store.sucursal ? config.store.sucursal : 'Principal';
             
+            document.getElementById('summaryIVA').textContent = 
+                config.store && config.store.iva ? `${config.store.iva}%` : '0%';
+            
             document.getElementById('summaryAdmin').textContent = 
                 config.admin && config.admin.name ? config.admin.name : 'No definido';
             
@@ -1461,7 +1433,7 @@
             try {
                 // 1. Actualizar progreso
                 progressBar.style.width = '10%';
-                setupMessages.innerHTML = '<div class="alert alert-info"><i class="fas fa-cog"></i> Inicializando Firebase...</div>';
+                setupMessages.innerHTML = '<div class="alert alert-info"><i class="fas fa-cog"></i> Inicializando sistema...</div>';
                 
                 // 2. Crear estructura de base de datos
                 await createDatabaseStructure(progressBar, setupMessages);
@@ -1498,33 +1470,39 @@
             setupMessages.innerHTML += '<div class="alert alert-info"><i class="fas fa-database"></i> Creando estructura de base de datos...</div>';
             
             try {
-                // Configuración de la ferretería
+                // Configuración de la ferretería (sin datos fiscales obligatorios)
                 const storeConfig = {
                     empresa: {
                         nombre: config.store.name,
                         direccion: config.store.address || '',
                         telefono: config.store.phone || '',
-                        cuit: config.store.cuit || '',
                         email: config.store.email || '',
-                        condicionIva: 'responsable_inscripto'
+                        condicionIva: 'consumidor_final' // Por defecto sin AFIP
                     },
                     facturacion: {
                         puntoVenta: config.store.puntoVenta || '0001',
-                        ivaPorcentaje: parseFloat(config.store.iva) || 21,
-                        autoImprimir: true
+                        ivaPorcentaje: parseFloat(config.store.iva) || 0,
+                        autoImprimir: config.store.autoImprimir || true,
+                        tipoFactura: 'ticket' // Ticket en lugar de factura AFIP
+                    },
+                    caja: {
+                        numero: config.store.cajaNumero || '1',
+                        efectivoInicial: 0
                     },
                     sucursales: [config.store.sucursal || 'Principal'],
                     fechaCreacion: new Date(),
-                    tipoNegocio: 'ferreteria'
+                    tipoNegocio: 'ferreteria',
+                    mensajeTicket: '¡Gracias por su compra! - ' + config.store.name
                 };
                 
                 await db.collection('configuracion').doc(config.store.sucursal || 'Principal').set(storeConfig);
                 
-                // Contador de facturas
+                // Contador de facturas (para tickets)
                 await db.collection('contadores_facturas').doc(`sucursal_${config.store.sucursal || 'Principal'}`).set({
                     proximo: 1,
                     sucursalId: config.store.sucursal || 'Principal',
-                    ultimaActualizacion: new Date()
+                    ultimaActualizacion: new Date(),
+                    tipo: 'ticket'
                 });
                 
                 // Crear categorías por defecto para ferretería
@@ -1538,7 +1516,7 @@
                     });
                 }
                 
-                // Crear algunos productos de ejemplo
+                // Crear algunos productos de ejemplo para ferretería
                 setupMessages.innerHTML += '<div class="alert alert-info"><i class="fas fa-boxes"></i> Creando productos de ejemplo...</div>';
                 
                 const sampleProducts = [
@@ -1551,10 +1529,11 @@
                         precioVenta: 4500,
                         stock: 25,
                         stockMinimo: 5,
-                        iva: 21,
+                        iva: parseFloat(config.store.iva) || 0,
                         sucursalId: config.store.sucursal || 'Principal',
                         estado: 'activo',
-                        fechaCreacion: new Date()
+                        fechaCreacion: new Date(),
+                        codigoBarras: '789123456001'
                     },
                     {
                         codigo: 'ELE-001',
@@ -1565,10 +1544,11 @@
                         precioVenta: 1200,
                         stock: 100,
                         stockMinimo: 20,
-                        iva: 21,
+                        iva: parseFloat(config.store.iva) || 0,
                         sucursalId: config.store.sucursal || 'Principal',
                         estado: 'activo',
-                        fechaCreacion: new Date()
+                        fechaCreacion: new Date(),
+                        codigoBarras: '789123456002'
                     },
                     {
                         codigo: 'PLM-001',
@@ -1579,10 +1559,26 @@
                         precioVenta: 8900,
                         stock: 15,
                         stockMinimo: 3,
-                        iva: 21,
+                        iva: parseFloat(config.store.iva) || 0,
                         sucursalId: config.store.sucursal || 'Principal',
                         estado: 'activo',
-                        fechaCreacion: new Date()
+                        fechaCreacion: new Date(),
+                        codigoBarras: '789123456003'
+                    },
+                    {
+                        codigo: 'PNT-001',
+                        nombre: 'Pintura Latex 4L',
+                        descripcion: 'Pintura latex blanco 4 litros',
+                        categoria: 'Pintura',
+                        precioCompra: 5200,
+                        precioVenta: 6500,
+                        stock: 30,
+                        stockMinimo: 10,
+                        iva: parseFloat(config.store.iva) || 0,
+                        sucursalId: config.store.sucursal || 'Principal',
+                        estado: 'activo',
+                        fechaCreacion: new Date(),
+                        codigoBarras: '789123456004'
                     }
                 ];
                 
@@ -1639,7 +1635,7 @@
                 return;
             }
             
-            setupMessages.innerHTML += `<div class="alert alert-info"><i class="fas fa-users"></i> Creando ${config.additionalUsers.length} cuenta(s) adicional(es)...</div>`;
+            setupMessages.innerHTML += `<div class="alert alert-info"><i class="fas fa-users"></i> Creando ${config.additionalUsers.length} cuenta(s) adicional(es)...</div>';
             
             let createdCount = 0;
             
