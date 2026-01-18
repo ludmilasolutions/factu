@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuración Inicial - Ferretería POS</title>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>">
+    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -981,12 +984,26 @@
             ]
         };
         
+        // Verificar si Firebase está disponible
+        function checkFirebaseAvailable() {
+            if (typeof firebase === 'undefined') {
+                console.error('Firebase SDK not loaded');
+                showAlert('Error: Firebase SDK no se cargó correctamente', 'danger');
+                return false;
+            }
+            return true;
+        }
+        
         // Función para probar conexión a Firebase
         async function testFirebaseConnection() {
+            if (!checkFirebaseAvailable()) {
+                return false;
+            }
+            
             const resultDiv = document.getElementById('connectionResult');
             const btn = document.getElementById('testConnectionBtn');
             
-            if (!btn) return;
+            if (!btn) return false;
             
             // Cambiar estado del botón
             btn.disabled = true;
@@ -1007,12 +1024,10 @@
                 await db.collection('test').limit(1).get();
                 
                 // Si llegamos aquí, la conexión es exitosa
-                resultDiv.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <strong>¡Conexión exitosa!</strong> Base de datos conectada correctamente.
-                    </div>
-                `;
+                resultDiv.innerHTML = '<div class="alert alert-success">' +
+                    '<i class="fas fa-check-circle"></i>' +
+                    '<strong>¡Conexión exitosa!</strong> Base de datos conectada correctamente.' +
+                    '</div>';
                 resultDiv.style.display = 'block';
                 
                 // Restaurar botón
@@ -1022,13 +1037,11 @@
                 return true;
             } catch (error) {
                 console.error('Error de conexión a Firebase:', error);
-                resultDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-times-circle"></i>
-                        <strong>Error de conexión:</strong> ${error.message}<br>
-                        <small>Asegúrese de haber habilitado Firestore Database y Authentication en Firebase Console.</small>
-                    </div>
-                `;
+                resultDiv.innerHTML = '<div class="alert alert-danger">' +
+                    '<i class="fas fa-times-circle"></i>' +
+                    '<strong>Error de conexión:</strong> ' + error.message + '<br>' +
+                    '<small>Asegúrese de haber habilitado Firestore Database y Authentication en Firebase Console.</small>' +
+                    '</div>';
                 resultDiv.style.display = 'block';
                 
                 // Restaurar botón
@@ -1187,7 +1200,7 @@
         function updateUI() {
             // Actualizar progreso
             const progress = (currentStep / 5) * 100;
-            document.getElementById('setupProgress').style.width = `${progress}%`;
+            document.getElementById('setupProgress').style.width = progress + '%';
             
             // Actualizar paso actual
             document.getElementById('currentStep').textContent = currentStep;
@@ -1321,52 +1334,44 @@
                     roleClass = 'role-vendedor';
             }
             
-            const userHTML = `
-                <div class="card mb-3" id="user-${userId}">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="mb-0">Nuevo ${roleText}</h6>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeUser(${userId})">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="form-label small">Nombre</label>
-                                    <input type="text" class="form-control form-control-sm" 
-                                           placeholder="Nombre completo"
-                                           onchange="updateUserField(${userId}, 'name', this.value)">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="form-label small">Email</label>
-                                    <input type="email" class="form-control form-control-sm" 
-                                           placeholder="email@ejemplo.com"
-                                           onchange="updateUserField(${userId}, 'email', this.value)">
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label class="form-label small">Contraseña</label>
-                                    <input type="password" class="form-control form-control-sm" 
-                                           placeholder="******"
-                                           onchange="updateUserField(${userId}, 'password', this.value)">
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="form-group">
-                                    <label class="form-label small">Rol</label>
-                                    <div class="user-role-badge ${roleClass}">${roleText}</div>
-                                    <input type="hidden" value="${role}" 
-                                           onchange="updateUserField(${userId}, 'role', this.value)">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            const userHTML = 
+                '<div class="card mb-3" id="user-' + userId + '">' +
+                    '<div class="card-body">' +
+                        '<div class="d-flex justify-content-between align-items-center mb-3">' +
+                            '<h6 class="mb-0">Nuevo ' + roleText + '</h6>' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeUser(' + userId + ')">' +
+                                '<i class="fas fa-times"></i>' +
+                            '</button>' +
+                        '</div>' +
+                        '<div class="row">' +
+                            '<div class="col-md-4">' +
+                                '<div class="form-group">' +
+                                    '<label class="form-label small">Nombre</label>' +
+                                    '<input type="text" class="form-control form-control-sm" placeholder="Nombre completo" onchange="updateUserField(' + userId + ', \'name\', this.value)">' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="col-md-4">' +
+                                '<div class="form-group">' +
+                                    '<label class="form-label small">Email</label>' +
+                                    '<input type="email" class="form-control form-control-sm" placeholder="email@ejemplo.com" onchange="updateUserField(' + userId + ', \'email\', this.value)">' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="col-md-2">' +
+                                '<div class="form-group">' +
+                                    '<label class="form-label small">Contraseña</label>' +
+                                    '<input type="password" class="form-control form-control-sm" placeholder="******" onchange="updateUserField(' + userId + ', \'password\', this.value)">' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="col-md-2">' +
+                                '<div class="form-group">' +
+                                    '<label class="form-label small">Rol</label>' +
+                                    '<div class="user-role-badge ' + roleClass + '">' + roleText + '</div>' +
+                                    '<input type="hidden" value="' + role + '" onchange="updateUserField(' + userId + ', \'role\', this.value)">' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
             
             usersContainer.innerHTML += userHTML;
             
@@ -1393,7 +1398,7 @@
         function removeUser(userId) {
             if (confirm('¿Eliminar este usuario?')) {
                 config.additionalUsers = config.additionalUsers.filter(u => u.id !== userId);
-                const userElement = document.getElementById(`user-${userId}`);
+                const userElement = document.getElementById('user-' + userId);
                 if (userElement) {
                     userElement.remove();
                 }
@@ -1410,7 +1415,7 @@
                 
                 // Establecer valores
                 setTimeout(() => {
-                    const userElement = document.getElementById(`user-${user.id}`);
+                    const userElement = document.getElementById('user-' + user.id);
                     if (userElement) {
                         const inputs = userElement.querySelectorAll('input');
                         inputs[0].value = user.name || '';
@@ -1436,7 +1441,7 @@
                 config.store && config.store.sucursal ? config.store.sucursal : 'Principal';
             
             document.getElementById('summaryIVA').textContent = 
-                config.store && config.store.iva ? `${config.store.iva}%` : '0%';
+                config.store && config.store.iva ? config.store.iva + '%' : '0%';
             
             document.getElementById('summaryAdmin').textContent = 
                 config.admin && config.admin.name ? config.admin.name : 'No definido';
@@ -1448,6 +1453,10 @@
         }
         
         async function completeSetup() {
+            if (!checkFirebaseAvailable()) {
+                return;
+            }
+            
             const btnComplete = document.getElementById('btnComplete');
             const progressDetails = document.getElementById('setupProgressDetails');
             const progressBar = document.getElementById('setupProgressBar');
@@ -1487,7 +1496,7 @@
                 }, 1000);
                 
             } catch (error) {
-                setupMessages.innerHTML += `<div class="alert alert-danger"><i class="fas fa-times-circle"></i> Error: ${error.message}</div>`;
+                setupMessages.innerHTML += '<div class="alert alert-danger"><i class="fas fa-times-circle"></i> Error: ' + error.message + '</div>';
                 btnComplete.disabled = false;
                 btnComplete.innerHTML = '<i class="fas fa-play-circle"></i> Reintentar';
             }
@@ -1526,7 +1535,7 @@
                 await db.collection('configuracion').doc(config.store.sucursal || 'Principal').set(storeConfig);
                 
                 // Contador de facturas (para tickets)
-                await db.collection('contadores_facturas').doc(`sucursal_${config.store.sucursal || 'Principal'}`).set({
+                await db.collection('contadores_facturas').doc('sucursal_' + (config.store.sucursal || 'Principal')).set({
                     proximo: 1,
                     sucursalId: config.store.sucursal || 'Principal',
                     ultimaActualizacion: new Date(),
@@ -1617,7 +1626,7 @@
                 setupMessages.innerHTML += '<div class="alert alert-success"><i class="fas fa-check-circle"></i> Base de datos creada correctamente</div>';
                 
             } catch (error) {
-                throw new Error(`Error creando estructura de BD: ${error.message}`);
+                throw new Error('Error creando estructura de BD: ' + error.message);
             }
         }
         
@@ -1652,7 +1661,7 @@
                 if (error.code === 'auth/email-already-in-use') {
                     setupMessages.innerHTML += '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> El email ya está registrado. Use otra cuenta o inicie sesión.</div>';
                 } else {
-                    throw new Error(`Error creando administrador: ${error.message}`);
+                    throw new Error('Error creando administrador: ' + error.message);
                 }
             }
         }
@@ -1663,7 +1672,7 @@
                 return;
             }
             
-            setupMessages.innerHTML += `<div class="alert alert-info"><i class="fas fa-users"></i> Creando ${config.additionalUsers.length} cuenta(s) adicional(es)...</div>';
+            setupMessages.innerHTML += '<div class="alert alert-info"><i class="fas fa-users"></i> Creando ' + config.additionalUsers.length + ' cuenta(s) adicional(es)...</div>';
             
             let createdCount = 0;
             
@@ -1710,24 +1719,19 @@
                     createdCount++;
                     
                 } catch (error) {
-    console.warn(
-        "No se pudo crear usuario " + user.email + ":",
-        error.message
-    );
-}
+                    console.warn('No se pudo crear usuario ' + user.email + ':', error.message);
+                }
             }
             
-            setupMessages.innerHTML += `<div class="alert alert-success"><i class="fas fa-check-circle"></i> ${createdCount} usuario(s) creado(s) correctamente</div>`;
+            setupMessages.innerHTML += '<div class="alert alert-success"><i class="fas fa-check-circle"></i> ' + createdCount + ' usuario(s) creado(s) correctamente</div>';
         }
         
         function showAlert(message, type) {
             // Crear alerta temporal
             const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
+            alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
+            alertDiv.innerHTML = message + 
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
             
             // Insertar al principio del body del setup
             const setupBody = document.querySelector('.setup-body');
