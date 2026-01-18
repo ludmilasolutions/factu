@@ -3,956 +3,424 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración Inicial - Ferretería POS</title>
-    <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>">
+    <title>Setup - Sistema POS Ferretería</title>
+    <link rel="stylesheet" href="styles.css">
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome -->
+    <!-- Iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔧</text></svg>">
+    
     <style>
-        :root {
-            --primary: #0d6efd;
-            --secondary: #6c757d;
-            --success: #198754;
-            --danger: #dc3545;
-            --warning: #ffc107;
-            --info: #0dcaf0;
-            --dark: #212529;
-            --light: #f8f9fa;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
         .setup-container {
-            max-width: 900px;
-            margin: 30px auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
         
         .setup-header {
-            background: linear-gradient(135deg, var(--primary) 0%, #0a58ca 100%);
+            background: linear-gradient(135deg, var(--primary), #2d3748);
             color: white;
             padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
             text-align: center;
         }
         
-        .logo {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-        }
-        
-        .setup-header h1 {
-            font-weight: 700;
-            margin-bottom: 10px;
-            font-size: 1.8rem;
-        }
-        
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 25px;
-            flex-wrap: wrap;
-        }
-        
-        .step {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .step.active {
+        .setup-card {
             background: white;
-            color: var(--primary);
-            transform: scale(1.1);
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
-        }
-        
-        .step.completed {
-            background: var(--success);
-            color: white;
-        }
-        
-        .step-label {
-            position: absolute;
-            top: 45px;
-            font-size: 0.8rem;
-            font-weight: normal;
-            white-space: nowrap;
-        }
-        
-        .setup-body {
-            padding: 30px;
-        }
-        
-        .step-content {
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .step-content.active {
-            display: block;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-label {
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .form-control, .form-select {
-            padding: 12px 15px;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-        }
-        
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        
-        .btn-primary {
-            background: var(--primary);
-            border: none;
-        }
-        
-        .btn-primary:hover {
-            background: #0b5ed7;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
-        }
-        
-        .btn-success {
-            background: var(--success);
-            border: none;
-        }
-        
-        .btn-success:hover {
-            background: #157347;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(25, 135, 84, 0.3);
-        }
-        
-        .btn-outline-secondary {
-            color: var(--secondary);
-            border: 2px solid var(--secondary);
-        }
-        
-        .btn-outline-secondary:hover {
-            background-color: var(--secondary);
-            color: white;
-        }
-        
-        .setup-footer {
-            padding: 20px 30px;
-            background-color: #f8f9fa;
-            border-top: 1px solid #dee2e6;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .progress {
-            height: 6px;
-            margin: 20px 30px 0 30px;
-        }
-        
-        .alert {
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            border: none;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-        }
-        
-        .alert i {
-            font-size: 1.2rem;
-            margin-top: 2px;
-        }
-        
-        .card {
-            border: none;
             border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid var(--primary);
+        }
+        
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .setup-step {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 36px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .progress-container {
+            margin: 30px 0;
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 20px;
             overflow: hidden;
         }
         
-        .card-header {
-            background-color: rgba(13, 110, 253, 0.1);
-            border-bottom: 1px solid rgba(13, 110, 253, 0.2);
-            padding: 15px 20px;
-            font-weight: 600;
-            color: var(--primary);
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
         }
         
-        .table th {
-            border-top: none;
-            font-weight: 600;
-            color: var(--dark);
-            background-color: #f8f9fa;
-        }
-        
-        .badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-weight: 500;
-        }
-        
-        .connection-status {
-            padding: 10px 15px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 15px;
-            font-weight: 500;
-        }
-        
-        .connection-status.connected {
-            background-color: rgba(25, 135, 84, 0.1);
-            color: var(--success);
-        }
-        
-        .connection-status.disconnected {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
-        }
-        
-        .category-preview {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .category-tag {
-            background: #e9ecef;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            color: var(--dark);
-        }
-        
-        .category-tag i {
-            margin-right: 5px;
-            color: var(--primary);
-        }
-        
-        .product-examples {
+        .product-preview {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 15px;
             margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
         }
         
-        .product-example {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary);
-        }
-        
-        .product-example h6 {
-            margin-bottom: 5px;
-            color: var(--dark);
-        }
-        
-        .product-example p {
-            margin: 0;
+        .product-preview-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            padding: 10px;
             font-size: 0.9rem;
-            color: var(--secondary);
         }
         
-        .user-role-badge {
+        .log-container {
+            background: #1a202c;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid #2d3748;
+        }
+        
+        .btn-setup {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            margin: 10px 5px;
+        }
+        
+        .danger-zone {
+            border-left-color: var(--danger);
+            background: linear-gradient(to right, #fff5f5, white);
+        }
+        
+        .user-avatar-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 15px;
+        }
+        
+        .role-badge {
             display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-left: 8px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 2px;
         }
         
-        .role-admin { background-color: #cfe2ff; color: #084298; }
-        .role-supervisor { background-color: #d1e7dd; color: #0a3622; }
-        .role-cajero { background-color: #fff3cd; color: #664d03; }
-        .role-vendedor { background-color: #f8d7da; color: #842029; }
-        
-        @media (max-width: 768px) {
-            .setup-container {
-                margin: 10px;
-                border-radius: 10px;
-            }
-            
-            .setup-header, .setup-body, .setup-footer {
-                padding: 20px;
-            }
-            
-            .step-indicator {
-                gap: 15px;
-            }
-            
-            .step {
-                width: 35px;
-                height: 35px;
-                font-size: 0.9rem;
-            }
-            
-            .step-label {
-                font-size: 0.7rem;
-                top: 40px;
-            }
-            
-            .setup-header h1 {
-                font-size: 1.5rem;
-            }
-        }
+        .role-admin { background: #805ad5; color: white; }
+        .role-supervisor { background: #3182ce; color: white; }
+        .role-cajero { background: #38a169; color: white; }
+        .role-vendedor { background: #d69e2e; color: white; }
     </style>
 </head>
 <body>
     <div class="setup-container">
         <!-- Header -->
         <div class="setup-header">
-            <div class="logo">
-                <i class="fas fa-tools"></i>
-            </div>
-            <h1>Configuración Sistema POS - Ferretería</h1>
-            <p>Sistema de punto de venta para ferretería - Configuración inicial</p>
-            
-            <div class="step-indicator">
-                <div class="step active" id="step1">
-                    1
-                    <div class="step-label">Verificar</div>
-                </div>
-                <div class="step" id="step2">
-                    2
-                    <div class="step-label">Ferretería</div>
-                </div>
-                <div class="step" id="step3">
-                    3
-                    <div class="step-label">Administrador</div>
-                </div>
-                <div class="step" id="step4">
-                    4
-                    <div class="step-label">Usuarios</div>
-                </div>
-                <div class="step" id="step5">
-                    5
-                    <div class="step-label">Finalizar</div>
+            <h1><i class="fas fa-tools"></i> Configuración Inicial - Ferretería</h1>
+            <p>Sistema POS Multipuesto - Configuración de base de datos</p>
+            <div style="margin-top: 20px; display: flex; justify-content: center; gap: 20px;">
+                <div style="text-align: center;">
+                    <div class="user-avatar-large">F</div>
+                    <strong>Ferretería</strong>
                 </div>
             </div>
         </div>
         
-        <!-- Progress Bar -->
-        <div class="progress mx-4 mt-3">
-            <div class="progress-bar" id="setupProgress" role="progressbar" style="width: 20%;"></div>
-        </div>
-        
-        <!-- Body -->
-        <div class="setup-body">
-            <!-- Step 1: Firebase Verification -->
-            <div id="step1Content" class="step-content active">
-                <h3 class="mb-4"><i class="fas fa-check-circle text-success"></i> Verificación de Firebase</h3>
-                <p class="text-muted mb-4">Verificando conexión con la base de datos...</p>
-                
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle text-success"></i>
-                    <div>
-                        <strong>Firebase configurado automáticamente</strong><br>
-                        La base de datos ya está preconfigurada y lista para usar.
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-database"></i> Configuración de Firebase
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">API Key</label>
-                                    <input type="text" class="form-control" value="AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">Project ID</label>
-                                    <input type="text" class="form-control" value="whatsappau-30dc1" readonly>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-info mt-3">
-                            <i class="fas fa-info-circle"></i>
-                            <div class="small">
-                                No se requieren cambios. La base de datos está lista para configurar su ferretería.
-                            </div>
-                        </div>
-                        
-                        <div class="text-center mt-4">
-                            <button type="button" class="btn btn-primary" id="testConnectionBtn">
-                                <i class="fas fa-plug"></i> Verificar Conexión
-                            </button>
-                        </div>
-                        
-                        <div id="connectionResult" class="mt-3" style="display: none;"></div>
-                    </div>
-                </div>
-                
-                <div class="alert alert-warning mt-3">
-                    <i class="fas fa-exclamation-triangle text-warning"></i>
-                    <div>
-                        <strong>Configuración requerida en Firebase Console:</strong>
-                        <ul class="mb-0 mt-2">
-                            <li>Habilitar Authentication → Método Email/Contraseña</li>
-                            <li>Firestore Database ya está configurado</li>
-                            <li>Reglas de seguridad configuradas para desarrollo</li>
-                        </ul>
-                    </div>
+        <!-- Estado de Firebase -->
+        <div class="setup-card">
+            <h2><i class="fas fa-database"></i> Conexión a Firebase</h2>
+            <div class="form-group">
+                <label>Estado de conexión:</label>
+                <div id="firebaseStatus" class="log-entry" style="color: #f56565;">
+                    <i class="fas fa-circle-notch fa-spin"></i> Conectando...
                 </div>
             </div>
-            
-            <!-- Step 2: Ferretería Configuration -->
-            <div id="step2Content" class="step-content">
-                <h3 class="mb-4"><i class="fas fa-tools text-primary"></i> Configuración de la Ferretería</h3>
-                <p class="text-muted mb-4">Configure los datos principales de su ferretería.</p>
-                
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="card">
-                            <div class="card-header">
-                                <i class="fas fa-store"></i> Información de la Ferretería
-                            </div>
-                            <div class="card-body">
-                                <form id="storeConfigForm">
-                                    <div class="form-group">
-                                        <label class="form-label" for="storeName"><i class="fas fa-signature"></i> Nombre de la Ferretería *</label>
-                                        <input type="text" class="form-control" id="storeName" required 
-                                               placeholder="Ej: Ferretería El Constructor">
-                                        <small class="text-muted">Este nombre aparecerá en los tickets y facturas</small>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label class="form-label" for="storeAddress"><i class="fas fa-map-marker-alt"></i> Dirección</label>
-                                                <input type="text" class="form-control" id="storeAddress" 
-                                                       placeholder="Av. Principal 1234">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label class="form-label" for="storePhone"><i class="fas fa-phone"></i> Teléfono</label>
-                                                <input type="text" class="form-control" id="storePhone" 
-                                                       placeholder="+54 11 4321-5678">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label class="form-label" for="storeEmail"><i class="fas fa-envelope"></i> Email de contacto</label>
-                                        <input type="email" class="form-control" id="storeEmail" 
-                                               placeholder="contacto@ferreteria.com">
-                                    </div>
-                                    
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle"></i>
-                                        <div class="small">
-                                            <strong>Nota:</strong> Los datos fiscales (CUIT, condición IVA) no son obligatorios ya que el sistema no está vinculado a AFIP. 
-                                            Puede agregarlos más tarde si lo desea.
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label class="form-label"><i class="fas fa-hashtag"></i> Configuración del sistema</label>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label>Punto de venta</label>
-                                                    <input type="text" class="form-control" id="puntoVenta" value="0001">
-                                                    <small class="text-muted">Número interno para facturación</small>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label>Sucursal</label>
-                                                    <input type="text" class="form-control" id="sucursal" value="Principal">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label class="form-label" for="storeIVA"><i class="fas fa-percentage"></i> IVA por defecto</label>
-                                        <select class="form-select" id="storeIVA">
-                                            <option value="21">21%</option>
-                                            <option value="10.5">10.5%</option>
-                                            <option value="27">27%</option>
-                                            <option value="0" selected>0% (Sin IVA - Consumidor Final)</option>
-                                        </select>
-                                        <small class="text-muted">Puede cambiar este valor por producto</small>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <i class="fas fa-tags"></i> Categorías por defecto
-                            </div>
-                            <div class="card-body">
-                                <p class="small text-muted">Se crearán estas categorías automáticamente:</p>
-                                <div class="category-preview">
-                                    <span class="category-tag"><i class="fas fa-hammer"></i> Herramientas</span>
-                                    <span class="category-tag"><i class="fas fa-bolt"></i> Electricidad</span>
-                                    <span class="category-tag"><i class="fas fa-faucet"></i> Plomería</span>
-                                    <span class="category-tag"><i class="fas fa-paint-roller"></i> Pintura</span>
-                                    <span class="category-tag"><i class="fas fa-tree"></i> Jardinería</span>
-                                    <span class="category-tag"><i class="fas fa-lock"></i> Cerrajería</span>
-                                    <span class="category-tag"><i class="fas fa-cube"></i> Materiales</span>
-                                    <span class="category-tag"><i class="fas fa-wrench"></i> Repuestos</span>
-                                </div>
-                                
-                                <hr class="my-3">
-                                
-                                <div class="form-group">
-                                    <label class="form-label small">Ejemplos de productos:</label>
-                                    <div class="product-examples">
-                                        <div class="product-example">
-                                            <h6>Martillo</h6>
-                                            <p>Herramientas • $4,500</p>
-                                        </div>
-                                        <div class="product-example">
-                                            <h6>Cable 2.5mm</h6>
-                                            <p>Electricidad • $1,200/m</p>
-                                        </div>
-                                        <div class="product-example">
-                                            <h6>Llave Stillson</h6>
-                                            <p>Plomería • $8,900</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="card mt-3">
-                            <div class="card-header">
-                                <i class="fas fa-cash-register"></i> Configuración de Caja
-                            </div>
-                            <div class="card-body">
-                                <div class="form-group">
-                                    <label class="form-label small">Número de caja</label>
-                                    <input type="text" class="form-control form-control-sm" id="cajaNumero" value="1">
-                                </div>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="autoImprimir" checked>
-                                    <label class="form-check-label small" for="autoImprimir">
-                                        Imprimir tickets automáticamente
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label>Configuración Firebase:</label>
+                <textarea id="firebaseConfig" class="form-control" rows="4" readonly style="font-family: monospace; font-size: 0.9rem;">
+apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
+authDomain: "whatsappau-30dc1.firebaseapp.com",
+projectId: "whatsappau-30dc1",
+storageBucket: "whatsappau-30dc1.firebasestorage.app",
+messagingSenderId: "456068013185",
+appId: "1:456068013185:web:5bdd49337fb622e56f0180"</textarea>
             </div>
-            
-            <!-- Step 3: Admin Account -->
-            <div id="step3Content" class="step-content">
-                <h3 class="mb-4"><i class="fas fa-user-shield text-success"></i> Cuenta de Administrador</h3>
-                <p class="text-muted mb-4">Cree la cuenta principal con acceso total al sistema.</p>
-                
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle text-warning"></i>
-                    <div>
-                        <strong>Importante:</strong> Esta cuenta tendrá acceso completo a todas las funciones del sistema.
-                        Guarde estos datos en un lugar seguro.
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <i class="fas fa-user-cog"></i> Datos del Administrador
-                            </div>
-                            <div class="card-body">
-                                <form id="adminAccountForm">
-                                    <div class="form-group">
-                                        <label class="form-label" for="adminName"><i class="fas fa-user"></i> Nombre completo *</label>
-                                        <input type="text" class="form-control" id="adminName" required 
-                                               placeholder="Ej: Juan Pérez">
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label class="form-label" for="adminEmail"><i class="fas fa-envelope"></i> Email *</label>
-                                        <input type="email" class="form-control" id="adminEmail" required 
-                                               placeholder="admin@ferreteria.com">
-                                        <small class="text-muted">Será el usuario para iniciar sesión</small>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label class="form-label" for="adminPassword"><i class="fas fa-lock"></i> Contraseña *</label>
-                                                <input type="password" class="form-control" id="adminPassword" required>
-                                                <small class="text-muted">Mínimo 6 caracteres</small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label class="form-label" for="adminConfirmPassword"><i class="fas fa-lock"></i> Confirmar *</label>
-                                                <input type="password" class="form-control" id="adminConfirmPassword" required>
-                                                <div class="mt-1" id="passwordMatch"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="form-check mt-3">
-                                        <input class="form-check-input" type="checkbox" id="autoLogin" checked>
-                                        <label class="form-check-label" for="autoLogin">
-                                            Iniciar sesión automáticamente después de la configuración
-                                        </label>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <i class="fas fa-shield-alt"></i> Permisos del Administrador
-                            </div>
-                            <div class="card-body">
-                                <p class="small text-muted">El administrador tendrá acceso a:</p>
-                                <ul class="list-group list-group-flush">
-                                    <li class="list-group-item d-flex align-items-center">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>Gestión completa de productos</span>
-                                    </li>
-                                    <li class="list-group-item d-flex align-items-center">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>Control de inventario y stock</span>
-                                    </li>
-                                    <li class="list-group-item d-flex align-items-center">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>Apertura y cierre de caja</span>
-                                    </li>
-                                    <li class="list-group-item d-flex align-items-center">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>Reportes y estadísticas</span>
-                                    </li>
-                                    <li class="list-group-item d-flex align-items-center">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>Gestión de clientes y proveedores</span>
-                                    </li>
-                                    <li class="list-group-item d-flex align-items-center">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>Configuración del sistema</span>
-                                    </li>
-                                    <li class="list-group-item d-flex align-items-center">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span>Creación y gestión de usuarios</span>
-                                    </li>
-                                </ul>
-                                
-                                <div class="alert alert-info mt-3">
-                                    <i class="fas fa-info-circle"></i>
-                                    <div class="small">
-                                        Podrá crear cuentas adicionales para vendedores, cajeros y supervisores en el siguiente paso.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Step 4: Additional Users -->
-            <div id="step4Content" class="step-content">
-                <h3 class="mb-4"><i class="fas fa-users text-info"></i> Usuarios Adicionales</h3>
-                <p class="text-muted mb-4">Cree cuentas para su personal (opcional).</p>
-                
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle text-info"></i>
-                    <div>
-                        Puede crear cuentas ahora o más tarde desde el panel de administración.
-                        Cada rol tiene diferentes permisos en el sistema.
-                    </div>
-                </div>
-                
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card text-center h-100">
-                            <div class="card-body">
-                                <h5 class="card-title"><i class="fas fa-user-tie text-primary"></i></h5>
-                                <h6 class="card-subtitle mb-2">Supervisor</h6>
-                                <p class="card-text small">Acceso a reportes, productos, clientes y caja.</p>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addUser('supervisor')">
-                                    <i class="fas fa-plus"></i> Agregar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-center h-100">
-                            <div class="card-body">
-                                <h5 class="card-title"><i class="fas fa-cash-register text-warning"></i></h5>
-                                <h6 class="card-subtitle mb-2">Cajero</h6>
-                                <p class="card-text small">Realizar ventas y abrir/cerrar caja.</p>
-                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="addUser('cajero')">
-                                    <i class="fas fa-plus"></i> Agregar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-center h-100">
-                            <div class="card-body">
-                                <h5 class="card-title"><i class="fas fa-user-check text-success"></i></h5>
-                                <h6 class="card-subtitle mb-2">Vendedor</h6>
-                                <p class="card-text small">Realizar ventas y consultar productos.</p>
-                                <button type="button" class="btn btn-sm btn-outline-success" onclick="addUser('vendedor')">
-                                    <i class="fas fa-plus"></i> Agregar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-center h-100">
-                            <div class="card-body">
-                                <h5 class="card-title"><i class="fas fa-boxes text-secondary"></i></h5>
-                                <h6 class="card-subtitle mb-2">Almacén</h6>
-                                <p class="card-text small">Gestionar inventario y stock.</p>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addUser('almacen')">
-                                    <i class="fas fa-plus"></i> Agregar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="usersContainer">
-                    <!-- Los usuarios se agregarán aquí -->
-                </div>
-                
-                <div class="text-center mt-4">
-                    <button type="button" class="btn btn-outline-secondary" onclick="skipAdditionalUsers()">
-                        <i class="fas fa-forward"></i> Saltar este paso
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Step 5: Final Step -->
-            <div id="step5Content" class="step-content">
-                <h3 class="mb-4"><i class="fas fa-check-circle text-success"></i> Resumen y Finalización</h3>
-                <p class="text-muted mb-4">Revise la configuración y complete la instalación.</p>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <i class="fas fa-clipboard-check"></i> Resumen de Configuración
-                            </div>
-                            <div class="card-body">
-                                <table class="table table-sm">
-                                    <tr>
-                                        <th>Ferretería:</th>
-                                        <td id="summaryStore">-</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Sucursal:</th>
-                                        <td id="summaryBranch">-</td>
-                                    </tr>
-                                    <tr>
-                                        <th>IVA por defecto:</th>
-                                        <td id="summaryIVA">-</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Administrador:</th>
-                                        <td id="summaryAdmin">-</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Usuarios adicionales:</th>
-                                        <td id="summaryUsers">0</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Fecha:</th>
-                                        <td id="summaryDate">-</td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <div class="card">
-                            <div class="card-header">
-                                <i class="fas fa-database"></i> Base de Datos
-                            </div>
-                            <div class="card-body">
-                                <p class="small">Se crearán las siguientes colecciones:</p>
-                                <div class="row">
-                                    <div class="col-6">
-                                        <ul class="small">
-                                            <li>productos</li>
-                                            <li>categorias</li>
-                                            <li>clientes</li>
-                                            <li>proveedores</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-6">
-                                        <ul class="small">
-                                            <li>ventas</li>
-                                            <li>turnos</li>
-                                            <li>usuarios</li>
-                                            <li>configuracion</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="alert alert-success mt-2">
-                                    <i class="fas fa-check-circle"></i>
-                                    <div class="small">Base de datos: <strong>whatsappau-30dc1</strong></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <i class="fas fa-rocket"></i> ¡Todo listo!
-                            </div>
-                            <div class="card-body d-flex flex-column">
-                                <div class="text-center mb-4">
-                                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                                    <h4>Configuración completa</h4>
-                                    <p class="text-muted">Haga clic en "Finalizar" para configurar el sistema.</p>
-                                </div>
-                                
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <div class="small">
-                                        <strong>Nota:</strong> El proceso puede tomar unos segundos. No cierre esta ventana hasta que se complete.
-                                    </div>
-                                </div>
-                                
-                                <div id="setupProgressDetails" class="mt-3" style="display: none;">
-                                    <div class="mb-2">
-                                        <small>Progreso de configuración:</small>
-                                        <div class="progress" style="height: 5px;">
-                                            <div class="progress-bar" id="setupProgressBar" style="width: 0%;"></div>
-                                        </div>
-                                    </div>
-                                    <div id="setupMessages"></div>
-                                </div>
-                                
-                                <div class="mt-auto">
-                                    <button class="btn btn-success btn-lg w-100" id="btnComplete" onclick="completeSetup()">
-                                        <i class="fas fa-play-circle"></i> Finalizar Configuración
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="setupComplete" style="display: none;">
-                    <div class="text-center py-5">
-                        <i class="fas fa-check-circle fa-5x text-success mb-4"></i>
-                        <h2>¡Configuración Exitosa!</h2>
-                        <p class="lead">El sistema está listo para usar.</p>
-                        
-                        <div class="row mt-5">
-                            <div class="col-md-6 offset-md-3">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title"><i class="fas fa-key"></i> Datos de acceso</h5>
-                                        <p class="card-text">
-                                            Email: <strong id="finalAdminEmail"></strong><br>
-                                            Contraseña: <strong>La que configuró</strong>
-                                        </p>
-                                        <div class="alert alert-info small">
-                                            <i class="fas fa-info-circle"></i>
-                                            Guarde estos datos en un lugar seguro.
-                                        </div>
-                                        <a href="index.html" class="btn btn-primary w-100">
-                                            <i class="fas fa-sign-in-alt"></i> Ir al Sistema POS
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Footer -->
-        <div class="setup-footer">
-            <button class="btn btn-outline-secondary" id="btnPrev" style="display: none;">
-                <i class="fas fa-arrow-left"></i> Anterior
+            <button id="btnTestConnection" class="btn btn-primary" onclick="testFirebaseConnection()">
+                <i class="fas fa-plug"></i> Probar Conexión
             </button>
-            <div class="step-info">
-                Paso <span id="currentStep">1</span> de 5
+        </div>
+        
+        <!-- Progreso -->
+        <div class="setup-card">
+            <h2><i class="fas fa-tasks"></i> Progreso de Configuración</h2>
+            <div class="progress-container">
+                <div id="setupProgress" class="progress-bar"></div>
             </div>
-            <button class="btn btn-primary" id="btnNext">
-                Siguiente <i class="fas fa-arrow-right"></i>
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <span>0%</span>
+                <span id="progressText">No iniciado</span>
+                <span>100%</span>
+            </div>
+        </div>
+        
+        <!-- Log de actividades -->
+        <div class="setup-card">
+            <h2><i class="fas fa-clipboard-list"></i> Log de Actividades</h2>
+            <div class="log-container" id="setupLog">
+                <div class="log-entry">> Sistema de configuración iniciado</div>
+                <div class="log-entry">> Esperando conexión a Firebase...</div>
+            </div>
+            <button class="btn btn-outline" onclick="clearLog()">
+                <i class="fas fa-broom"></i> Limpiar Log
             </button>
+        </div>
+        
+        <!-- Pasos de configuración -->
+        <div class="setup-grid">
+            <!-- Paso 1: Configuración inicial -->
+            <div class="setup-step">
+                <h3><span class="step-number">1</span> Configuración Inicial</h3>
+                <p>Crea la estructura básica de la base de datos y configuración del sistema.</p>
+                
+                <div class="form-group">
+                    <label>Nombre del Comercio:</label>
+                    <input type="text" id="nombreComercio" class="form-control" value="Ferretería Central" placeholder="Ej: Ferretería Central">
+                </div>
+                
+                <div class="form-group">
+                    <label>Dirección:</label>
+                    <input type="text" id="direccionComercio" class="form-control" value="Av. Principal 1234" placeholder="Dirección del comercio">
+                </div>
+                
+                <div class="form-group">
+                    <label>Teléfono:</label>
+                    <input type="text" id="telefonoComercio" class="form-control" value="11-1234-5678" placeholder="Teléfono de contacto">
+                </div>
+                
+                <button class="btn btn-primary btn-block btn-setup" onclick="crearConfiguracionInicial()">
+                    <i class="fas fa-cogs"></i> Crear Configuración
+                </button>
+            </div>
+            
+            <!-- Paso 2: Usuarios de prueba -->
+            <div class="setup-step">
+                <h3><span class="step-number">2</span> Usuarios de Prueba</h3>
+                <p>Crea usuarios con diferentes roles para testing del sistema.</p>
+                
+                <div class="product-preview">
+                    <div class="product-preview-item">
+                        <strong>admin@ferreteria.com</strong><br>
+                        <span class="role-badge role-admin">Administrador</span><br>
+                        <small>Acceso completo al sistema</small>
+                    </div>
+                    <div class="product-preview-item">
+                        <strong>supervisor@ferreteria.com</strong><br>
+                        <span class="role-badge role-supervisor">Supervisor</span><br>
+                        <small>Gestión de inventario y reportes</small>
+                    </div>
+                    <div class="product-preview-item">
+                        <strong>cajero@ferreteria.com</strong><br>
+                        <span class="role-badge role-cajero">Cajero</span><br>
+                        <small>Ventas y caja</small>
+                    </div>
+                    <div class="product-preview-item">
+                        <strong>vendedor@ferreteria.com</strong><br>
+                        <span class="role-badge role-vendedor">Vendedor</span><br>
+                        <small>Atención al cliente y ventas</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Contraseña para todos los usuarios:</label>
+                    <input type="password" id="userPassword" class="form-control" value="ferreteria123">
+                </div>
+                
+                <button class="btn btn-primary btn-block btn-setup" onclick="crearUsuariosPrueba()">
+                    <i class="fas fa-users"></i> Crear Usuarios
+                </button>
+            </div>
+            
+            <!-- Paso 3: Productos de ferretería -->
+            <div class="setup-step">
+                <h3><span class="step-number">3</span> Productos de Ferretería</h3>
+                <p>Agrega productos de prueba categorizados para una ferretería.</p>
+                
+                <div class="form-group">
+                    <label>Categorías a crear:</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                        <span class="badge badge-primary">Herramientas Manuales</span>
+                        <span class="badge badge-primary">Electricidad</span>
+                        <span class="badge badge-primary">Fontanería</span>
+                        <span class="badge badge-primary">Pinturas</span>
+                        <span class="badge badge-primary">Fijaciones</span>
+                        <span class="badge badge-primary">Jardinería</span>
+                    </div>
+                </div>
+                
+                <div class="product-preview" id="productPreview">
+                    <!-- Los productos se cargarán dinámicamente -->
+                </div>
+                
+                <button class="btn btn-primary btn-block btn-setup" onclick="crearProductosFerreteria()">
+                    <i class="fas fa-hammer"></i> Crear Productos (50+)
+                </button>
+            </div>
+            
+            <!-- Paso 4: Clientes y proveedores -->
+            <div class="setup-step">
+                <h3><span class="step-number">4</span> Clientes y Proveedores</h3>
+                <p>Crea clientes y proveedores de prueba para el sistema.</p>
+                
+                <div class="form-group">
+                    <label>Clientes de prueba:</label>
+                    <div style="margin-top: 10px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            <i class="fas fa-user" style="color: var(--primary); margin-right: 10px;"></i>
+                            <span>Cliente Minorista (Consumidor final)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            <i class="fas fa-building" style="color: var(--secondary); margin-right: 10px;"></i>
+                            <span>Constructora El Progreso S.A.</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            <i class="fas fa-store" style="color: var(--success); margin-right: 10px;"></i>
+                            <span>Distribuidora Mayorista</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Proveedores de prueba:</label>
+                    <div style="margin-top: 10px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            <i class="fas fa-industry" style="color: var(--warning); margin-right: 10px;"></i>
+                            <span>Industrias Metálicas S.A.</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            <i class="fas fa-truck" style="color: var(--danger); margin-right: 10px;"></i>
+                            <span>Distribuidora de Herramientas</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary btn-block btn-setup" onclick="crearClientesProveedores()">
+                    <i class="fas fa-handshake"></i> Crear Clientes/Proveedores
+                </button>
+            </div>
+            
+            <!-- Paso 5: Setup completo -->
+            <div class="setup-step">
+                <h3><span class="step-number">5</span> Setup Completo</h3>
+                <p>Ejecuta todos los pasos anteriores en orden para una configuración completa.</p>
+                
+                <div style="background: #e6fffa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                    <h4 style="color: var(--success); margin-top: 0;">
+                        <i class="fas fa-check-circle"></i> Orden de ejecución:
+                    </h4>
+                    <ol style="margin: 10px 0 0 20px;">
+                        <li>Configuración inicial</li>
+                        <li>Usuarios de prueba</li>
+                        <li>Productos de ferretería</li>
+                        <li>Clientes y proveedores</li>
+                    </ol>
+                </div>
+                
+                <button class="btn btn-success btn-block btn-setup" onclick="setupCompleto()" style="padding: 15px; font-size: 1.2rem;">
+                    <i class="fas fa-rocket"></i> EJECUTAR SETUP COMPLETO
+                </button>
+                
+                <div style="margin-top: 20px; text-align: center;">
+                    <a href="index.html" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Volver al Login
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Zona de peligro -->
+            <div class="setup-step danger-zone">
+                <h3><i class="fas fa-exclamation-triangle"></i> Zona de Peligro</h3>
+                <p style="color: var(--danger);">Advertencia: Estas acciones eliminarán datos existentes.</p>
+                
+                <div class="form-group">
+                    <label>Contraseña de confirmación:</label>
+                    <input type="password" id="confirmPassword" class="form-control" placeholder="Ingrese 'CONFIRMAR' para proceder">
+                </div>
+                
+                <button class="btn btn-danger btn-block btn-setup" onclick="eliminarTodosDatos()">
+                    <i class="fas fa-trash"></i> Eliminar TODOS los datos
+                </button>
+                
+                <button class="btn btn-warning btn-block btn-setup" onclick="resetearProductos()">
+                    <i class="fas fa-redo"></i> Resetear solo productos
+                </button>
+            </div>
+        </div>
+        
+        <!-- Notas finales -->
+        <div class="setup-card" style="margin-top: 30px; background: #f0fff4; border-left-color: var(--success);">
+            <h3><i class="fas fa-info-circle"></i> Notas importantes</h3>
+            <ul>
+                <li>Este setup es solo para desarrollo/pruebas iniciales.</li>
+                <li>Los usuarios creados tienen la contraseña: <strong>ferreteria123</strong></li>
+                <li>Los productos incluyen márgenes de ganancia predefinidos.</li>
+                <li>Se crean categorías organizadas para ferretería.</li>
+                <li>Después del setup, puedes acceder con: admin@ferreteria.com</li>
+                <li>Recomendado: Ejecutar el "Setup Completo" una sola vez.</li>
+            </ul>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
     <script>
-        // Configuración de Firebase predefinida
+        // ============================================
+        // CONFIGURACIÓN FIREBASE (MISMA QUE APP.JS)
+        // ============================================
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
             authDomain: "whatsappau-30dc1.firebaseapp.com",
@@ -961,797 +429,729 @@
             messagingSenderId: "456068013185",
             appId: "1:456068013185:web:5bdd49337fb622e56f0180"
         };
-        
-        // Variables globales
-        let currentStep = 1;
-        let firebaseApp = null;
-        let db = null;
-        let auth = null;
-        let config = {
-            firebase: FIREBASE_CONFIG,
-            store: {},
-            admin: {},
-            additionalUsers: [],
-            categories: [
-                { nombre: 'Herramientas', descripcion: 'Herramientas manuales y eléctricas', estado: 'activa', orden: 1 },
-                { nombre: 'Electricidad', descripcion: 'Material eléctrico y cables', estado: 'activa', orden: 2 },
-                { nombre: 'Plomería', descripcion: 'Tuberías, llaves y accesorios', estado: 'activa', orden: 3 },
-                { nombre: 'Pintura', descripcion: 'Pinturas, brochas y rodillos', estado: 'activa', orden: 4 },
-                { nombre: 'Jardinería', descripcion: 'Herramientas y productos para jardín', estado: 'activa', orden: 5 },
-                { nombre: 'Cerrajería', descripcion: 'Candados, chapas y llaves', estado: 'activa', orden: 6 },
-                { nombre: 'Materiales', descripcion: 'Materiales de construcción', estado: 'activa', orden: 7 },
-                { nombre: 'Repuestos', descripcion: 'Repuestos y accesorios varios', estado: 'activa', orden: 8 }
-            ]
+
+        const ROLES = {
+            ADMIN: 'admin',
+            SUPERVISOR: 'supervisor',
+            CAJERO: 'cajero',
+            VENDEDOR: 'vendedor'
         };
-        
-        // Verificar si Firebase está disponible
-        function checkFirebaseAvailable() {
-            if (typeof firebase === 'undefined') {
-                console.error('Firebase SDK not loaded');
-                showAlert('Error: Firebase SDK no se cargó correctamente', 'danger');
-                return false;
-            }
-            return true;
-        }
-        
-        // Función para probar conexión a Firebase
-        async function testFirebaseConnection() {
-            if (!checkFirebaseAvailable()) {
-                return false;
-            }
-            
-            const resultDiv = document.getElementById('connectionResult');
-            const btn = document.getElementById('testConnectionBtn');
-            
-            if (!btn) return false;
-            
-            // Cambiar estado del botón
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Probando...';
-            
-            try {
-                // Inicializar Firebase con la configuración predefinida
-                if (firebase.apps.length === 0) {
-                    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG, 'SetupTest');
-                } else {
-                    firebaseApp = firebase.app('SetupTest');
-                }
-                
-                auth = firebase.auth(firebaseApp);
-                db = firebase.firestore(firebaseApp);
-                
-                // Probar conexión intentando obtener un documento
-                await db.collection('test').limit(1).get();
-                
-                // Si llegamos aquí, la conexión es exitosa
-                resultDiv.innerHTML = '<div class="alert alert-success">' +
-                    '<i class="fas fa-check-circle"></i>' +
-                    '<strong>¡Conexión exitosa!</strong> Base de datos conectada correctamente.' +
-                    '</div>';
-                resultDiv.style.display = 'block';
-                
-                // Restaurar botón
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-plug"></i> Verificar Conexión';
-                
-                return true;
-            } catch (error) {
-                console.error('Error de conexión a Firebase:', error);
-                resultDiv.innerHTML = '<div class="alert alert-danger">' +
-                    '<i class="fas fa-times-circle"></i>' +
-                    '<strong>Error de conexión:</strong> ' + error.message + '<br>' +
-                    '<small>Asegúrese de haber habilitado Firestore Database y Authentication en Firebase Console.</small>' +
-                    '</div>';
-                resultDiv.style.display = 'block';
-                
-                // Restaurar botón
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-plug"></i> Verificar Conexión';
-                
-                return false;
-            }
-        }
-        
-        // Inicializar cuando el DOM esté listo
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        let app, auth, db;
+        let totalSteps = 5;
+        let completedSteps = 0;
+        let setupLog = [];
+
         document.addEventListener('DOMContentLoaded', function() {
-            initializeSetup();
-        });
-        
-        function initializeSetup() {
-            // Cargar configuración guardada si existe
-            loadSavedConfig();
+            logMessage('Sistema de setup iniciado');
             
-            // Configurar eventos de los botones
-            document.getElementById('btnNext').addEventListener('click', nextStep);
-            document.getElementById('btnPrev').addEventListener('click', prevStep);
-            
-            // Configurar evento para el botón de prueba de conexión
-            const testBtn = document.getElementById('testConnectionBtn');
-            if (testBtn) {
-                testBtn.addEventListener('click', testFirebaseConnection);
-            }
-            
-            // Configurar eventos para validación de contraseña
-            const passwordInput = document.getElementById('adminPassword');
-            const confirmPasswordInput = document.getElementById('adminConfirmPassword');
-            
-            if (passwordInput) {
-                passwordInput.addEventListener('input', checkPasswordMatch);
-            }
-            
-            if (confirmPasswordInput) {
-                confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-            }
-            
-            // Probar conexión automáticamente
-            setTimeout(() => testFirebaseConnection(), 1000);
-            
-            // Actualizar UI
-            updateUI();
-        }
-        
-        function loadSavedConfig() {
-            const savedConfig = localStorage.getItem('ferreteria_setup_config');
-            if (savedConfig) {
-                try {
-                    const loadedConfig = JSON.parse(savedConfig);
-                    // Mantener la configuración de Firebase predefinida
-                    loadedConfig.firebase = FIREBASE_CONFIG;
-                    config = { ...config, ...loadedConfig };
-                    
-                    // Rellenar formularios con datos guardados
-                    if (config.store) {
-                        document.getElementById('storeName').value = config.store.name || '';
-                        document.getElementById('storeAddress').value = config.store.address || '';
-                        document.getElementById('storePhone').value = config.store.phone || '';
-                        document.getElementById('storeEmail').value = config.store.email || '';
-                        document.getElementById('puntoVenta').value = config.store.puntoVenta || '0001';
-                        document.getElementById('sucursal').value = config.store.sucursal || 'Principal';
-                        document.getElementById('storeIVA').value = config.store.iva || '0';
-                        document.getElementById('cajaNumero').value = config.store.cajaNumero || '1';
-                    }
-                    
-                    if (config.admin) {
-                        document.getElementById('adminName').value = config.admin.name || '';
-                        document.getElementById('adminEmail').value = config.admin.email || '';
-                    }
-                    
-                    if (config.additionalUsers) {
-                        renderAdditionalUsers();
-                    }
-                    
-                } catch (e) {
-                    console.error('Error cargando configuración:', e);
-                }
-            }
-        }
-        
-        function saveConfig() {
-            // Guardar configuración actual (manteniendo Firebase predefinido)
-            config.firebase = FIREBASE_CONFIG;
-            
-            config.store = {
-                name: document.getElementById('storeName').value,
-                address: document.getElementById('storeAddress').value,
-                phone: document.getElementById('storePhone').value,
-                email: document.getElementById('storeEmail').value,
-                iva: document.getElementById('storeIVA').value,
-                puntoVenta: document.getElementById('puntoVenta').value,
-                sucursal: document.getElementById('sucursal').value,
-                cajaNumero: document.getElementById('cajaNumero').value,
-                autoImprimir: document.getElementById('autoImprimir').checked
-            };
-            
-            config.admin = {
-                name: document.getElementById('adminName').value,
-                email: document.getElementById('adminEmail').value,
-                password: document.getElementById('adminPassword').value
-            };
-            
-            localStorage.setItem('ferreteria_setup_config', JSON.stringify(config));
-        }
-        
-        function nextStep() {
-            if (!validateCurrentStep()) {
-                return;
-            }
-            
-            saveConfig();
-            
-            // Marcar paso como completado
-            document.getElementById(`step${currentStep}`).classList.add('completed');
-            
-            // Ocultar paso actual
-            document.getElementById(`step${currentStep}Content`).classList.remove('active');
-            document.getElementById(`step${currentStep}`).classList.remove('active');
-            
-            // Incrementar paso
-            currentStep++;
-            
-            // Mostrar paso siguiente
-            document.getElementById(`step${currentStep}Content`).classList.add('active');
-            document.getElementById(`step${currentStep}`).classList.add('active');
-            
-            // Actualizar UI
-            updateUI();
-            
-            // Si estamos en el paso 5, actualizar resumen
-            if (currentStep === 5) {
-                updateSummary();
-            }
-        }
-        
-        function prevStep() {
-            // Ocultar paso actual
-            document.getElementById(`step${currentStep}Content`).classList.remove('active');
-            document.getElementById(`step${currentStep}`).classList.remove('active');
-            
-            // Decrementar paso
-            currentStep--;
-            
-            // Mostrar paso anterior
-            document.getElementById(`step${currentStep}Content`).classList.add('active');
-            document.getElementById(`step${currentStep}`).classList.add('active');
-            
-            // Actualizar UI
-            updateUI();
-        }
-        
-        function updateUI() {
-            // Actualizar progreso
-            const progress = (currentStep / 5) * 100;
-            document.getElementById('setupProgress').style.width = progress + '%';
-            
-            // Actualizar paso actual
-            document.getElementById('currentStep').textContent = currentStep;
-            
-            // Mostrar/ocultar botones
-            const btnPrev = document.getElementById('btnPrev');
-            const btnNext = document.getElementById('btnNext');
-            
-            if (currentStep === 1) {
-                btnPrev.style.display = 'none';
-                btnNext.textContent = 'Siguiente';
-                btnNext.innerHTML = 'Siguiente <i class="fas fa-arrow-right"></i>';
-            } else if (currentStep === 5) {
-                btnPrev.style.display = 'inline-block';
-                btnNext.style.display = 'none';
-            } else {
-                btnPrev.style.display = 'inline-block';
-                btnNext.style.display = 'inline-block';
-                btnNext.textContent = 'Siguiente';
-                btnNext.innerHTML = 'Siguiente <i class="fas fa-arrow-right"></i>';
-            }
-        }
-        
-        function validateCurrentStep() {
-            switch(currentStep) {
-                case 1:
-                    return true; // Firebase ya está configurado
-                case 2:
-                    return validateStoreConfig();
-                case 3:
-                    return validateAdminConfig();
-                case 4:
-                    return validateUsersConfig();
-                default:
-                    return true;
-            }
-        }
-        
-        function validateStoreConfig() {
-            const storeName = document.getElementById('storeName').value.trim();
-            
-            if (!storeName) {
-                showAlert('Por favor ingrese el nombre de la ferretería', 'danger');
-                return false;
-            }
-            
-            return true;
-        }
-        
-        function validateAdminConfig() {
-            const adminName = document.getElementById('adminName').value.trim();
-            const adminEmail = document.getElementById('adminEmail').value.trim();
-            const adminPassword = document.getElementById('adminPassword').value;
-            const adminConfirmPassword = document.getElementById('adminConfirmPassword').value;
-            
-            if (!adminName || !adminEmail || !adminPassword || !adminConfirmPassword) {
-                showAlert('Por favor complete todos los campos del administrador', 'danger');
-                return false;
-            }
-            
-            // Validar email
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(adminEmail)) {
-                showAlert('Por favor ingrese un email válido', 'danger');
-                return false;
-            }
-            
-            // Validar contraseña
-            if (adminPassword.length < 6) {
-                showAlert('La contraseña debe tener al menos 6 caracteres', 'danger');
-                return false;
-            }
-            
-            // Validar que las contraseñas coincidan
-            if (adminPassword !== adminConfirmPassword) {
-                showAlert('Las contraseñas no coinciden', 'danger');
-                return false;
-            }
-            
-            return true;
-        }
-        
-        function validateUsersConfig() {
-            // Todos los usuarios adicionales son opcionales
-            return true;
-        }
-        
-        function checkPasswordMatch() {
-            const password = document.getElementById('adminPassword').value;
-            const confirmPassword = document.getElementById('adminConfirmPassword').value;
-            const matchDiv = document.getElementById('passwordMatch');
-            
-            if (confirmPassword === '') {
-                matchDiv.innerHTML = '';
-                return;
-            }
-            
-            if (password === confirmPassword) {
-                matchDiv.innerHTML = '<span class="text-success small"><i class="fas fa-check-circle"></i> Las contraseñas coinciden</span>';
-                return true;
-            } else {
-                matchDiv.innerHTML = '<span class="text-danger small"><i class="fas fa-times-circle"></i> Las contraseñas no coinciden</span>';
-                return false;
-            }
-        }
-        
-        function addUser(role) {
-            const usersContainer = document.getElementById('usersContainer');
-            
-            // Generar ID único
-            const userId = Date.now();
-            
-            // Determinar texto según rol
-            let roleText = '';
-            let roleClass = '';
-            switch(role) {
-                case 'supervisor':
-                    roleText = 'Supervisor';
-                    roleClass = 'role-supervisor';
-                    break;
-                case 'cajero':
-                    roleText = 'Cajero';
-                    roleClass = 'role-cajero';
-                    break;
-                case 'almacen':
-                    roleText = 'Almacén';
-                    roleClass = 'role-vendedor';
-                    break;
-                default:
-                    roleText = 'Vendedor';
-                    roleClass = 'role-vendedor';
-            }
-            
-            const userHTML = 
-                '<div class="card mb-3" id="user-' + userId + '">' +
-                    '<div class="card-body">' +
-                        '<div class="d-flex justify-content-between align-items-center mb-3">' +
-                            '<h6 class="mb-0">Nuevo ' + roleText + '</h6>' +
-                            '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeUser(' + userId + ')">' +
-                                '<i class="fas fa-times"></i>' +
-                            '</button>' +
-                        '</div>' +
-                        '<div class="row">' +
-                            '<div class="col-md-4">' +
-                                '<div class="form-group">' +
-                                    '<label class="form-label small">Nombre</label>' +
-                                    '<input type="text" class="form-control form-control-sm" placeholder="Nombre completo" onchange="updateUserField(' + userId + ', \'name\', this.value)">' +
-                                '</div>' +
-                            '</div>' +
-                            '<div class="col-md-4">' +
-                                '<div class="form-group">' +
-                                    '<label class="form-label small">Email</label>' +
-                                    '<input type="email" class="form-control form-control-sm" placeholder="email@ejemplo.com" onchange="updateUserField(' + userId + ', \'email\', this.value)">' +
-                                '</div>' +
-                            '</div>' +
-                            '<div class="col-md-2">' +
-                                '<div class="form-group">' +
-                                    '<label class="form-label small">Contraseña</label>' +
-                                    '<input type="password" class="form-control form-control-sm" placeholder="******" onchange="updateUserField(' + userId + ', \'password\', this.value)">' +
-                                '</div>' +
-                            '</div>' +
-                            '<div class="col-md-2">' +
-                                '<div class="form-group">' +
-                                    '<label class="form-label small">Rol</label>' +
-                                    '<div class="user-role-badge ' + roleClass + '">' + roleText + '</div>' +
-                                    '<input type="hidden" value="' + role + '" onchange="updateUserField(' + userId + ', \'role\', this.value)">' +
-                                '</div>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>';
-            
-            usersContainer.innerHTML += userHTML;
-            
-            // Agregar al array de usuarios
-            config.additionalUsers.push({
-                id: userId,
-                name: '',
-                email: '',
-                password: '',
-                role: role
-            });
-            
-            saveConfig();
-        }
-        
-        function updateUserField(userId, field, value) {
-            const userIndex = config.additionalUsers.findIndex(u => u.id === userId);
-            if (userIndex !== -1) {
-                config.additionalUsers[userIndex][field] = value;
-                saveConfig();
-            }
-        }
-        
-        function removeUser(userId) {
-            if (confirm('¿Eliminar este usuario?')) {
-                config.additionalUsers = config.additionalUsers.filter(u => u.id !== userId);
-                const userElement = document.getElementById('user-' + userId);
-                if (userElement) {
-                    userElement.remove();
-                }
-                saveConfig();
-            }
-        }
-        
-        function renderAdditionalUsers() {
-            const usersContainer = document.getElementById('usersContainer');
-            usersContainer.innerHTML = '';
-            
-            config.additionalUsers.forEach(user => {
-                addUser(user.role);
-                
-                // Establecer valores
-                setTimeout(() => {
-                    const userElement = document.getElementById('user-' + user.id);
-                    if (userElement) {
-                        const inputs = userElement.querySelectorAll('input');
-                        inputs[0].value = user.name || '';
-                        inputs[1].value = user.email || '';
-                        inputs[2].value = user.password || '';
-                    }
-                }, 100);
-            });
-        }
-        
-        function skipAdditionalUsers() {
-            config.additionalUsers = [];
-            saveConfig();
-            nextStep();
-        }
-        
-        function updateSummary() {
-            // Actualizar resumen
-            document.getElementById('summaryStore').textContent = 
-                config.store && config.store.name ? config.store.name : 'No definido';
-            
-            document.getElementById('summaryBranch').textContent = 
-                config.store && config.store.sucursal ? config.store.sucursal : 'Principal';
-            
-            document.getElementById('summaryIVA').textContent = 
-                config.store && config.store.iva ? config.store.iva + '%' : '0%';
-            
-            document.getElementById('summaryAdmin').textContent = 
-                config.admin && config.admin.name ? config.admin.name : 'No definido';
-            
-            document.getElementById('summaryUsers').textContent = 
-                config.additionalUsers ? config.additionalUsers.length : '0';
-            
-            document.getElementById('summaryDate').textContent = new Date().toLocaleDateString('es-AR');
-        }
-        
-        async function completeSetup() {
-            if (!checkFirebaseAvailable()) {
-                return;
-            }
-            
-            const btnComplete = document.getElementById('btnComplete');
-            const progressDetails = document.getElementById('setupProgressDetails');
-            const progressBar = document.getElementById('setupProgressBar');
-            const setupMessages = document.getElementById('setupMessages');
-            
-            // Deshabilitar botón y mostrar progreso
-            btnComplete.disabled = true;
-            btnComplete.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Configurando...';
-            progressDetails.style.display = 'block';
-            
+            // Inicializar Firebase
             try {
-                // 1. Actualizar progreso
-                progressBar.style.width = '10%';
-                setupMessages.innerHTML = '<div class="alert alert-info"><i class="fas fa-cog"></i> Inicializando sistema...</div>';
+                app = firebase.initializeApp(FIREBASE_CONFIG);
+                auth = firebase.auth();
+                db = firebase.firestore();
                 
-                // 2. Crear estructura de base de datos
-                await createDatabaseStructure(progressBar, setupMessages);
+                logMessage('Firebase inicializado correctamente', 'success');
+                updateFirebaseStatus('Conectado a Firebase', 'success');
                 
-                // 3. Crear cuenta de administrador
-                await createAdminAccount(progressBar, setupMessages);
-                
-                // 4. Crear cuentas adicionales
-                await createAdditionalAccounts(progressBar, setupMessages);
-                
-                // 5. Finalizar
-                progressBar.style.width = '100%';
-                setupMessages.innerHTML += '<div class="alert alert-success"><i class="fas fa-check-circle"></i> ¡Configuración completada!</div>';
-                
-                // 6. Mostrar pantalla de éxito
-                setTimeout(() => {
-                    document.getElementById('step5Content').style.display = 'none';
-                    document.getElementById('setupComplete').style.display = 'block';
-                    document.getElementById('finalAdminEmail').textContent = config.admin.email;
-                    
-                    // Limpiar configuración temporal
-                    localStorage.removeItem('ferreteria_setup_config');
-                }, 1000);
+                // Mostrar productos de ejemplo
+                mostrarProductosEjemplo();
                 
             } catch (error) {
-                setupMessages.innerHTML += '<div class="alert alert-danger"><i class="fas fa-times-circle"></i> Error: ' + error.message + '</div>';
-                btnComplete.disabled = false;
-                btnComplete.innerHTML = '<i class="fas fa-play-circle"></i> Reintentar';
+                logMessage('Error inicializando Firebase: ' + error.message, 'error');
+                updateFirebaseStatus('Error de conexión', 'error');
+            }
+        });
+
+        // ============================================
+        // FUNCIONES DE LOG Y UI
+        // ============================================
+        function logMessage(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            let icon = '📝';
+            let color = '#68d391';
+            
+            switch(type) {
+                case 'success':
+                    icon = '✅';
+                    color = '#68d391';
+                    break;
+                case 'error':
+                    icon = '❌';
+                    color = '#fc8181';
+                    break;
+                case 'warning':
+                    icon = '⚠️';
+                    color = '#f6ad55';
+                    break;
+                case 'info':
+                    icon = 'ℹ️';
+                    color = '#63b3ed';
+                    break;
+            }
+            
+            const logEntry = {
+                time: timestamp,
+                message: message,
+                type: type
+            };
+            
+            setupLog.push(logEntry);
+            
+            const logContainer = document.getElementById('setupLog');
+            if (logContainer) {
+                const logElement = document.createElement('div');
+                logElement.className = 'log-entry';
+                logElement.innerHTML = `<span style="color: ${color}">${icon} [${timestamp}] ${message}</span>`;
+                logContainer.appendChild(logElement);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function updateProgress(step, message) {
+            completedSteps = step;
+            const progress = (completedSteps / totalSteps) * 100;
+            
+            const progressBar = document.getElementById('setupProgress');
+            const progressText = document.getElementById('progressText');
+            
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+            }
+            
+            if (progressText) {
+                progressText.textContent = message || `${Math.round(progress)}% completado`;
+            }
+            
+            logMessage(`Progreso: ${Math.round(progress)}% - ${message}`, 'info');
+        }
+
+        function updateFirebaseStatus(message, status) {
+            const statusElement = document.getElementById('firebaseStatus');
+            if (!statusElement) return;
+            
+            let icon = '🔵';
+            let color = '#63b3ed';
+            
+            switch(status) {
+                case 'success':
+                    icon = '🟢';
+                    color = '#68d391';
+                    break;
+                case 'error':
+                    icon = '🔴';
+                    color = '#fc8181';
+                    break;
+                case 'warning':
+                    icon = '🟡';
+                    color = '#f6ad55';
+                    break;
+            }
+            
+            statusElement.innerHTML = `<span style="color: ${color}">${icon} ${message}</span>`;
+        }
+
+        function clearLog() {
+            const logContainer = document.getElementById('setupLog');
+            if (logContainer) {
+                logContainer.innerHTML = '';
+                logMessage('Log limpiado');
             }
         }
-        
-        async function createDatabaseStructure(progressBar, setupMessages) {
-            progressBar.style.width = '30%';
-            setupMessages.innerHTML += '<div class="alert alert-info"><i class="fas fa-database"></i> Creando estructura de base de datos...</div>';
+
+        function mostrarProductosEjemplo() {
+            const productosEjemplo = [
+                { codigo: "H001", nombre: "Martillo de Carpintero 500g", precio: 4500, categoria: "Herramientas Manuales" },
+                { codigo: "H002", nombre: "Destornillador Phillips #2", precio: 1200, categoria: "Herramientas Manuales" },
+                { codigo: "E001", nombre: "Cable Eléctrico 2.5mm x 100m", precio: 28500, categoria: "Electricidad" },
+                { codigo: "F001", nombre: "Llave Stillson 14\"", precio: 8900, categoria: "Fontanería" },
+                { codigo: "P001", nombre: "Pintura Latex Blanco 20L", precio: 32500, categoria: "Pinturas" },
+                { codigo: "FJ001", nombre: "Tornillo para Madera 3x50 (100u)", precio: 4500, categoria: "Fijaciones" },
+                { codigo: "J001", nombre: "Manguera de Jardín 1/2\" x 50m", precio: 18500, categoria: "Jardinería" }
+            ];
             
+            const preview = document.getElementById('productPreview');
+            if (!preview) return;
+            
+            preview.innerHTML = '';
+            productosEjemplo.forEach(producto => {
+                const div = document.createElement('div');
+                div.className = 'product-preview-item';
+                div.innerHTML = `
+                    <strong>${producto.codigo}</strong><br>
+                    ${producto.nombre}<br>
+                    <small>Categoría: ${producto.categoria}</small><br>
+                    <strong style="color: var(--primary);">$${producto.precio.toLocaleString()}</strong>
+                `;
+                preview.appendChild(div);
+            });
+        }
+
+        // ============================================
+        // FUNCIONES DE SETUP
+        // ============================================
+        async function testFirebaseConnection() {
             try {
-                // Configuración de la ferretería (sin datos fiscales obligatorios)
-                const storeConfig = {
-                    empresa: {
-                        nombre: config.store.name,
-                        direccion: config.store.address || '',
-                        telefono: config.store.phone || '',
-                        email: config.store.email || '',
-                        condicionIva: 'consumidor_final' // Por defecto sin AFIP
-                    },
-                    facturacion: {
-                        puntoVenta: config.store.puntoVenta || '0001',
-                        ivaPorcentaje: parseFloat(config.store.iva) || 0,
-                        autoImprimir: config.store.autoImprimir || true,
-                        tipoFactura: 'ticket' // Ticket en lugar de factura AFIP
-                    },
-                    caja: {
-                        numero: config.store.cajaNumero || '1',
-                        efectivoInicial: 0
-                    },
-                    sucursales: [config.store.sucursal || 'Principal'],
-                    fechaCreacion: new Date(),
-                    tipoNegocio: 'ferreteria',
-                    mensajeTicket: '¡Gracias por su compra! - ' + config.store.name
-                };
+                logMessage('Probando conexión a Firebase...');
                 
-                await db.collection('configuracion').doc(config.store.sucursal || 'Principal').set(storeConfig);
-                
-                // Contador de facturas (para tickets)
-                await db.collection('contadores_facturas').doc('sucursal_' + (config.store.sucursal || 'Principal')).set({
-                    proximo: 1,
-                    sucursalId: config.store.sucursal || 'Principal',
-                    ultimaActualizacion: new Date(),
-                    tipo: 'ticket'
+                // Intentar una operación simple
+                const testRef = db.collection('test_connection').doc('test');
+                await testRef.set({
+                    test: true,
+                    timestamp: new Date()
                 });
                 
-                // Crear categorías por defecto para ferretería
-                setupMessages.innerHTML += '<div class="alert alert-info"><i class="fas fa-tags"></i> Creando categorías para ferretería...</div>';
+                await testRef.delete();
                 
-                for (const category of config.categories) {
+                logMessage('Conexión a Firebase exitosa', 'success');
+                updateFirebaseStatus('Conexión exitosa', 'success');
+                
+            } catch (error) {
+                logMessage('Error de conexión a Firebase: ' + error.message, 'error');
+                updateFirebaseStatus('Error de conexión', 'error');
+            }
+        }
+
+        async function crearConfiguracionInicial() {
+            try {
+                logMessage('Creando configuración inicial...');
+                
+                const nombre = document.getElementById('nombreComercio').value || 'Ferretería Central';
+                const direccion = document.getElementById('direccionComercio').value || 'Av. Principal 1234';
+                const telefono = document.getElementById('telefonoComercio').value || '11-1234-5678';
+                
+                const configData = {
+                    empresa: {
+                        nombre: nombre,
+                        direccion: direccion,
+                        telefono: telefono,
+                        cuit: '30-12345678-9',
+                        condicionIva: 'responsable_inscripto'
+                    },
+                    facturacion: {
+                        puntoVenta: '0001',
+                        ivaPorcentaje: 21,
+                        autoImprimir: true,
+                        generarTicket: true
+                    },
+                    sucursales: ['principal'],
+                    cajas: ['caja1', 'caja2'],
+                    impresion: {
+                        tipo: 'ticket',
+                        header: nombre,
+                        footer: '¡Gracias por su compra!',
+                        mostrarIVA: true
+                    },
+                    inventario: {
+                        alertaStockMinimo: true,
+                        stockMinimo: 5,
+                        controlStock: true
+                    },
+                    fechaCreacion: new Date(),
+                    ultimaActualizacion: new Date()
+                };
+                
+                await db.collection('configuracion').doc('principal').set(configData);
+                
+                // Crear contador de facturas
+                await db.collection('contadores_facturas').doc('sucursal_principal').set({
+                    sucursalId: 'principal',
+                    proximo: 1,
+                    ultimaActualizacion: new Date()
+                });
+                
+                logMessage('Configuración inicial creada exitosamente', 'success');
+                updateProgress(1, 'Configuración creada');
+                
+            } catch (error) {
+                logMessage('Error creando configuración: ' + error.message, 'error');
+            }
+        }
+
+        async function crearUsuariosPrueba() {
+            try {
+                logMessage('Creando usuarios de prueba...');
+                
+                const password = document.getElementById('userPassword').value || 'ferreteria123';
+                const usuarios = [
+                    {
+                        email: 'admin@ferreteria.com',
+                        nombre: 'Administrador Sistema',
+                        rol: ROLES.ADMIN,
+                        sucursales: ['principal'],
+                        telefono: '11-9876-5432'
+                    },
+                    {
+                        email: 'supervisor@ferreteria.com',
+                        nombre: 'Supervisor General',
+                        rol: ROLES.SUPERVISOR,
+                        sucursales: ['principal'],
+                        telefono: '11-8765-4321'
+                    },
+                    {
+                        email: 'cajero@ferreteria.com',
+                        nombre: 'Cajero Principal',
+                        rol: ROLES.CAJERO,
+                        sucursales: ['principal'],
+                        telefono: '11-7654-3210'
+                    },
+                    {
+                        email: 'vendedor@ferreteria.com',
+                        nombre: 'Vendedor 1',
+                        rol: ROLES.VENDEDOR,
+                        sucursales: ['principal'],
+                        telefono: '11-6543-2109'
+                    }
+                ];
+                
+                for (const userData of usuarios) {
+                    try {
+                        // Crear usuario en Firebase Auth
+                        const userCredential = await auth.createUserWithEmailAndPassword(userData.email, password);
+                        const userId = userCredential.user.uid;
+                        
+                        // Guardar datos en Firestore
+                        await db.collection('usuarios').doc(userId).set({
+                            email: userData.email,
+                            nombre: userData.nombre,
+                            rol: userData.rol,
+                            sucursales: userData.sucursales,
+                            telefono: userData.telefono,
+                            estado: 'activo',
+                            fechaRegistro: new Date(),
+                            ultimoAcceso: null
+                        });
+                        
+                        logMessage(`Usuario creado: ${userData.email} (${userData.rol})`, 'success');
+                        
+                        // Cerrar sesión del usuario creado
+                        await auth.signOut();
+                        
+                    } catch (error) {
+                        if (error.code === 'auth/email-already-in-use') {
+                            logMessage(`Usuario ${userData.email} ya existe`, 'warning');
+                        } else {
+                            logMessage(`Error creando usuario ${userData.email}: ${error.message}`, 'error');
+                        }
+                    }
+                }
+                
+                updateProgress(2, 'Usuarios creados');
+                logMessage('Proceso de creación de usuarios completado', 'success');
+                
+            } catch (error) {
+                logMessage('Error en creación de usuarios: ' + error.message, 'error');
+            }
+        }
+
+        async function crearProductosFerreteria() {
+            try {
+                logMessage('Creando productos de ferretería...');
+                
+                const categorias = [
+                    'Herramientas Manuales',
+                    'Herramientas Eléctricas', 
+                    'Electricidad',
+                    'Fontanería',
+                    'Pinturas',
+                    'Fijaciones',
+                    'Jardinería',
+                    'Materiales de Construcción',
+                    'Cerraduras y Seguridad',
+                    'Iluminación'
+                ];
+                
+                // Crear categorías primero
+                for (const categoria of categorias) {
                     await db.collection('categorias').add({
-                        ...category,
-                        sucursalId: config.store.sucursal || 'Principal',
+                        nombre: categoria,
+                        sucursalId: 'principal',
+                        estado: 'activa',
                         fechaCreacion: new Date()
                     });
                 }
                 
-                // Crear algunos productos de ejemplo para ferretería
-                setupMessages.innerHTML += '<div class="alert alert-info"><i class="fas fa-boxes"></i> Creando productos de ejemplo...</div>';
+                logMessage(`${categorias.length} categorías creadas`, 'success');
                 
-                const sampleProducts = [
-                    {
-                        codigo: 'HRT-001',
-                        nombre: 'Martillo de Carpintero',
-                        descripcion: 'Martillo de acero con mango de madera',
-                        categoria: 'Herramientas',
-                        precioCompra: 3500,
-                        precioVenta: 4500,
-                        stock: 25,
+                // Productos de ferretería (lista extensa)
+                const productos = [
+                    // Herramientas Manuales
+                    { codigo: "HM001", nombre: "Martillo de Carpintero 500g", precioCosto: 2800, precioVenta: 4500, stock: 25, categoria: "Herramientas Manuales", proveedor: "Proveedor A", codigoBarras: "779123456001" },
+                    { codigo: "HM002", nombre: "Martillo de Bola 750g", precioCosto: 3200, precioVenta: 5200, stock: 18, categoria: "Herramientas Manuales", proveedor: "Proveedor A", codigoBarras: "779123456002" },
+                    { codigo: "HM003", nombre: "Destornillador Plano 6mm", precioCosto: 750, precioVenta: 1200, stock: 50, categoria: "Herramientas Manuales", proveedor: "Proveedor B", codigoBarras: "779123456003" },
+                    { codigo: "HM004", nombre: "Destornillador Phillips #2", precioCosto: 800, precioVenta: 1300, stock: 45, categoria: "Herramientas Manuales", proveedor: "Proveedor B", codigoBarras: "779123456004" },
+                    { codigo: "HM005", nombre: "Alicate Universal 8\"", precioCosto: 2200, precioVenta: 3800, stock: 30, categoria: "Herramientas Manuales", proveedor: "Proveedor A", codigoBarras: "779123456005" },
+                    { codigo: "HM006", nombre: "Alicate de Corte 7\"", precioCosto: 2500, precioVenta: 4200, stock: 28, categoria: "Herramientas Manuales", proveedor: "Proveedor A", codigoBarras: "779123456006" },
+                    { codigo: "HM007", nombre: "Llave Francesa 10\"", precioCosto: 3200, precioVenta: 5200, stock: 22, categoria: "Herramientas Manuales", proveedor: "Proveedor C", codigoBarras: "779123456007" },
+                    { codigo: "HM008", nombre: "Juego de Llaves Allen", precioCosto: 1800, precioVenta: 3200, stock: 35, categoria: "Herramientas Manuales", proveedor: "Proveedor B", codigoBarras: "779123456008" },
+                    
+                    // Herramientas Eléctricas
+                    { codigo: "HE001", nombre: "Taladro Percutor 650W", precioCosto: 18500, precioVenta: 28500, stock: 8, categoria: "Herramientas Eléctricas", proveedor: "Proveedor D", codigoBarras: "779123456101" },
+                    { codigo: "HE002", nombre: "Amoladora Angular 4 1/2\"", precioCosto: 12500, precioVenta: 19800, stock: 10, categoria: "Herramientas Eléctricas", proveedor: "Proveedor D", codigoBarras: "779123456102" },
+                    { codigo: "HE003", nombre: "Sierra Caladora 500W", precioCosto: 9800, precioVenta: 16500, stock: 6, categoria: "Herramientas Eléctricas", proveedor: "Proveedor D", codigoBarras: "779123456103" },
+                    
+                    // Electricidad
+                    { codigo: "EL001", nombre: "Cable Eléctrico 2.5mm x 100m", precioCosto: 18500, precioVenta: 28500, stock: 15, categoria: "Electricidad", proveedor: "Proveedor E", codigoBarras: "779123456201" },
+                    { codigo: "EL002", nombre: "Cable Eléctrico 1.5mm x 100m", precioCosto: 12500, precioVenta: 19800, stock: 20, categoria: "Electricidad", proveedor: "Proveedor E", codigoBarras: "779123456202" },
+                    { codigo: "EL003", nombre: "Interruptor Simple Blanco", precioCosto: 450, precioVenta: 850, stock: 100, categoria: "Electricidad", proveedor: "Proveedor F", codigoBarras: "779123456203" },
+                    { codigo: "EL004", nombre: "Tomacorriente Doble 10A", precioCosto: 520, precioVenta: 950, stock: 80, categoria: "Electricidad", proveedor: "Proveedor F", codigoBarras: "779123456204" },
+                    { codigo: "EL005", nombre: "Caja Rectangular PVC", precioCosto: 120, precioVenta: 250, stock: 200, categoria: "Electricidad", proveedor: "Proveedor F", codigoBarras: "779123456205" },
+                    
+                    // Fontanería
+                    { codigo: "FO001", nombre: "Llave Stillson 14\"", precioCosto: 5800, precioVenta: 8900, stock: 12, categoria: "Fontanería", proveedor: "Proveedor G", codigoBarras: "779123456301" },
+                    { codigo: "FO002", nombre: "Caño PVC 1/2\" x 6m", precioCosto: 850, precioVenta: 1500, stock: 50, categoria: "Fontanería", proveedor: "Proveedor G", codigoBarras: "779123456302" },
+                    { codigo: "FO003", nombre: "Codo PVC 90° 1/2\"", precioCosto: 45, precioVenta: 120, stock: 300, categoria: "Fontanería", proveedor: "Proveedor G", codigoBarras: "779123456303" },
+                    { codigo: "FO004", nombre: "Grifería Monocomando Cocina", precioCosto: 4200, precioVenta: 7200, stock: 8, categoria: "Fontanería", proveedor: "Proveedor H", codigoBarras: "779123456304" },
+                    
+                    // Pinturas
+                    { codigo: "PI001", nombre: "Pintura Latex Blanco 20L", precioCosto: 19500, precioVenta: 32500, stock: 10, categoria: "Pinturas", proveedor: "Proveedor I", codigoBarras: "779123456401" },
+                    { codigo: "PI002", nombre: "Pintura Latex Blanco 4L", precioCosto: 5200, precioVenta: 8500, stock: 25, categoria: "Pinturas", proveedor: "Proveedor I", codigoBarras: "779123456402" },
+                    { codigo: "PI003", nombre: "Rodillo de Lana 9\"", precioCosto: 850, precioVenta: 1600, stock: 40, categoria: "Pinturas", proveedor: "Proveedor J", codigoBarras: "779123456403" },
+                    { codigo: "PI004", nombre: "Brocha 2\" Cerdas Naturales", precioCosto: 650, precioVenta: 1200, stock: 60, categoria: "Pinturas", proveedor: "Proveedor J", codigoBarras: "779123456404" },
+                    
+                    // Fijaciones
+                    { codigo: "FJ001", nombre: "Tornillo para Madera 3x50 (100u)", precioCosto: 2800, precioVenta: 4500, stock: 30, categoria: "Fijaciones", proveedor: "Proveedor K", codigoBarras: "779123456501" },
+                    { codigo: "FJ002", nombre: "Tornillo Autorroscante 4x30 (100u)", precioCosto: 3200, precioVenta: 5200, stock: 28, categoria: "Fijaciones", proveedor: "Proveedor K", codigoBarras: "779123456502" },
+                    { codigo: "FJ003", nombre: "Taco Plástico 8x40 (50u)", precioCosto: 950, precioVenta: 1800, stock: 45, categoria: "Fijaciones", proveedor: "Proveedor K", codigoBarras: "779123456503" },
+                    { codigo: "FJ004", nombre: "Clavo de Construcción 3\" (1kg)", precioCosto: 1200, precioVenta: 2200, stock: 40, categoria: "Fijaciones", proveedor: "Proveedor L", codigoBarras: "779123456504" },
+                    
+                    // Jardinería
+                    { codigo: "JA001", nombre: "Manguera de Jardín 1/2\" x 50m", precioCosto: 12500, precioVenta: 18500, stock: 15, categoria: "Jardinería", proveedor: "Proveedor M", codigoBarras: "779123456601" },
+                    { codigo: "JA002", nombre: "Pistola para Manguera 6 Funciones", precioCosto: 2200, precioVenta: 3800, stock: 25, categoria: "Jardinería", proveedor: "Proveedor M", codigoBarras: "779123456602" },
+                    { codigo: "JA003", nombre: "Tijera de Podar 8\"", precioCosto: 3200, precioVenta: 5200, stock: 18, categoria: "Jardinería", proveedor: "Proveedor N", codigoBarras: "779123456603" },
+                    { codigo: "JA004", nombre: "Rastrillo de Jardín 16 Dientes", precioCosto: 2800, precioVenta: 4500, stock: 20, categoria: "Jardinería", proveedor: "Proveedor N", codigoBarras: "779123456604" },
+                    
+                    // Materiales de Construcción
+                    { codigo: "MC001", nombre: "Cemento Portland 50kg", precioCosto: 3200, precioVenta: 5200, stock: 50, categoria: "Materiales de Construcción", proveedor: "Proveedor O", codigoBarras: "779123456701" },
+                    { codigo: "MC002", nombre: "Cal Hidratada 25kg", precioCosto: 1800, precioVenta: 3200, stock: 30, categoria: "Materiales de Construcción", proveedor: "Proveedor O", codigoBarras: "779123456702" },
+                    { codigo: "MC003", nombre: "Arena por m3", precioCosto: 8500, precioVenta: 12500, stock: 10, categoria: "Materiales de Construcción", proveedor: "Proveedor O", codigoBarras: "779123456703" },
+                    
+                    // Cerraduras y Seguridad
+                    { codigo: "CS001", nombre: "Cerradura Doble Paleta Bronce", precioCosto: 4200, precioVenta: 7200, stock: 15, categoria: "Cerraduras y Seguridad", proveedor: "Proveedor P", codigoBarras: "779123456801" },
+                    { codigo: "CS002", nombre: "Candado de Seguridad 40mm", precioCosto: 2200, precioVenta: 3800, stock: 25, categoria: "Cerraduras y Seguridad", proveedor: "Proveedor P", codigoBarras: "779123456802" },
+                    { codigo: "CS003", nombre: "Pomo Interior Níquel", precioCosto: 1800, precioVenta: 3200, stock: 20, categoria: "Cerraduras y Seguridad", proveedor: "Proveedor P", codigoBarras: "779123456803" },
+                    
+                    // Iluminación
+                    { codigo: "IL001", nombre: "LED Empotrable 12W Blanco", precioCosto: 650, precioVenta: 1200, stock: 60, categoria: "Iluminación", proveedor: "Proveedor Q", codigoBarras: "779123456901" },
+                    { codigo: "IL002", nombre: "Tubo LED 18W 120cm", precioCosto: 2200, precioVenta: 3800, stock: 35, categoria: "Iluminación", proveedor: "Proveedor Q", codigoBarras: "779123456902" },
+                    { codigo: "IL003", nombre: "Foco LED E27 9W", precioCosto: 450, precioVenta: 850, stock: 100, categoria: "Iluminación", proveedor: "Proveedor Q", codigoBarras: "779123456903" }
+                ];
+                
+                // Crear productos en lote
+                const batch = db.batch();
+                let contador = 0;
+                
+                for (const producto of productos) {
+                    const productoRef = db.collection('productos').doc();
+                    
+                    const productoData = {
+                        ...producto,
+                        sucursalId: 'principal',
+                        estado: 'activo',
+                        controlStock: true,
                         stockMinimo: 5,
-                        iva: parseFloat(config.store.iva) || 0,
-                        sucursalId: config.store.sucursal || 'Principal',
-                        estado: 'activo',
+                        iva: 21,
                         fechaCreacion: new Date(),
-                        codigoBarras: '789123456001'
+                        fechaActualizacion: new Date(),
+                        vendidosTotal: 0,
+                        ubicacion: 'Estantería ' + Math.floor(Math.random() * 10) + 1
+                    };
+                    
+                    batch.set(productoRef, productoData);
+                    contador++;
+                    
+                    // Firestore tiene límite de 500 operaciones por batch
+                    if (contador % 400 === 0) {
+                        await batch.commit();
+                        logMessage(`${contador} productos creados...`, 'info');
+                    }
+                }
+                
+                // Commit final si queda algo pendiente
+                if (contador % 400 !== 0) {
+                    await batch.commit();
+                }
+                
+                logMessage(`${contador} productos de ferretería creados exitosamente`, 'success');
+                updateProgress(3, `${contador} productos creados`);
+                
+            } catch (error) {
+                logMessage('Error creando productos: ' + error.message, 'error');
+            }
+        }
+
+        async function crearClientesProveedores() {
+            try {
+                logMessage('Creando clientes y proveedores...');
+                
+                // Clientes
+                const clientes = [
+                    {
+                        nombre: "Consumidor Final",
+                        tipo: "consumidor_final",
+                        documento: "99999999",
+                        email: "consumidor@final.com",
+                        telefono: "11-0000-0000",
+                        direccion: "Varios",
+                        saldo: 0,
+                        limiteCredito: 0
                     },
                     {
-                        codigo: 'ELE-001',
-                        nombre: 'Cable Eléctrico 2.5mm',
-                        descripcion: 'Cable de cobre 2.5mm por metro',
-                        categoria: 'Electricidad',
-                        precioCompra: 800,
-                        precioVenta: 1200,
-                        stock: 100,
-                        stockMinimo: 20,
-                        iva: parseFloat(config.store.iva) || 0,
-                        sucursalId: config.store.sucursal || 'Principal',
-                        estado: 'activo',
-                        fechaCreacion: new Date(),
-                        codigoBarras: '789123456002'
+                        nombre: "Constructora El Progreso S.A.",
+                        tipo: "empresa",
+                        documento: "30-12345678-9",
+                        email: "contacto@elprogreso.com",
+                        telefono: "11-4321-5678",
+                        direccion: "Av. Industrial 2345, Pilar",
+                        saldo: 0,
+                        limiteCredito: 500000,
+                        contacto: "Juan Pérez"
                     },
                     {
-                        codigo: 'PLM-001',
-                        nombre: 'Llave Stillson 10"',
-                        descripcion: 'Llave ajustable para plomería',
-                        categoria: 'Plomería',
-                        precioCompra: 7500,
-                        precioVenta: 8900,
-                        stock: 15,
-                        stockMinimo: 3,
-                        iva: parseFloat(config.store.iva) || 0,
-                        sucursalId: config.store.sucursal || 'Principal',
-                        estado: 'activo',
-                        fechaCreacion: new Date(),
-                        codigoBarras: '789123456003'
+                        nombre: "Distribuidora Mayorista Central",
+                        tipo: "empresa",
+                        documento: "30-87654321-0",
+                        email: "ventas@mayoristacentral.com",
+                        telefono: "11-8765-4321",
+                        direccion: "Zona Industrial Norte, Lote 45",
+                        saldo: 0,
+                        limiteCredito: 300000,
+                        contacto: "María González"
                     },
                     {
-                        codigo: 'PNT-001',
-                        nombre: 'Pintura Latex 4L',
-                        descripcion: 'Pintura latex blanco 4 litros',
-                        categoria: 'Pintura',
-                        precioCompra: 5200,
-                        precioVenta: 6500,
-                        stock: 30,
-                        stockMinimo: 10,
-                        iva: parseFloat(config.store.iva) || 0,
-                        sucursalId: config.store.sucursal || 'Principal',
-                        estado: 'activo',
-                        fechaCreacion: new Date(),
-                        codigoBarras: '789123456004'
+                        nombre: "Carlos Rodríguez",
+                        tipo: "particular",
+                        documento: "20-12345678",
+                        email: "carlos.rodriguez@gmail.com",
+                        telefono: "11-1234-9876",
+                        direccion: "Calle Falsa 123, CABA",
+                        saldo: 0,
+                        limiteCredito: 50000
+                    },
+                    {
+                        nombre: "María Lopez",
+                        tipo: "particular",
+                        documento: "27-87654321",
+                        email: "maria.lopez@hotmail.com",
+                        telefono: "11-9876-1234",
+                        direccion: "Av. Siempre Viva 742, Springfield",
+                        saldo: 0,
+                        limiteCredito: 30000
                     }
                 ];
                 
-                for (const product of sampleProducts) {
-                    await db.collection('productos').add(product);
+                for (const cliente of clientes) {
+                    await db.collection('clientes').add({
+                        ...cliente,
+                        sucursalId: 'principal',
+                        estado: 'activo',
+                        fechaRegistro: new Date(),
+                        comprasTotal: 0,
+                        ultimaCompra: null
+                    });
                 }
                 
-                setupMessages.innerHTML += '<div class="alert alert-success"><i class="fas fa-check-circle"></i> Base de datos creada correctamente</div>';
+                logMessage(`${clientes.length} clientes creados`, 'success');
+                
+                // Proveedores
+                const proveedores = [
+                    {
+                        nombre: "Industrias Metálicas S.A.",
+                        documento: "30-11222333-4",
+                        contacto: "Roberto Martínez",
+                        email: "ventas@industriasmetalicas.com",
+                        telefono: "11-2233-4455",
+                        direccion: "Parque Industrial Pilar, Lote 12",
+                        productos: ["Herramientas Manuales", "Herramientas Eléctricas"],
+                        estado: "activo"
+                    },
+                    {
+                        nombre: "Distribuidora de Herramientas Norte",
+                        documento: "30-44555666-7",
+                        contacto: "Laura Fernández",
+                        email: "laura@herramientasnorte.com",
+                        telefono: "11-3344-5566",
+                        direccion: "Ruta 9 Km 45, Escobar",
+                        productos: ["Herramientas Manuales", "Fijaciones", "Electricidad"],
+                        estado: "activo"
+                    },
+                    {
+                        nombre: "Pinturerías del Sur S.R.L.",
+                        documento: "30-77888999-1",
+                        contacto: "Diego Sánchez",
+                        email: "diego@pintureriassur.com",
+                        telefono: "11-4455-6677",
+                        direccion: "Av. San Martín 2345, Quilmes",
+                        productos: ["Pinturas", "Rodillos", "Brochas"],
+                        estado: "activo"
+                    },
+                    {
+                        nombre: "Materiales de Construcción La Estrella",
+                        documento: "30-99888777-6",
+                        contacto: "Ana Torres",
+                        email: "ana@materialesestrella.com",
+                        telefono: "11-5566-7788",
+                        direccion: "Ruta 2 Km 60, La Plata",
+                        productos: ["Materiales de Construcción", "Fontanería"],
+                        estado: "activo"
+                    },
+                    {
+                        nombre: "Iluminación LED Argentina",
+                        documento: "30-66777888-9",
+                        contacto: "Pablo Gómez",
+                        email: "pablo@ledargentina.com",
+                        telefono: "11-6677-8899",
+                        direccion: "Av. Cabildo 3456, CABA",
+                        productos: ["Iluminación", "Electricidad"],
+                        estado: "activo"
+                    }
+                ];
+                
+                for (const proveedor of proveedores) {
+                    await db.collection('proveedores').add({
+                        ...proveedor,
+                        sucursalId: 'principal',
+                        fechaRegistro: new Date()
+                    });
+                }
+                
+                logMessage(`${proveedores.length} proveedores creados`, 'success');
+                updateProgress(4, 'Clientes y proveedores creados');
                 
             } catch (error) {
-                throw new Error('Error creando estructura de BD: ' + error.message);
+                logMessage('Error creando clientes/proveedores: ' + error.message, 'error');
             }
         }
-        
-        async function createAdminAccount(progressBar, setupMessages) {
-            progressBar.style.width = '60%';
-            setupMessages.innerHTML += '<div class="alert alert-info"><i class="fas fa-user-shield"></i> Creando cuenta de administrador...</div>';
-            
+
+        async function setupCompleto() {
             try {
-                // Crear usuario en Firebase Auth
-                const userCredential = await auth.createUserWithEmailAndPassword(
-                    config.admin.email,
-                    config.admin.password
-                );
+                logMessage('=== INICIANDO SETUP COMPLETO ===', 'info');
                 
-                // Guardar datos del usuario en Firestore
-                await db.collection('usuarios').doc(userCredential.user.uid).set({
-                    email: config.admin.email,
-                    nombre: config.admin.name,
-                    rol: 'admin',
-                    sucursales: [config.store.sucursal || 'Principal'],
-                    fechaRegistro: new Date(),
-                    estado: 'activo',
-                    ultimoAcceso: new Date(),
-                    permisos: ['*'],
-                    telefono: '',
-                    direccion: ''
-                });
+                // 1. Configuración inicial
+                await crearConfiguracionInicial();
                 
-                setupMessages.innerHTML += '<div class="alert alert-success"><i class="fas fa-check-circle"></i> Administrador creado correctamente</div>';
+                // 2. Usuarios de prueba
+                await crearUsuariosPrueba();
+                
+                // 3. Productos de ferretería
+                await crearProductosFerreteria();
+                
+                // 4. Clientes y proveedores
+                await crearClientesProveedores();
+                
+                logMessage('=== SETUP COMPLETADO EXITOSAMENTE ===', 'success');
+                updateProgress(5, 'Setup completo');
+                
+                // Mostrar mensaje final
+                setTimeout(() => {
+                    alert('✅ Setup completado exitosamente!\n\nAhora puedes acceder al sistema con:\nEmail: admin@ferreteria.com\nContraseña: ferreteria123\n\nHaz clic en "Volver al Login" para comenzar.');
+                }, 1000);
                 
             } catch (error) {
-                if (error.code === 'auth/email-already-in-use') {
-                    setupMessages.innerHTML += '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> El email ya está registrado. Use otra cuenta o inicie sesión.</div>';
-                } else {
-                    throw new Error('Error creando administrador: ' + error.message);
-                }
+                logMessage('Error en setup completo: ' + error.message, 'error');
             }
         }
-        
-        async function createAdditionalAccounts(progressBar, setupMessages) {
-            if (!config.additionalUsers || config.additionalUsers.length === 0) {
-                progressBar.style.width = '90%';
+
+        // ============================================
+        // FUNCIONES DE LIMPIEZA (ZONA PELIGROSA)
+        // ============================================
+        async function eliminarTodosDatos() {
+            const confirmacion = document.getElementById('confirmPassword').value;
+            
+            if (confirmacion !== 'CONFIRMAR') {
+                alert('Debe escribir "CONFIRMAR" en el campo de contraseña para proceder');
                 return;
             }
             
-            setupMessages.innerHTML += '<div class="alert alert-info"><i class="fas fa-users"></i> Creando ' + config.additionalUsers.length + ' cuenta(s) adicional(es)...</div>';
-            
-            let createdCount = 0;
-            
-            for (const user of config.additionalUsers) {
-                if (!user.email || !user.password || !user.name) {
-                    continue;
-                }
-                
-                try {
-                    const userCredential = await auth.createUserWithEmailAndPassword(
-                        user.email,
-                        user.password
-                    );
-                    
-                    // Determinar permisos según rol
-                    let permisos = [];
-                    switch(user.role) {
-                        case 'supervisor':
-                            permisos = ['ventas', 'productos', 'clientes', 'caja', 'reportes'];
-                            break;
-                        case 'cajero':
-                            permisos = ['ventas', 'caja'];
-                            break;
-                        case 'almacen':
-                            permisos = ['productos', 'proveedores'];
-                            break;
-                        default: // vendedor
-                            permisos = ['ventas', 'productos'];
-                    }
-                    
-                    await db.collection('usuarios').doc(userCredential.user.uid).set({
-                        email: user.email,
-                        nombre: user.name,
-                        rol: user.role,
-                        sucursales: [config.store.sucursal || 'Principal'],
-                        fechaRegistro: new Date(),
-                        estado: 'activo',
-                        ultimoAcceso: new Date(),
-                        permisos: permisos,
-                        telefono: '',
-                        direccion: ''
-                    });
-                    
-                    createdCount++;
-                    
-                } catch (error) {
-                    console.warn('No se pudo crear usuario ' + user.email + ':', error.message);
-                }
+            if (!confirm('⚠️ ¿ESTÁ SEGURO?\n\nEsta acción eliminará TODOS los datos de la base de datos y no se puede deshacer.')) {
+                return;
             }
             
-            setupMessages.innerHTML += '<div class="alert alert-success"><i class="fas fa-check-circle"></i> ' + createdCount + ' usuario(s) creado(s) correctamente</div>';
-        }
-        
-        function showAlert(message, type) {
-            // Crear alerta temporal
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
-            alertDiv.innerHTML = message + 
-                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
-            
-            // Insertar al principio del body del setup
-            const setupBody = document.querySelector('.setup-body');
-            setupBody.insertBefore(alertDiv, setupBody.firstChild);
-            
-            // Auto-eliminar después de 5 segundos
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
+            try {
+                logMessage('Eliminando todos los datos...', 'warning');
+                
+                // Lista de colecciones a limpiar
+                const colecciones = [
+                    'usuarios',
+                    'productos', 
+                    'clientes',
+                    'proveedores',
+                    'categorias',
+                    'ventas',
+                    'turnos',
+                    'configuracion',
+                    'contadores_facturas',
+                    'eventos_sistema'
+                ];
+                
+                for (const coleccion of colecciones) {
+                    try {
+                        const snapshot = await db.collection(coleccion).get();
+                        const batch = db.batch();
+                        
+                        snapshot.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+                        
+                        await batch.commit();
+                        logMessage(`Colección ${coleccion} eliminada`, 'success');
+                        
+                    } catch (error) {
+                        logMessage(`Error eliminando ${coleccion}: ${error.message}`, 'error');
+                    }
                 }
-            }, 5000);
+                
+                // También eliminar usuarios de Auth (esto es más complejo y requiere admin SDK)
+                logMessage('Nota: Los usuarios de Firebase Auth deben eliminarse manualmente desde la consola', 'warning');
+                
+                logMessage('Todos los datos han sido eliminados', 'success');
+                updateProgress(0, 'Datos eliminados');
+                
+            } catch (error) {
+                logMessage('Error eliminando datos: ' + error.message, 'error');
+            }
         }
-        
-        // Exportar funciones globales
-        window.testFirebaseConnection = testFirebaseConnection;
-        window.addUser = addUser;
-        window.removeUser = removeUser;
-        window.updateUserField = updateUserField;
-        window.skipAdditionalUsers = skipAdditionalUsers;
-        window.completeSetup = completeSetup;
+
+        async function resetearProductos() {
+            const confirmacion = document.getElementById('confirmPassword').value;
+            
+            if (confirmacion !== 'CONFIRMAR') {
+                alert('Debe escribir "CONFIRMAR" en el campo de contraseña para proceder');
+                return;
+            }
+            
+            if (!confirm('¿Resetear todos los productos? Esto eliminará todos los productos existentes.')) {
+                return;
+            }
+            
+            try {
+                logMessage('Reseteando productos...', 'warning');
+                
+                // Eliminar productos existentes
+                const snapshot = await db.collection('productos').get();
+                const batch = db.batch();
+                
+                snapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                logMessage('Productos existentes eliminados', 'success');
+                
+                // Crear productos de prueba nuevamente
+                await crearProductosFerreteria();
+                
+                logMessage('Productos reseteados exitosamente', 'success');
+                
+            } catch (error) {
+                logMessage('Error reseteando productos: ' + error.message, 'error');
+            }
+        }
     </script>
 </body>
 </html>
