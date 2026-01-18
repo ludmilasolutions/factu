@@ -24,6 +24,9 @@
     <!-- SheetJS para Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
+    <!-- QuaggaJS para escaneo de códigos de barras -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    
     <style>
         /* ESTILOS PRINCIPALES - Sistema completo */
         :root {
@@ -618,13 +621,13 @@
         
         // Firebase configuration - SE REEMPLAZA CON setup.html
         const firebaseConfig = JSON.parse(localStorage.getItem('firebase_config')) || {
-  apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
-  authDomain: "whatsappau-30dc1.firebaseapp.com",
-  projectId: "whatsappau-30dc1",
-  storageBucket: "whatsappau-30dc1.firebasestorage.app",
-  messagingSenderId: "456068013185",
-  appId: "1:456068013185:web:5bdd49337fb622e56f0180"
-};
+            apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
+            authDomain: "whatsappau-30dc1.firebaseapp.com",
+            projectId: "whatsappau-30dc1",
+            storageBucket: "whatsappau-30dc1.firebasestorage.app",
+            messagingSenderId: "456068013185",
+            appId: "1:456068013185:web:5bdd49337fb622e56f0180"
+        };
         
         // Inicializar Firebase
         const app = firebase.initializeApp(firebaseConfig);
@@ -1267,6 +1270,314 @@
         // FUNCIONES IMPLEMENTADAS
         // ============================================
         
+        // 1. Scanner de Código de Barras
+        let scannerStream = null;
+        let quaggaInicializado = false;
+        
+        async function abrirScanner() {
+            try {
+                const scanner = document.getElementById('barcodeScanner');
+                scanner.style.display = 'block';
+                
+                // Solicitar permisos de cámara
+                scannerStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                
+                const video = document.getElementById('barcodeVideo');
+                video.srcObject = scannerStream;
+                await video.play();
+                
+                // Configurar QuaggaJS para detección de códigos de barras
+                if (!quaggaInicializado) {
+                    Quagga.init({
+                        inputStream: {
+                            name: "Live",
+                            type: "LiveStream",
+                            target: video,
+                            constraints: {
+                                facingMode: "environment"
+                            }
+                        },
+                        decoder: {
+                            readers: [
+                                "code_128_reader",
+                                "ean_reader",
+                                "ean_8_reader",
+                                "code_39_reader",
+                                "code_39_vin_reader",
+                                "codabar_reader",
+                                "upc_reader",
+                                "upc_e_reader",
+                                "i2of5_reader"
+                            ]
+                        }
+                    }, function(err) {
+                        if (err) {
+                            console.error('Error inicializando Quagga:', err);
+                            mostrarError('No se pudo iniciar el escáner. Usando método alternativo.');
+                            iniciarScannerAlternativo();
+                            return;
+                        }
+                        
+                        Quagga.start();
+                        quaggaInicializado = true;
+                    });
+                    
+                    Quagga.onDetected(function(result) {
+                        const codigo = result.codeResult.code;
+                        buscarProductoPorCodigo(codigo);
+                        cerrarScanner();
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error al abrir scanner:', error);
+                mostrarError('No se pudo acceder a la cámara. Verifica los permisos.');
+                // Método alternativo: entrada manual
+                iniciarScannerAlternativo();
+            }
+        }
+        
+        function iniciarScannerAlternativo() {
+            const codigo = prompt('Ingresa el código de barras manualmente:');
+            if (codigo && codigo.trim() !== '') {
+                buscarProductoPorCodigo(codigo.trim());
+            }
+        }
+        
+        function buscarProductoPorCodigo(codigo) {
+            // Buscar en el cache de productos
+            for (let producto of productosCache.values()) {
+                if (producto.codigo === codigo) {
+                    agregarAlCarrito(producto);
+                    mostrarExito(`Producto agregado: ${producto.nombre}`);
+                    return;
+                }
+            }
+            
+            // Buscar por coincidencia parcial
+            const productosEncontrados = Array.from(productosCache.values()).filter(
+                p => p.codigo.includes(codigo) || codigo.includes(p.codigo)
+            );
+            
+            if (productosEncontrados.length === 1) {
+                agregarAlCarrito(productosEncontrados[0]);
+                mostrarExito(`Producto agregado: ${productosEncontrados[0].nombre}`);
+            } else if (productosEncontrados.length > 1) {
+                mostrarError(`Múltiples productos encontrados. Usa la búsqueda.`);
+            } else {
+                mostrarError(`No se encontró producto con código: ${codigo}`);
+            }
+        }
+        
+        function cerrarScanner() {
+            const scanner = document.getElementById('barcodeScanner');
+            scanner.style.display = 'none';
+            
+            // Detener Quagga
+            if (quaggaInicializado) {
+                Quagga.stop();
+            }
+            
+            // Detener stream de cámara
+            if (scannerStream) {
+                scannerStream.getTracks().forEach(track => track.stop());
+                scannerStream = null;
+            }
+        }
+        
+        // 2. Generar Número de Factura
+        async function generarNumeroFactura() {
+            try {
+                const hoy = new Date();
+                const fechaStr = hoy.toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD
+                
+                // Buscar el último número de factura del día
+                const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
+                const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+                
+                const ventasHoy = await db.collection('ventas')
+                    .where('sucursalId', '==', sucursalActual.id)
+                    .where('fecha', '>=', inicioDia)
+                    .where('fecha', '<=', finDia)
+                    .orderBy('fecha', 'desc')
+                    .limit(1)
+                    .get();
+                
+                let secuencia = 1;
+                
+                if (!ventasHoy.empty) {
+                    const ultimaVenta = ventasHoy.docs[0].data();
+                    if (ultimaVenta.numeroFactura) {
+                        // Extraer secuencia del último número
+                        const partes = ultimaVenta.numeroFactura.split('-');
+                        if (partes.length > 1) {
+                            const ultimaSecuencia = parseInt(partes[partes.length - 1]);
+                            if (!isNaN(ultimaSecuencia)) {
+                                secuencia = ultimaSecuencia + 1;
+                            }
+                        }
+                    }
+                }
+                
+                // Formato: FECHA-SECUENCIA-SUCURSAL
+                const numeroFactura = `${fechaStr}-${secuencia.toString().padStart(4, '0')}-${sucursalActual.id.substring(0, 4).toUpperCase()}`;
+                
+                return numeroFactura;
+                
+            } catch (error) {
+                console.error('Error generando número de factura:', error);
+                // Número de emergencia basado en timestamp
+                return `EMG-${Date.now()}`;
+            }
+        }
+        
+        // 3. Actualizar Stock después de Venta
+        async function actualizarStockVenta(items) {
+            try {
+                const batch = db.batch();
+                
+                for (const item of items) {
+                    const productoRef = db.collection('productos').doc(item.productoId);
+                    
+                    // Obtener producto actual
+                    const productoDoc = await productoRef.get();
+                    if (productoDoc.exists) {
+                        const productoData = productoDoc.data();
+                        
+                        if (productoData.controlStock) {
+                            // Actualizar stock
+                            const nuevoStock = (productoData.stock || 0) - item.cantidad;
+                            
+                            batch.update(productoRef, {
+                                stock: nuevoStock,
+                                ultimaVenta: new Date(),
+                                vendidosTotal: firebase.firestore.FieldValue.increment(item.cantidad)
+                            });
+                            
+                            // Actualizar cache local
+                            if (productosCache.has(item.productoId)) {
+                                const productoCache = productosCache.get(item.productoId);
+                                productoCache.stock = nuevoStock;
+                            }
+                        }
+                    }
+                }
+                
+                // Ejecutar batch
+                await batch.commit();
+                console.log('Stock actualizado correctamente');
+                
+            } catch (error) {
+                console.error('Error actualizando stock:', error);
+                // No lanzamos error para no interrumpir la venta
+                mostrarError('Error actualizando stock, revisa manualmente');
+            }
+        }
+        
+        // 4. Actualizar Saldo del Cliente
+        async function actualizarSaldoCliente(clienteId, monto) {
+            try {
+                const clienteRef = db.collection('clientes').doc(clienteId);
+                
+                // Actualizar en Firestore
+                await clienteRef.update({
+                    saldo: firebase.firestore.FieldValue.increment(monto),
+                    ultimaCompra: new Date(),
+                    comprasTotal: firebase.firestore.FieldValue.increment(1)
+                });
+                
+                // Actualizar cache local
+                if (clientesCache.has(clienteId)) {
+                    const cliente = clientesCache.get(clienteId);
+                    cliente.saldo = (cliente.saldo || 0) + monto;
+                    cliente.ultimaCompra = new Date();
+                    cliente.comprasTotal = (cliente.comprasTotal || 0) + 1;
+                }
+                
+                console.log(`Saldo actualizado para cliente ${clienteId}: +${monto}`);
+                
+            } catch (error) {
+                console.error('Error actualizando saldo del cliente:', error);
+                mostrarError('Error actualizando saldo del cliente');
+            }
+        }
+        
+        // 5. Monitoreo de Conexión
+        function initConnectionMonitor() {
+            const connectionStatus = document.getElementById('connectionStatus');
+            const connectionStatusIcon = document.getElementById('connectionStatusIcon');
+            const syncStatus = document.getElementById('syncStatus');
+            
+            function actualizarEstadoConexion() {
+                if (navigator.onLine) {
+                    // Online
+                    connectionStatus.textContent = 'Conectado';
+                    connectionStatusIcon.className = 'fas fa-wifi status-online';
+                    
+                    if (modoEmergencia) {
+                        // Salir del modo emergencia
+                        modoEmergencia = false;
+                        document.getElementById('emergencyMode').style.display = 'none';
+                        
+                        // Intentar sincronizar datos pendientes
+                        intentarSincronizar();
+                        syncStatus.textContent = 'Sincronizando...';
+                        syncStatus.className = 'pulse';
+                        
+                        setTimeout(() => {
+                            syncStatus.textContent = 'Sincronizado';
+                            syncStatus.className = '';
+                        }, 2000);
+                    } else {
+                        syncStatus.textContent = 'Sincronizado';
+                    }
+                    
+                } else {
+                    // Offline
+                    connectionStatus.textContent = 'Sin conexión';
+                    connectionStatusIcon.className = 'fas fa-wifi status-offline';
+                    
+                    // Activar modo emergencia
+                    if (!modoEmergencia) {
+                        modoEmergencia = true;
+                        document.getElementById('emergencyMode').style.display = 'flex';
+                        document.getElementById('pendingSalesCount').textContent = ventasPendientes.length;
+                    }
+                    
+                    syncStatus.textContent = 'Modo offline';
+                }
+            }
+            
+            // Estado inicial
+            actualizarEstadoConexion();
+            
+            // Escuchar cambios de conexión
+            window.addEventListener('online', actualizarEstadoConexion);
+            window.addEventListener('offline', actualizarEstadoConexion);
+            
+            // Monitoreo periódico de la conexión a Firestore
+            setInterval(async () => {
+                if (navigator.onLine) {
+                    try {
+                        // Intentar una operación simple de Firestore
+                        await db.collection('heartbeat').doc('ping').set({
+                            timestamp: new Date()
+                        }, { merge: true });
+                        
+                        connectionStatus.textContent = 'Conectado';
+                        connectionStatusIcon.className = 'fas fa-wifi status-online';
+                        
+                    } catch (error) {
+                        console.warn('Firestore no responde:', error);
+                        connectionStatus.textContent = 'Conectado (sin Firebase)';
+                        connectionStatusIcon.className = 'fas fa-wifi status-offline';
+                    }
+                }
+            }, 30000); // Cada 30 segundos
+        }
+        
         // 1. Actualizar información del cliente seleccionado
         function actualizarCliente() {
             const clienteSelect = document.getElementById('selectCliente');
@@ -1780,22 +2091,27 @@
             }
         }
         
-        // Funciones pendientes que aún faltan por implementar:
-        // - abrirScanner() y cerrarScanner()
-        // - generarNumeroFactura()
-        // - actualizarStockVenta(items)
-        // - actualizarSaldoCliente(clienteId, monto)
-        // - initConnectionMonitor()
-        // - setupInactivityTimer(timeout)
-        // - obtenerVentasPendientes()
-        // - eliminarVentaOffline(id)
-        // - crearPresupuesto()
-        // - reimprimirUltimo()
-        // - exportarVentaPDF()
-        // - continuarSinConexion()
-        // - verVentasPendientes()
-        // - congelarPrecios()
-        // - actualizarPago()
+        // ============================================
+        // FUNCIONES PENDIENTES RESTANTES
+        // ============================================
+        
+        /*
+        FUNCIONES QUE AÚN FALTAN POR IMPLEMENTAR:
+        
+        1. setupInactivityTimer(timeout)
+        2. obtenerVentasPendientes()
+        3. eliminarVentaOffline(id)
+        4. crearPresupuesto()
+        5. reimprimirUltimo()
+        6. exportarVentaPDF()
+        7. continuarSinConexion()
+        8. verVentasPendientes()
+        9. congelarPrecios()
+        10. actualizarPago()
+        11. cargarListaProductosModal()
+        12. guardarProductoModal()
+        13. guardarClienteModal()
+        */
         
         // ============================================
         // CONFIGURACIÓN PWA
@@ -1853,7 +2169,8 @@
                                 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
                                 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
                                 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
-                                'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js'
+                                'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js',
+                                'https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js'
                             ]);
                         })
                     );
@@ -1866,6 +2183,17 @@
                         })
                     );
                 });
+                
+                self.addEventListener('sync', (event) => {
+                    if (event.tag === 'sync-ventas') {
+                        event.waitUntil(syncVentasPendientes());
+                    }
+                });
+                
+                async function syncVentasPendientes() {
+                    // Sincronizar ventas pendientes cuando haya conexión
+                    console.log('Intentando sincronizar ventas pendientes...');
+                }
             `;
             
             // Registrar service worker inline
