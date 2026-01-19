@@ -3,197 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>POS CommerceFire | Sistema de Punto de Venta</title>
+    <title>Sistema POS - Facturación Web</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <!-- IndexedDB helper -->
-    <script src="https://unpkg.com/idb@7/build/umd.js"></script>
 </head>
 <body>
-    <!-- Pantalla de Login (inicial) -->
-    <div id="login-screen" class="screen active">
+    <!-- Pantalla de Login -->
+    <div id="loginScreen" class="login-screen">
         <div class="login-container">
             <div class="login-header">
-                <h1>POS CommerceFire</h1>
-                <p class="subtitle">Sistema de Punto de Venta Offline-First</p>
-                <div class="status-indicator">
-                    <span id="connection-status" class="status-offline">● Sin conexión</span>
-                    <span id="local-indicator">Local: No asignado</span>
-                </div>
+                <h1>🛒 Sistema POS</h1>
+                <p class="subtitle">Facturación Web - MultiLocal - Offline First</p>
             </div>
             
-            <div class="login-card">
-                <h2>Iniciar Sesión</h2>
-                
+            <div class="login-form">
                 <div class="form-group">
-                    <label for="email">Correo electrónico</label>
-                    <input type="email" id="email" placeholder="usuario@comercio.com" value="admin@test.com">
+                    <label for="loginEmail">Email:</label>
+                    <input type="email" id="loginEmail" placeholder="usuario@empresa.com">
                 </div>
-                
                 <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <input type="password" id="password" placeholder="••••••••" value="admin123">
+                    <label for="loginPassword">Contraseña:</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
                 </div>
-                
+                <button id="loginBtn" class="btn btn-primary">Iniciar Sesión</button>
+                <button id="loginOffline" class="btn btn-secondary">Modo Offline</button>
+            </div>
+            
+            <div class="login-status" id="loginStatus"></div>
+            
+            <div class="setup-link">
+                <p>¿Primera vez? <a href="setup.html">Configurar sistema</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aplicación Principal (oculta inicialmente) -->
+    <div id="appScreen" class="app-screen" style="display: none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1>🛒 POS <span id="currentPage">Ventas</span></h1>
+                <div class="session-info">
+                    <span id="userInfo">Usuario: -</span>
+                    <span id="localInfo">Local: -</span>
+                    <span id="cajaInfo">Caja: -</span>
+                    <span id="turnoInfo">Turno: -</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="syncStatus" class="btn-status online" title="Estado de conexión">🟢 Online</button>
+                <button id="notifications" class="btn-icon">🔔</button>
+                <button id="logoutBtn" class="btn btn-secondary">Cerrar Sesión</button>
+            </div>
+        </header>
+
+        <!-- Panel de Configuración Inicial -->
+        <div id="initialConfig" class="initial-config">
+            <div class="config-card">
+                <h2>⚙️ Configuración de Sesión</h2>
                 <div class="form-group">
-                    <label for="local">Local</label>
-                    <select id="local-select">
-                        <option value="">Cargando locales...</option>
+                    <label for="selectLocal">Local:</label>
+                    <select id="selectLocal">
+                        <option value="">Seleccionar local...</option>
                     </select>
                 </div>
-                
                 <div class="form-group">
-                    <label for="turno">Turno</label>
-                    <select id="turno-select">
+                    <label for="selectCaja">Caja:</label>
+                    <select id="selectCaja">
+                        <option value="">Seleccionar caja...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="selectTurno">Turno:</label>
+                    <select id="selectTurno">
                         <option value="mañana">Mañana</option>
                         <option value="tarde">Tarde</option>
                         <option value="noche">Noche</option>
                     </select>
                 </div>
-                
-                <button id="login-btn" class="btn-primary">
-                    <span class="btn-text">Iniciar Sesión</span>
-                    <span class="btn-spinner" style="display: none;">⌛</span>
-                </button>
-                
-                <div id="login-error" class="error-message" style="display: none;"></div>
-                
-                <div class="login-footer">
-                    <p>Sistema diseñado para funcionar sin internet</p>
-                    <p class="small">v1.0.0 | Firebase Spark Plan</p>
+                <div class="form-group">
+                    <label for="saldoInicial">Saldo Inicial en Caja:</label>
+                    <input type="number" id="saldoInicial" placeholder="0.00" min="0" step="0.01">
                 </div>
+                <button id="startSession" class="btn btn-primary">Iniciar Sesión de Trabajo</button>
             </div>
         </div>
-    </div>
-    
-    <!-- Aplicación Principal (oculta inicialmente) -->
-    <div id="app-screen" class="screen">
-        <!-- Barra Superior -->
-        <header class="app-header">
-            <div class="header-left">
-                <button id="menu-toggle" class="icon-btn">☰</button>
-                <div class="business-info">
-                    <h2 id="business-name">POS CommerceFire</h2>
-                    <div class="session-info">
-                        <span id="current-user">Usuario</span>
-                        <span class="divider">|</span>
-                        <span id="current-local">Local</span>
-                        <span class="divider">|</span>
-                        <span id="current-turn">Turno</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="header-center">
-                <div class="connection-status">
-                    <span id="app-connection-status" class="status-offline">OFFLINE</span>
-                    <span id="pending-sync" class="sync-indicator" style="display: none;">🔄 0 pendientes</span>
-                </div>
-            </div>
-            
-            <div class="header-right">
-                <button id="cashbox-btn" class="header-btn">💰 Caja</button>
-                <button id="cart-btn" class="header-btn primary">🛒 <span id="cart-count">0</span></button>
-                <button id="logout-btn" class="header-btn danger">Salir</button>
-            </div>
-        </header>
-        
-        <!-- Contenedor Principal -->
-        <div class="main-container">
-            <!-- Sidebar -->
-            <nav id="sidebar" class="sidebar">
-                <div class="sidebar-header">
-                    <h3>Operaciones</h3>
-                </div>
-                
-                <ul class="nav-menu">
-                    <li><a href="#" data-section="pos" class="nav-link active">🏪 POS Ventas</a></li>
-                    <li><a href="#" data-section="products" class="nav-link">📦 Productos</a></li>
-                    <li><a href="#" data-section="clients" class="nav-link">👥 Clientes</a></li>
-                    <li><a href="#" data-section="budgets" class="nav-link">📄 Presupuestos</a></li>
-                    <li><a href="#" data-section="sales" class="nav-link">📊 Ventas</a></li>
-                    <li><a href="#" data-section="reports" class="nav-link">📈 Reportes</a></li>
-                    <li><a href="#" data-section="providers" class="nav-link">🚚 Proveedores</a></li>
-                    <li><a href="#" data-section="cashbox" class="nav-link">💰 Caja Diaria</a></li>
-                    
-                    <li class="nav-divider">Administración</li>
-                    <li><a href="#" data-section="users" class="nav-link">👤 Usuarios</a></li>
-                    <li><a href="#" data-section="locals" class="nav-link">🏪 Locales</a></li>
-                    <li><a href="#" data-section="config" class="nav-link">⚙️ Configuración</a></li>
-                </ul>
-                
-                <div class="sidebar-footer">
-                    <div class="storage-info">
-                        <div class="storage-bar">
-                            <div class="storage-fill" style="width: 0%"></div>
-                        </div>
-                        <small>Offline: <span id="storage-used">0</span>MB</small>
-                    </div>
-                </div>
+
+        <!-- Aplicación Principal -->
+        <div id="mainApp" class="main-app" style="display: none;">
+            <!-- Barra de Navegación -->
+            <nav class="main-nav">
+                <button class="nav-btn active" data-page="pos">🛒 POS</button>
+                <button class="nav-btn" data-page="productos">📦 Productos</button>
+                <button class="nav-btn" data-page="clientes">👥 Clientes</button>
+                <button class="nav-btn" data-page="proveedores">🏢 Proveedores</button>
+                <button class="nav-btn" data-page="presupuestos">📄 Presupuestos</button>
+                <button class="nav-btn" data-page="reportes">📊 Reportes</button>
+                <button class="nav-btn" data-page="caja">💰 Caja</button>
             </nav>
-            
+
             <!-- Contenido Dinámico -->
-            <main id="main-content" class="content">
-                <!-- Se cargará dinámicamente por app.js -->
-                <div class="content-placeholder">
-                    <div class="placeholder-icon">🏪</div>
-                    <h2>Sistema POS CommerceFire</h2>
-                    <p>Selecciona una operación del menú lateral</p>
-                    <div class="placeholder-stats">
-                        <div class="stat-card">
-                            <div class="stat-value" id="stat-products">0</div>
-                            <div class="stat-label">Productos</div>
+            <div class="main-content">
+                <!-- Página POS -->
+                <div id="pagePos" class="page active">
+                    <div class="pos-container">
+                        <!-- Buscador de Productos -->
+                        <div class="pos-search">
+                            <input type="text" id="productSearch" placeholder="🔍 Buscar producto por código o nombre...">
+                            <button id="scanBarcode" class="btn btn-primary">📷 Escanear</button>
+                            <button id="keyboardMode" class="btn btn-secondary">⌨️ Modo Teclado</button>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="stat-sales-today">0</div>
-                            <div class="stat-label">Ventas Hoy</div>
+
+                        <!-- Video para escaner -->
+                        <div id="scannerContainer" class="scanner-container" style="display: none;">
+                            <video id="scannerVideo" width="100%" height="200"></video>
+                            <button id="stopScanner" class="btn btn-secondary">Detener Escáner</button>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="stat-pending">0</div>
-                            <div class="stat-label">Pendientes</div>
+
+                        <!-- Carrito de Compras -->
+                        <div class="pos-cart">
+                            <h3>🛒 Carrito de Venta</h3>
+                            <div class="cart-header">
+                                <span>Producto</span>
+                                <span>Cant.</span>
+                                <span>Precio</span>
+                                <span>Subtotal</span>
+                                <span>Acciones</span>
+                            </div>
+                            <div id="cartItems" class="cart-items">
+                                <!-- Items del carrito se agregarán aquí dinámicamente -->
+                            </div>
+                            <div class="cart-summary">
+                                <div class="summary-row">
+                                    <span>Subtotal:</span>
+                                    <span id="cartSubtotal">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Descuento:</span>
+                                    <input type="number" id="cartDiscount" placeholder="0.00" min="0" step="0.01">
+                                </div>
+                                <div class="summary-row total">
+                                    <span>TOTAL:</span>
+                                    <span id="cartTotal">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cliente y Acciones -->
+                        <div class="pos-actions">
+                            <div class="customer-section">
+                                <h4>👤 Cliente</h4>
+                                <select id="selectCliente">
+                                    <option value="">Cliente Contado</option>
+                                    <option value="cuenta">Cliente Cuenta Corriente</option>
+                                </select>
+                                <button id="nuevoCliente" class="btn btn-outline">+ Nuevo Cliente</button>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button id="finalizarVenta" class="btn btn-success">💳 Finalizar Venta</button>
+                                <button id="crearPresupuesto" class="btn btn-primary">📄 Crear Presupuesto</button>
+                                <button id="cancelarVenta" class="btn btn-danger">❌ Cancelar Venta</button>
+                            </div>
+
+                            <!-- Métodos de Pago -->
+                            <div id="paymentModal" class="modal" style="display: none;">
+                                <div class="modal-content">
+                                    <h3>💳 Método de Pago</h3>
+                                    <div class="payment-methods">
+                                        <button class="payment-btn" data-method="efectivo">💵 Efectivo</button>
+                                        <button class="payment-btn" data-method="tarjeta">💳 Tarjeta</button>
+                                        <button class="payment-btn" data-method="transferencia">🏦 Transferencia</button>
+                                        <button class="payment-btn" data-method="qr">📱 QR</button>
+                                        <button class="payment-btn" data-method="cuenta">📋 Cuenta Corriente</button>
+                                    </div>
+                                    <div id="paymentDetails" class="payment-details">
+                                        <!-- Detalles específicos de cada método -->
+                                    </div>
+                                    <button id="confirmPayment" class="btn btn-success">Confirmar Pago</button>
+                                    <button id="cancelPayment" class="btn btn-secondary">Cancelar</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </main>
-        </div>
-        
-        <!-- Carrito Flotante (minimizado) -->
-        <div id="cart-minimized" class="cart-minimized">
-            <button id="toggle-cart" class="cart-toggle">
-                <span>🛒 Carrito:</span>
-                <span id="cart-total">$0</span>
-                <span id="cart-items">0 items</span>
-            </button>
+
+                <!-- Página Productos -->
+                <div id="pageProductos" class="page">
+                    <div class="page-header">
+                        <h2>📦 Gestión de Productos</h2>
+                        <div class="page-actions">
+                            <button id="nuevoProducto" class="btn btn-primary">+ Nuevo Producto</button>
+                            <button id="importarExcel" class="btn btn-secondary">📥 Importar Excel</button>
+                            <button id="exportarExcel" class="btn btn-secondary">📤 Exportar Excel</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filtros -->
+                    <div class="filters">
+                        <input type="text" id="filterProductos" placeholder="🔍 Filtrar productos...">
+                        <select id="filterCategoria">
+                            <option value="">Todas las categorías</option>
+                        </select>
+                        <button id="filterStockBajo" class="btn btn-warning">⚠️ Stock Bajo</button>
+                    </div>
+                    
+                    <!-- Lista de Productos -->
+                    <div class="productos-grid" id="productosList">
+                        <!-- Productos cargados dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Página Clientes -->
+                <div id="pageClientes" class="page">
+                    <div class="page-header">
+                        <h2>👥 Gestión de Clientes</h2>
+                        <button id="nuevoClientePage" class="btn btn-primary">+ Nuevo Cliente</button>
+                    </div>
+                    
+                    <div class="clientes-list" id="clientesList">
+                        <!-- Clientes cargados dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Página Caja -->
+                <div id="pageCaja" class="page">
+                    <div class="page-header">
+                        <h2>💰 Cierre de Caja</h2>
+                    </div>
+                    
+                    <div class="caja-resumen">
+                        <div class="resumen-card">
+                            <h3>Resumen del Turno</h3>
+                            <div class="resumen-data">
+                                <div class="data-row">
+                                    <span>Saldo Inicial:</span>
+                                    <span id="saldoInicialResumen">$0.00</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Ventas Efectivo:</span>
+                                    <span id="ventasEfectivo">$0.00</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Ventas Tarjeta:</span>
+                                    <span id="ventasTarjeta">$0.00</span>
+                                </div>
+                                <div class="data-row total">
+                                    <span>Total Ventas:</span>
+                                    <span id="totalVentas">$0.00</span>
+                                </div>
+                                <div class="data-row">
+                                    <span>Saldo Final Estimado:</span>
+                                    <span id="saldoFinal">$0.00</span>
+                                </div>
+                            </div>
+                            <button id="cerrarCaja" class="btn btn-success">Cerrar Caja</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    
+
+    <!-- Modal Genérico -->
+    <div id="genericModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Título</h3>
+            <div id="modalBody">
+                Contenido del modal
+            </div>
+            <div class="modal-actions">
+                <button id="modalConfirm" class="btn btn-primary">Confirmar</button>
+                <button id="modalCancel" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
-    <script type="module" src="js/auth.js"></script>
-    <script src="js/utils.js"></script>
-    <script type="module" src="app.js"></script>
-    
-    <!-- Inicialización Firebase simplificada -->
-    <script>
-        // Configuración Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
-            authDomain: "whatsappau-30dc1.firebaseapp.com",
-            projectId: "whatsappau-30dc1",
-            storageBucket: "whatsappau-30dc1.firebasestorage.app",
-            messagingSenderId: "456068013185",
-            appId: "1:456068013185:web:5bdd49337fb622e56f0180"
-        };
-        
-        // Inicializar Firebase globalmente
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        
-        console.log('✅ Firebase inicializado globalmente');
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
