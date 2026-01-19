@@ -3,1155 +3,873 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Setup - Sistema POS Ferretería</title>
-    <link rel="stylesheet" href="styles.css">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
-    <!-- Iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔧</text></svg>">
-    
+    <title>Configuración Inicial | POS CommerceFire</title>
     <style>
-        .setup-container {
-            max-width: 1200px;
-            margin: 0 auto;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
         }
         
+        .setup-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+        }
+        
         .setup-header {
-            background: linear-gradient(135deg, var(--primary), #2d3748);
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
             color: white;
             padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
             text-align: center;
         }
         
-        .setup-card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 25px;
-            margin-bottom: 30px;
-            border-left: 5px solid var(--primary);
+        .setup-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
         }
         
-        .setup-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
+        .setup-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
         }
         
-        .setup-step {
-            background: #f8fafc;
-            padding: 25px;
+        .warning-banner {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px;
             border-radius: 8px;
-            border: 2px solid #e2e8f0;
+        }
+        
+        .warning-banner h3 {
+            color: #92400e;
+            margin-bottom: 5px;
+        }
+        
+        .setup-steps {
+            padding: 30px;
+        }
+        
+        .step {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
         }
         
         .step-number {
-            display: inline-block;
-            background: var(--primary);
+            background: #4f46e5;
             color: white;
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            text-align: center;
-            line-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
             margin-right: 15px;
         }
         
-        .progress-container {
-            margin: 30px 0;
-            background: #e2e8f0;
-            border-radius: 10px;
-            height: 20px;
-            overflow: hidden;
+        .step-title {
+            font-size: 1.3rem;
+            color: #1f2937;
+            font-weight: 600;
+        }
+        
+        .step-content {
+            padding-left: 51px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .firebase-config {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .test-users {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .test-user {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .test-user:last-child {
+            border-bottom: none;
+        }
+        
+        .setup-actions {
+            padding: 20px 30px;
+            background: #f9fafb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #4338ca;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status-message {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+            display: block;
+        }
+        
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+            display: block;
+        }
+        
+        .status-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            display: block;
         }
         
         .progress-bar {
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
             height: 100%;
-            background: var(--primary);
+            background: #4f46e5;
             width: 0%;
-            transition: width 0.5s ease;
+            transition: width 0.3s;
+        }
+        
+        .setup-complete {
+            text-align: center;
+            padding: 40px 30px;
+            display: none;
+        }
+        
+        .setup-complete h2 {
+            color: #065f46;
+            margin-bottom: 20px;
+        }
+        
+        .setup-complete .success-icon {
+            font-size: 4rem;
+            color: #10b981;
+            margin-bottom: 20px;
+        }
+        
+        .credentials {
+            background: #f8fafc;
             border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
         }
         
-        .product-preview {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-            max-height: 300px;
-            overflow-y: auto;
-            padding: 10px;
+        .credential-item {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #e5e7eb;
         }
         
-        .product-preview-item {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 5px;
-            padding: 10px;
-            font-size: 0.9rem;
+        .credential-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
         }
-        
-        .log-container {
-            background: #1a202c;
-            color: #68d391;
-            padding: 15px;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            height: 200px;
-            overflow-y: auto;
-            margin-top: 15px;
-            font-size: 0.9rem;
-        }
-        
-        .log-entry {
-            margin: 5px 0;
-            padding: 3px 0;
-            border-bottom: 1px solid #2d3748;
-        }
-        
-        .btn-setup {
-            padding: 12px 24px;
-            font-size: 1.1rem;
-            margin: 10px 5px;
-        }
-        
-        .danger-zone {
-            border-left-color: var(--danger);
-            background: linear-gradient(to right, #fff5f5, white);
-        }
-        
-        .user-avatar-large {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            margin: 0 auto 15px;
-        }
-        
-        .role-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin: 2px;
-        }
-        
-        .role-admin { background: #805ad5; color: white; }
-        .role-supervisor { background: #3182ce; color: white; }
-        .role-cajero { background: #38a169; color: white; }
-        .role-vendedor { background: #d69e2e; color: white; }
     </style>
 </head>
 <body>
     <div class="setup-container">
-        <!-- Header -->
         <div class="setup-header">
-            <h1><i class="fas fa-tools"></i> Configuración Inicial - Ferretería</h1>
-            <p>Sistema POS Multipuesto - Configuración de base de datos</p>
-            <div style="margin-top: 20px; display: flex; justify-content: center; gap: 20px;">
-                <div style="text-align: center;">
-                    <div class="user-avatar-large">F</div>
-                    <strong>Ferretería</strong>
-                </div>
-            </div>
+            <h1>⚙️ Configuración Inicial</h1>
+            <p>POS CommerceFire - Sistema de Punto de Venta</p>
         </div>
         
-        <!-- Estado de Firebase -->
-        <div class="setup-card">
-            <h2><i class="fas fa-database"></i> Conexión a Firebase</h2>
-            <div class="form-group">
-                <label>Estado de conexión:</label>
-                <div id="firebaseStatus" class="log-entry" style="color: #f56565;">
-                    <i class="fas fa-circle-notch fa-spin"></i> Conectando...
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Configuración Firebase:</label>
-                <textarea id="firebaseConfig" class="form-control" rows="4" readonly style="font-family: monospace; font-size: 0.9rem;">
-apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
-authDomain: "whatsappau-30dc1.firebaseapp.com",
-projectId: "whatsappau-30dc1",
-storageBucket: "whatsappau-30dc1.firebasestorage.app",
-messagingSenderId: "456068013185",
-appId: "1:456068013185:web:5bdd49337fb622e56f0180"</textarea>
-            </div>
-            <button id="btnTestConnection" class="btn btn-primary" onclick="testFirebaseConnection()">
-                <i class="fas fa-plug"></i> Probar Conexión
-            </button>
+        <div class="warning-banner">
+            <h3>⚠️ ADVERTENCIA IMPORTANTE</h3>
+            <p>Este setup debe ejecutarse <strong>UNA SOLA VEZ</strong> para inicializar la estructura de la base de datos. Asegúrate de tener permiso de administrador en Firebase.</p>
         </div>
         
-        <!-- Progreso -->
-        <div class="setup-card">
-            <h2><i class="fas fa-tasks"></i> Progreso de Configuración</h2>
-            <div class="progress-container">
-                <div id="setupProgress" class="progress-bar"></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
-                <span>0%</span>
-                <span id="progressText">No iniciado</span>
-                <span>100%</span>
-            </div>
-        </div>
-        
-        <!-- Log de actividades -->
-        <div class="setup-card">
-            <h2><i class="fas fa-clipboard-list"></i> Log de Actividades</h2>
-            <div class="log-container" id="setupLog">
-                <div class="log-entry">> Sistema de configuración iniciado</div>
-                <div class="log-entry">> Esperando conexión a Firebase...</div>
-            </div>
-            <button class="btn btn-outline" onclick="clearLog()">
-                <i class="fas fa-broom"></i> Limpiar Log
-            </button>
-        </div>
-        
-        <!-- Pasos de configuración -->
-        <div class="setup-grid">
-            <!-- Paso 1: Configuración inicial -->
-            <div class="setup-step">
-                <h3><span class="step-number">1</span> Configuración Inicial</h3>
-                <p>Crea la estructura básica de la base de datos y configuración del sistema.</p>
-                
-                <div class="form-group">
-                    <label>Nombre del Comercio:</label>
-                    <input type="text" id="nombreComercio" class="form-control" value="Ferretería Central" placeholder="Ej: Ferretería Central">
-                </div>
-                
-                <div class="form-group">
-                    <label>Dirección:</label>
-                    <input type="text" id="direccionComercio" class="form-control" value="Av. Principal 1234" placeholder="Dirección del comercio">
-                </div>
-                
-                <div class="form-group">
-                    <label>Teléfono:</label>
-                    <input type="text" id="telefonoComercio" class="form-control" value="11-1234-5678" placeholder="Teléfono de contacto">
-                </div>
-                
-                <button class="btn btn-primary btn-block btn-setup" onclick="crearConfiguracionInicial()">
-                    <i class="fas fa-cogs"></i> Crear Configuración
-                </button>
-            </div>
-            
-            <!-- Paso 2: Usuarios de prueba -->
-            <div class="setup-step">
-                <h3><span class="step-number">2</span> Usuarios de Prueba</h3>
-                <p>Crea usuarios con diferentes roles para testing del sistema.</p>
-                
-                <div class="product-preview">
-                    <div class="product-preview-item">
-                        <strong>admin@ferreteria.com</strong><br>
-                        <span class="role-badge role-admin">Administrador</span><br>
-                        <small>Acceso completo al sistema</small>
+        <div id="setup-form">
+            <div class="setup-steps">
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <div class="step-title">Configuración Firebase</div>
                     </div>
-                    <div class="product-preview-item">
-                        <strong>supervisor@ferreteria.com</strong><br>
-                        <span class="role-badge role-supervisor">Supervisor</span><br>
-                        <small>Gestión de inventario y reportes</small>
-                    </div>
-                    <div class="product-preview-item">
-                        <strong>cajero@ferreteria.com</strong><br>
-                        <span class="role-badge role-cajero">Cajero</span><br>
-                        <small>Ventas y caja</small>
-                    </div>
-                    <div class="product-preview-item">
-                        <strong>vendedor@ferreteria.com</strong><br>
-                        <span class="role-badge role-vendedor">Vendedor</span><br>
-                        <small>Atención al cliente y ventas</small>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Contraseña para todos los usuarios:</label>
-                    <input type="password" id="userPassword" class="form-control" value="ferreteria123">
-                </div>
-                
-                <button class="btn btn-primary btn-block btn-setup" onclick="crearUsuariosPrueba()">
-                    <i class="fas fa-users"></i> Crear Usuarios
-                </button>
-            </div>
-            
-            <!-- Paso 3: Productos de ferretería -->
-            <div class="setup-step">
-                <h3><span class="step-number">3</span> Productos de Ferretería</h3>
-                <p>Agrega productos de prueba categorizados para una ferretería.</p>
-                
-                <div class="form-group">
-                    <label>Categorías a crear:</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
-                        <span class="badge badge-primary">Herramientas Manuales</span>
-                        <span class="badge badge-primary">Electricidad</span>
-                        <span class="badge badge-primary">Fontanería</span>
-                        <span class="badge badge-primary">Pinturas</span>
-                        <span class="badge badge-primary">Fijaciones</span>
-                        <span class="badge badge-primary">Jardinería</span>
-                    </div>
-                </div>
-                
-                <div class="product-preview" id="productPreview">
-                    <!-- Los productos se cargarán dinámicamente -->
-                </div>
-                
-                <button class="btn btn-primary btn-block btn-setup" onclick="crearProductosFerreteria()">
-                    <i class="fas fa-hammer"></i> Crear Productos (50+)
-                </button>
-            </div>
-            
-            <!-- Paso 4: Clientes y proveedores -->
-            <div class="setup-step">
-                <h3><span class="step-number">4</span> Clientes y Proveedores</h3>
-                <p>Crea clientes y proveedores de prueba para el sistema.</p>
-                
-                <div class="form-group">
-                    <label>Clientes de prueba:</label>
-                    <div style="margin-top: 10px;">
-                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                            <i class="fas fa-user" style="color: var(--primary); margin-right: 10px;"></i>
-                            <span>Cliente Minorista (Consumidor final)</span>
+                    <div class="step-content">
+                        <p>Ingresa la configuración de tu proyecto Firebase. Esta configuración se encuentra en la consola de Firebase → Configuración del proyecto → Tus apps.</p>
+                        
+                        <div class="form-group">
+                            <label for="firebase-config">Configuración Firebase</label>
+                            <textarea id="firebase-config" rows="6" class="firebase-config" placeholder='{
+  apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
+  authDomain: "whatsappau-30dc1.firebaseapp.com",
+  projectId: "whatsappau-30dc1",
+  storageBucket: "whatsappau-30dc1.firebasestorage.app",
+  messagingSenderId: "456068013185",
+  appId: "1:456068013185:web:5bdd49337fb622e56f0180"
+}'></textarea>
                         </div>
-                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                            <i class="fas fa-building" style="color: var(--secondary); margin-right: 10px;"></i>
-                            <span>Constructora El Progreso S.A.</span>
-                        </div>
-                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                            <i class="fas fa-store" style="color: var(--success); margin-right: 10px;"></i>
-                            <span>Distribuidora Mayorista</span>
+                        
+                        <div class="form-group">
+                            <button id="test-connection" class="btn btn-secondary" style="width: auto;">Probar Conexión Firebase</button>
+                            <span id="connection-test-result" style="margin-left: 10px;"></span>
                         </div>
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>Proveedores de prueba:</label>
-                    <div style="margin-top: 10px;">
-                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                            <i class="fas fa-industry" style="color: var(--warning); margin-right: 10px;"></i>
-                            <span>Industrias Metálicas S.A.</span>
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <div class="step-title">Datos del Negocio Principal</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="business-name">Nombre del Negocio *</label>
+                                <input type="text" id="business-name" placeholder="Ej: Mi Comercio S.A." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="business-address">Dirección</label>
+                                <input type="text" id="business-address" placeholder="Calle 123, Ciudad">
+                            </div>
                         </div>
-                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                            <i class="fas fa-truck" style="color: var(--danger); margin-right: 10px;"></i>
-                            <span>Distribuidora de Herramientas</span>
+                        
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="business-phone">Teléfono</label>
+                                <input type="text" id="business-phone" placeholder="+54 11 1234-5678">
+                            </div>
+                            <div class="form-group">
+                                <label for="business-email">Email</label>
+                                <input type="email" id="business-email" placeholder="info@micomercio.com">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="business-logo">Logo URL (opcional)</label>
+                            <input type="text" id="business-logo" placeholder="https://...">
                         </div>
                     </div>
                 </div>
                 
-                <button class="btn btn-primary btn-block btn-setup" onclick="crearClientesProveedores()">
-                    <i class="fas fa-handshake"></i> Crear Clientes/Proveedores
-                </button>
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Local Principal</div>
+                    </div>
+                    <div class="step-content">
+                        <p>Este será tu primer local de ventas. Puedes agregar más locales después.</p>
+                        
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="local-name">Nombre del Local *</label>
+                                <input type="text" id="local-name" placeholder="Ej: Sucursal Centro" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="local-code">Código del Local *</label>
+                                <input type="text" id="local-code" placeholder="CENTRO" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="local-address">Dirección del Local</label>
+                            <input type="text" id="local-address" placeholder="Calle Principal 456">
+                        </div>
+                        
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="local-phone">Teléfono Local</label>
+                                <input type="text" id="local-phone" placeholder="+54 11 8765-4321">
+                            </div>
+                            <div class="form-group">
+                                <label for="local-opening">Horario</label>
+                                <input type="text" id="local-opening" placeholder="9:00 - 18:00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">4</div>
+                        <div class="step-title">Usuarios de Prueba</div>
+                    </div>
+                    <div class="step-content">
+                        <p>Se crearán estos usuarios para comenzar a usar el sistema. Cambia las contraseñas después del primer login.</p>
+                        
+                        <div class="test-users">
+                            <div class="test-user">
+                                <div>
+                                    <strong>Administrador</strong><br>
+                                    admin@comercio.com
+                                </div>
+                                <div>Contraseña: admin123</div>
+                            </div>
+                            <div class="test-user">
+                                <div>
+                                    <strong>Cajero</strong><br>
+                                    cajero@comercio.com
+                                </div>
+                                <div>Contraseña: cajero123</div>
+                            </div>
+                            <div class="test-user">
+                                <div>
+                                    <strong>Vendedor</strong><br>
+                                    vendedor@comercio.com
+                                </div>
+                                <div>Contraseña: vendedor123</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label for="admin-email">Email Administrador Personalizado (opcional)</label>
+                            <input type="email" id="admin-email" placeholder="tucorreo@dominio.com">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <div class="step-number">5</div>
+                        <div class="step-title">Productos de Prueba</div>
+                    </div>
+                    <div class="step-content">
+                        <p>Se crearán 50 productos de ejemplo para comenzar a probar el sistema.</p>
+                        
+                        <div class="form-group">
+                            <label for="product-category">Categoría Principal</label>
+                            <select id="product-category">
+                                <option value="general">General</option>
+                                <option value="alimentos">Alimentos</option>
+                                <option value="bebidas">Bebidas</option>
+                                <option value="limpieza">Limpieza</option>
+                                <option value="electronica">Electrónica</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="create-products" checked>
+                                Crear productos de prueba
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <!-- Paso 5: Setup completo -->
-            <div class="setup-step">
-                <h3><span class="step-number">5</span> Setup Completo</h3>
-                <p>Ejecuta todos los pasos anteriores en orden para una configuración completa.</p>
-                
-                <div style="background: #e6fffa; padding: 15px; border-radius: 5px; margin: 15px 0;">
-                    <h4 style="color: var(--success); margin-top: 0;">
-                        <i class="fas fa-check-circle"></i> Orden de ejecución:
-                    </h4>
-                    <ol style="margin: 10px 0 0 20px;">
-                        <li>Configuración inicial</li>
-                        <li>Usuarios de prueba</li>
-                        <li>Productos de ferretería</li>
-                        <li>Clientes y proveedores</li>
-                    </ol>
-                </div>
-                
-                <button class="btn btn-success btn-block btn-setup" onclick="setupCompleto()" style="padding: 15px; font-size: 1.2rem;">
-                    <i class="fas fa-rocket"></i> EJECUTAR SETUP COMPLETO
-                </button>
-                
-                <div style="margin-top: 20px; text-align: center;">
-                    <a href="index.html" class="btn btn-outline">
-                        <i class="fas fa-arrow-left"></i> Volver al Login
-                    </a>
-                </div>
+            <div id="status-messages"></div>
+            
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
             </div>
             
-            <!-- Zona de peligro -->
-            <div class="setup-step danger-zone">
-                <h3><i class="fas fa-exclamation-triangle"></i> Zona de Peligro</h3>
-                <p style="color: var(--danger);">Advertencia: Estas acciones eliminarán datos existentes.</p>
-                
-                <div class="form-group">
-                    <label>Contraseña de confirmación:</label>
-                    <input type="password" id="confirmPassword" class="form-control" placeholder="Ingrese 'CONFIRMAR' para proceder">
+            <div class="setup-actions">
+                <div>
+                    <strong id="current-operation">Listo para configurar</strong>
                 </div>
-                
-                <button class="btn btn-danger btn-block btn-setup" onclick="eliminarTodosDatos()">
-                    <i class="fas fa-trash"></i> Eliminar TODOS los datos
-                </button>
-                
-                <button class="btn btn-warning btn-block btn-setup" onclick="resetearProductos()">
-                    <i class="fas fa-redo"></i> Resetear solo productos
-                </button>
+                <div>
+                    <button id="start-setup" class="btn btn-primary">Iniciar Configuración</button>
+                </div>
             </div>
         </div>
         
-        <!-- Notas finales -->
-        <div class="setup-card" style="margin-top: 30px; background: #f0fff4; border-left-color: var(--success);">
-            <h3><i class="fas fa-info-circle"></i> Notas importantes</h3>
-            <ul>
-                <li>Este setup es solo para desarrollo/pruebas iniciales.</li>
-                <li>Los usuarios creados tienen la contraseña: <strong>ferreteria123</strong></li>
-                <li>Los productos incluyen márgenes de ganancia predefinidos.</li>
-                <li>Se crean categorías organizadas para ferretería.</li>
-                <li>Después del setup, puedes acceder con: admin@ferreteria.com</li>
-                <li>Recomendado: Ejecutar el "Setup Completo" una sola vez.</li>
-            </ul>
+        <div id="setup-complete" class="setup-complete">
+            <div class="success-icon">✅</div>
+            <h2>¡Configuración Completada!</h2>
+            <p>El sistema POS CommerceFire ha sido configurado correctamente.</p>
+            
+            <div class="credentials">
+                <h3>Credenciales de Acceso:</h3>
+                <div class="credential-item">
+                    <strong>Administrador:</strong><br>
+                    admin@comercio.com / admin123
+                </div>
+                <div class="credential-item">
+                    <strong>Cajero:</strong><br>
+                    cajero@comercio.com / cajero123
+                </div>
+                <div class="credential-item">
+                    <strong>Vendedor:</strong><br>
+                    vendedor@comercio.com / vendedor123
+                </div>
+            </div>
+            
+            <p><strong>¡IMPORTANTE!</strong> Cambia estas contraseñas después del primer login.</p>
+            
+            <div style="margin-top: 30px;">
+                <a href="index.html" class="btn btn-primary" style="text-decoration: none;">Ir al Sistema POS</a>
+            </div>
         </div>
     </div>
-
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
     <script>
-        // ============================================
-        // CONFIGURACIÓN FIREBASE (MISMA QUE APP.JS)
-        // ============================================
-        const FIREBASE_CONFIG = {
-            apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
-            authDomain: "whatsappau-30dc1.firebaseapp.com",
-            projectId: "whatsappau-30dc1",
-            storageBucket: "whatsappau-30dc1.firebasestorage.app",
-            messagingSenderId: "456068013185",
-            appId: "1:456068013185:web:5bdd49337fb622e56f0180"
-        };
-
-        const ROLES = {
-            ADMIN: 'admin',
-            SUPERVISOR: 'supervisor',
-            CAJERO: 'cajero',
-            VENDEDOR: 'vendedor'
-        };
-
-        // ============================================
-        // INICIALIZACIÓN
-        // ============================================
-        let app, auth, db;
-        let totalSteps = 5;
-        let completedSteps = 0;
-        let setupLog = [];
-
-        document.addEventListener('DOMContentLoaded', function() {
-            logMessage('Sistema de setup iniciado');
+        // Elementos del DOM
+        const setupForm = document.getElementById('setup-form');
+        const setupComplete = document.getElementById('setup-complete');
+        const startSetupBtn = document.getElementById('start-setup');
+        const testConnectionBtn = document.getElementById('test-connection');
+        const statusMessages = document.getElementById('status-messages');
+        const progressFill = document.getElementById('progress-fill');
+        const currentOperation = document.getElementById('current-operation');
+        const connectionTestResult = document.getElementById('connection-test-result');
+        
+        // Estado de la configuración
+        let firebaseApp = null;
+        let db = null;
+        let auth = null;
+        let isConfiguring = false;
+        
+        // Probar conexión a Firebase
+        testConnectionBtn.addEventListener('click', async () => {
+            const configText = document.getElementById('firebase-config').value;
             
-            // Inicializar Firebase
+            if (!configText) {
+                connectionTestResult.innerHTML = '<span style="color: #dc2626;">Ingresa la configuración primero</span>';
+                return;
+            }
+            
             try {
-                app = firebase.initializeApp(FIREBASE_CONFIG);
-                auth = firebase.auth();
+                const config = JSON.parse(configText);
+                connectionTestResult.innerHTML = '<span style="color: #059669;">Probando conexión...</span>';
+                
+                // Intentar inicializar Firebase
+                firebaseApp = firebase.initializeApp(config);
                 db = firebase.firestore();
+                auth = firebase.auth();
                 
-                logMessage('Firebase inicializado correctamente', 'success');
-                updateFirebaseStatus('Conectado a Firebase', 'success');
+                // Probar conexión simple
+                await db.collection('test').limit(1).get();
                 
-                // Mostrar productos de ejemplo
-                mostrarProductosEjemplo();
+                connectionTestResult.innerHTML = '<span style="color: #059669;">✅ Conexión exitosa</span>';
+                startSetupBtn.disabled = false;
                 
             } catch (error) {
-                logMessage('Error inicializando Firebase: ' + error.message, 'error');
-                updateFirebaseStatus('Error de conexión', 'error');
+                console.error('Error de conexión:', error);
+                connectionTestResult.innerHTML = `<span style="color: #dc2626;">Error: ${error.message}</span>`;
+                startSetupBtn.disabled = true;
             }
         });
-
-        // ============================================
-        // FUNCIONES DE LOG Y UI
-        // ============================================
-        function logMessage(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            let icon = '📝';
-            let color = '#68d391';
+        
+        // Iniciar configuración completa
+        startSetupBtn.addEventListener('click', async () => {
+            if (isConfiguring) return;
             
-            switch(type) {
-                case 'success':
-                    icon = '✅';
-                    color = '#68d391';
-                    break;
-                case 'error':
-                    icon = '❌';
-                    color = '#fc8181';
-                    break;
-                case 'warning':
-                    icon = '⚠️';
-                    color = '#f6ad55';
-                    break;
-                case 'info':
-                    icon = 'ℹ️';
-                    color = '#63b3ed';
-                    break;
+            // Validar campos requeridos
+            if (!validateRequiredFields()) {
+                return;
             }
             
-            const logEntry = {
-                time: timestamp,
-                message: message,
-                type: type
+            isConfiguring = true;
+            startSetupBtn.disabled = true;
+            startSetupBtn.textContent = 'Configurando...';
+            
+            // Recopilar datos del formulario
+            const businessData = {
+                name: document.getElementById('business-name').value,
+                address: document.getElementById('business-address').value,
+                phone: document.getElementById('business-phone').value,
+                email: document.getElementById('business-email').value,
+                logo: document.getElementById('business-logo').value || null
             };
             
-            setupLog.push(logEntry);
+            const localData = {
+                name: document.getElementById('local-name').value,
+                code: document.getElementById('local-code').value.toUpperCase(),
+                address: document.getElementById('local-address').value,
+                phone: document.getElementById('local-phone').value,
+                openingHours: document.getElementById('local-opening').value,
+                isActive: true,
+                createdAt: new Date().toISOString()
+            };
             
-            const logContainer = document.getElementById('setupLog');
-            if (logContainer) {
-                const logElement = document.createElement('div');
-                logElement.className = 'log-entry';
-                logElement.innerHTML = `<span style="color: ${color}">${icon} [${timestamp}] ${message}</span>`;
-                logContainer.appendChild(logElement);
-                logContainer.scrollTop = logContainer.scrollHeight;
-            }
+            const adminEmail = document.getElementById('admin-email').value || 'admin@comercio.com';
+            const createProducts = document.getElementById('create-products').checked;
+            const productCategory = document.getElementById('product-category').value;
             
-            console.log(`[${timestamp}] ${message}`);
-        }
-
-        function updateProgress(step, message) {
-            completedSteps = step;
-            const progress = (completedSteps / totalSteps) * 100;
-            
-            const progressBar = document.getElementById('setupProgress');
-            const progressText = document.getElementById('progressText');
-            
-            if (progressBar) {
-                progressBar.style.width = `${progress}%`;
-            }
-            
-            if (progressText) {
-                progressText.textContent = message || `${Math.round(progress)}% completado`;
-            }
-            
-            logMessage(`Progreso: ${Math.round(progress)}% - ${message}`, 'info');
-        }
-
-        function updateFirebaseStatus(message, status) {
-            const statusElement = document.getElementById('firebaseStatus');
-            if (!statusElement) return;
-            
-            let icon = '🔵';
-            let color = '#63b3ed';
-            
-            switch(status) {
-                case 'success':
-                    icon = '🟢';
-                    color = '#68d391';
-                    break;
-                case 'error':
-                    icon = '🔴';
-                    color = '#fc8181';
-                    break;
-                case 'warning':
-                    icon = '🟡';
-                    color = '#f6ad55';
-                    break;
-            }
-            
-            statusElement.innerHTML = `<span style="color: ${color}">${icon} ${message}</span>`;
-        }
-
-        function clearLog() {
-            const logContainer = document.getElementById('setupLog');
-            if (logContainer) {
-                logContainer.innerHTML = '';
-                logMessage('Log limpiado');
-            }
-        }
-
-        function mostrarProductosEjemplo() {
-            const productosEjemplo = [
-                { codigo: "H001", nombre: "Martillo de Carpintero 500g", precio: 4500, categoria: "Herramientas Manuales" },
-                { codigo: "H002", nombre: "Destornillador Phillips #2", precio: 1200, categoria: "Herramientas Manuales" },
-                { codigo: "E001", nombre: "Cable Eléctrico 2.5mm x 100m", precio: 28500, categoria: "Electricidad" },
-                { codigo: "F001", nombre: "Llave Stillson 14\"", precio: 8900, categoria: "Fontanería" },
-                { codigo: "P001", nombre: "Pintura Latex Blanco 20L", precio: 32500, categoria: "Pinturas" },
-                { codigo: "FJ001", nombre: "Tornillo para Madera 3x50 (100u)", precio: 4500, categoria: "Fijaciones" },
-                { codigo: "J001", nombre: "Manguera de Jardín 1/2\" x 50m", precio: 18500, categoria: "Jardinería" }
-            ];
-            
-            const preview = document.getElementById('productPreview');
-            if (!preview) return;
-            
-            preview.innerHTML = '';
-            productosEjemplo.forEach(producto => {
-                const div = document.createElement('div');
-                div.className = 'product-preview-item';
-                div.innerHTML = `
-                    <strong>${producto.codigo}</strong><br>
-                    ${producto.nombre}<br>
-                    <small>Categoría: ${producto.categoria}</small><br>
-                    <strong style="color: var(--primary);">$${producto.precio.toLocaleString()}</strong>
-                `;
-                preview.appendChild(div);
-            });
-        }
-
-        // ============================================
-        // FUNCIONES DE SETUP
-        // ============================================
-        async function testFirebaseConnection() {
             try {
-                logMessage('Probando conexión a Firebase...');
+                // Paso 1: Crear estructura de colecciones
+                updateProgress('Creando estructura de base de datos...', 10);
+                await createDatabaseStructure();
                 
-                // Intentar una operación simple
-                const testRef = db.collection('test_connection').doc('test');
-                await testRef.set({
-                    test: true,
-                    timestamp: new Date()
-                });
+                // Paso 2: Crear negocio principal
+                updateProgress('Creando datos del negocio...', 20);
+                const businessId = await createBusiness(businessData);
                 
-                await testRef.delete();
+                // Paso 3: Crear local principal
+                updateProgress('Creando local principal...', 30);
+                const localId = await createLocal(localData, businessId);
                 
-                logMessage('Conexión a Firebase exitosa', 'success');
-                updateFirebaseStatus('Conexión exitosa', 'success');
+                // Paso 4: Crear usuarios
+                updateProgress('Creando usuarios de prueba...', 50);
+                await createUsers(adminEmail, localId);
                 
-            } catch (error) {
-                logMessage('Error de conexión a Firebase: ' + error.message, 'error');
-                updateFirebaseStatus('Error de conexión', 'error');
-            }
-        }
-
-        async function crearConfiguracionInicial() {
-            try {
-                logMessage('Creando configuración inicial...');
-                
-                const nombre = document.getElementById('nombreComercio').value || 'Ferretería Central';
-                const direccion = document.getElementById('direccionComercio').value || 'Av. Principal 1234';
-                const telefono = document.getElementById('telefonoComercio').value || '11-1234-5678';
-                
-                const configData = {
-                    empresa: {
-                        nombre: nombre,
-                        direccion: direccion,
-                        telefono: telefono,
-                        cuit: '30-12345678-9',
-                        condicionIva: 'responsable_inscripto'
-                    },
-                    facturacion: {
-                        puntoVenta: '0001',
-                        ivaPorcentaje: 21,
-                        autoImprimir: true,
-                        generarTicket: true
-                    },
-                    sucursales: ['principal'],
-                    cajas: ['caja1', 'caja2'],
-                    impresion: {
-                        tipo: 'ticket',
-                        header: nombre,
-                        footer: '¡Gracias por su compra!',
-                        mostrarIVA: true
-                    },
-                    inventario: {
-                        alertaStockMinimo: true,
-                        stockMinimo: 5,
-                        controlStock: true
-                    },
-                    fechaCreacion: new Date(),
-                    ultimaActualizacion: new Date()
-                };
-                
-                await db.collection('configuracion').doc('principal').set(configData);
-                
-                // Crear contador de facturas
-                await db.collection('contadores_facturas').doc('sucursal_principal').set({
-                    sucursalId: 'principal',
-                    proximo: 1,
-                    ultimaActualizacion: new Date()
-                });
-                
-                logMessage('Configuración inicial creada exitosamente', 'success');
-                updateProgress(1, 'Configuración creada');
-                
-            } catch (error) {
-                logMessage('Error creando configuración: ' + error.message, 'error');
-            }
-        }
-
-        async function crearUsuariosPrueba() {
-            try {
-                logMessage('Creando usuarios de prueba...');
-                
-                const password = document.getElementById('userPassword').value || 'ferreteria123';
-                const usuarios = [
-                    {
-                        email: 'admin@ferreteria.com',
-                        nombre: 'Administrador Sistema',
-                        rol: ROLES.ADMIN,
-                        sucursales: ['principal'],
-                        telefono: '11-9876-5432'
-                    },
-                    {
-                        email: 'supervisor@ferreteria.com',
-                        nombre: 'Supervisor General',
-                        rol: ROLES.SUPERVISOR,
-                        sucursales: ['principal'],
-                        telefono: '11-8765-4321'
-                    },
-                    {
-                        email: 'cajero@ferreteria.com',
-                        nombre: 'Cajero Principal',
-                        rol: ROLES.CAJERO,
-                        sucursales: ['principal'],
-                        telefono: '11-7654-3210'
-                    },
-                    {
-                        email: 'vendedor@ferreteria.com',
-                        nombre: 'Vendedor 1',
-                        rol: ROLES.VENDEDOR,
-                        sucursales: ['principal'],
-                        telefono: '11-6543-2109'
-                    }
-                ];
-                
-                for (const userData of usuarios) {
-                    try {
-                        // Crear usuario en Firebase Auth
-                        const userCredential = await auth.createUserWithEmailAndPassword(userData.email, password);
-                        const userId = userCredential.user.uid;
-                        
-                        // Guardar datos en Firestore
-                        await db.collection('usuarios').doc(userId).set({
-                            email: userData.email,
-                            nombre: userData.nombre,
-                            rol: userData.rol,
-                            sucursales: userData.sucursales,
-                            telefono: userData.telefono,
-                            estado: 'activo',
-                            fechaRegistro: new Date(),
-                            ultimoAcceso: null
-                        });
-                        
-                        logMessage(`Usuario creado: ${userData.email} (${userData.rol})`, 'success');
-                        
-                        // Cerrar sesión del usuario creado
-                        await auth.signOut();
-                        
-                    } catch (error) {
-                        if (error.code === 'auth/email-already-in-use') {
-                            logMessage(`Usuario ${userData.email} ya existe`, 'warning');
-                        } else {
-                            logMessage(`Error creando usuario ${userData.email}: ${error.message}`, 'error');
-                        }
-                    }
+                // Paso 5: Crear productos de prueba
+                if (createProducts) {
+                    updateProgress('Creando productos de prueba...', 70);
+                    await createSampleProducts(localId, productCategory);
                 }
                 
-                updateProgress(2, 'Usuarios creados');
-                logMessage('Proceso de creación de usuarios completado', 'success');
+                // Paso 6: Configurar permisos iniciales
+                updateProgress('Configurando permisos...', 90);
+                await setupInitialPermissions(localId);
                 
-            } catch (error) {
-                logMessage('Error en creación de usuarios: ' + error.message, 'error');
-            }
-        }
-
-        async function crearProductosFerreteria() {
-            try {
-                logMessage('Creando productos de ferretería...');
+                // Finalizar
+                updateProgress('Configuración completada', 100);
                 
-                const categorias = [
-                    'Herramientas Manuales',
-                    'Herramientas Eléctricas', 
-                    'Electricidad',
-                    'Fontanería',
-                    'Pinturas',
-                    'Fijaciones',
-                    'Jardinería',
-                    'Materiales de Construcción',
-                    'Cerraduras y Seguridad',
-                    'Iluminación'
-                ];
-                
-                // Crear categorías primero
-                for (const categoria of categorias) {
-                    await db.collection('categorias').add({
-                        nombre: categoria,
-                        sucursalId: 'principal',
-                        estado: 'activa',
-                        fechaCreacion: new Date()
-                    });
-                }
-                
-                logMessage(`${categorias.length} categorías creadas`, 'success');
-                
-                // Productos de ferretería (lista extensa)
-                const productos = [
-                    // Herramientas Manuales
-                    { codigo: "HM001", nombre: "Martillo de Carpintero 500g", precioCosto: 2800, precioVenta: 4500, stock: 25, categoria: "Herramientas Manuales", proveedor: "Proveedor A", codigoBarras: "779123456001" },
-                    { codigo: "HM002", nombre: "Martillo de Bola 750g", precioCosto: 3200, precioVenta: 5200, stock: 18, categoria: "Herramientas Manuales", proveedor: "Proveedor A", codigoBarras: "779123456002" },
-                    { codigo: "HM003", nombre: "Destornillador Plano 6mm", precioCosto: 750, precioVenta: 1200, stock: 50, categoria: "Herramientas Manuales", proveedor: "Proveedor B", codigoBarras: "779123456003" },
-                    { codigo: "HM004", nombre: "Destornillador Phillips #2", precioCosto: 800, precioVenta: 1300, stock: 45, categoria: "Herramientas Manuales", proveedor: "Proveedor B", codigoBarras: "779123456004" },
-                    { codigo: "HM005", nombre: "Alicate Universal 8\"", precioCosto: 2200, precioVenta: 3800, stock: 30, categoria: "Herramientas Manuales", proveedor: "Proveedor A", codigoBarras: "779123456005" },
-                    { codigo: "HM006", nombre: "Alicate de Corte 7\"", precioCosto: 2500, precioVenta: 4200, stock: 28, categoria: "Herramientas Manuales", proveedor: "Proveedor A", codigoBarras: "779123456006" },
-                    { codigo: "HM007", nombre: "Llave Francesa 10\"", precioCosto: 3200, precioVenta: 5200, stock: 22, categoria: "Herramientas Manuales", proveedor: "Proveedor C", codigoBarras: "779123456007" },
-                    { codigo: "HM008", nombre: "Juego de Llaves Allen", precioCosto: 1800, precioVenta: 3200, stock: 35, categoria: "Herramientas Manuales", proveedor: "Proveedor B", codigoBarras: "779123456008" },
-                    
-                    // Herramientas Eléctricas
-                    { codigo: "HE001", nombre: "Taladro Percutor 650W", precioCosto: 18500, precioVenta: 28500, stock: 8, categoria: "Herramientas Eléctricas", proveedor: "Proveedor D", codigoBarras: "779123456101" },
-                    { codigo: "HE002", nombre: "Amoladora Angular 4 1/2\"", precioCosto: 12500, precioVenta: 19800, stock: 10, categoria: "Herramientas Eléctricas", proveedor: "Proveedor D", codigoBarras: "779123456102" },
-                    { codigo: "HE003", nombre: "Sierra Caladora 500W", precioCosto: 9800, precioVenta: 16500, stock: 6, categoria: "Herramientas Eléctricas", proveedor: "Proveedor D", codigoBarras: "779123456103" },
-                    
-                    // Electricidad
-                    { codigo: "EL001", nombre: "Cable Eléctrico 2.5mm x 100m", precioCosto: 18500, precioVenta: 28500, stock: 15, categoria: "Electricidad", proveedor: "Proveedor E", codigoBarras: "779123456201" },
-                    { codigo: "EL002", nombre: "Cable Eléctrico 1.5mm x 100m", precioCosto: 12500, precioVenta: 19800, stock: 20, categoria: "Electricidad", proveedor: "Proveedor E", codigoBarras: "779123456202" },
-                    { codigo: "EL003", nombre: "Interruptor Simple Blanco", precioCosto: 450, precioVenta: 850, stock: 100, categoria: "Electricidad", proveedor: "Proveedor F", codigoBarras: "779123456203" },
-                    { codigo: "EL004", nombre: "Tomacorriente Doble 10A", precioCosto: 520, precioVenta: 950, stock: 80, categoria: "Electricidad", proveedor: "Proveedor F", codigoBarras: "779123456204" },
-                    { codigo: "EL005", nombre: "Caja Rectangular PVC", precioCosto: 120, precioVenta: 250, stock: 200, categoria: "Electricidad", proveedor: "Proveedor F", codigoBarras: "779123456205" },
-                    
-                    // Fontanería
-                    { codigo: "FO001", nombre: "Llave Stillson 14\"", precioCosto: 5800, precioVenta: 8900, stock: 12, categoria: "Fontanería", proveedor: "Proveedor G", codigoBarras: "779123456301" },
-                    { codigo: "FO002", nombre: "Caño PVC 1/2\" x 6m", precioCosto: 850, precioVenta: 1500, stock: 50, categoria: "Fontanería", proveedor: "Proveedor G", codigoBarras: "779123456302" },
-                    { codigo: "FO003", nombre: "Codo PVC 90° 1/2\"", precioCosto: 45, precioVenta: 120, stock: 300, categoria: "Fontanería", proveedor: "Proveedor G", codigoBarras: "779123456303" },
-                    { codigo: "FO004", nombre: "Grifería Monocomando Cocina", precioCosto: 4200, precioVenta: 7200, stock: 8, categoria: "Fontanería", proveedor: "Proveedor H", codigoBarras: "779123456304" },
-                    
-                    // Pinturas
-                    { codigo: "PI001", nombre: "Pintura Latex Blanco 20L", precioCosto: 19500, precioVenta: 32500, stock: 10, categoria: "Pinturas", proveedor: "Proveedor I", codigoBarras: "779123456401" },
-                    { codigo: "PI002", nombre: "Pintura Latex Blanco 4L", precioCosto: 5200, precioVenta: 8500, stock: 25, categoria: "Pinturas", proveedor: "Proveedor I", codigoBarras: "779123456402" },
-                    { codigo: "PI003", nombre: "Rodillo de Lana 9\"", precioCosto: 850, precioVenta: 1600, stock: 40, categoria: "Pinturas", proveedor: "Proveedor J", codigoBarras: "779123456403" },
-                    { codigo: "PI004", nombre: "Brocha 2\" Cerdas Naturales", precioCosto: 650, precioVenta: 1200, stock: 60, categoria: "Pinturas", proveedor: "Proveedor J", codigoBarras: "779123456404" },
-                    
-                    // Fijaciones
-                    { codigo: "FJ001", nombre: "Tornillo para Madera 3x50 (100u)", precioCosto: 2800, precioVenta: 4500, stock: 30, categoria: "Fijaciones", proveedor: "Proveedor K", codigoBarras: "779123456501" },
-                    { codigo: "FJ002", nombre: "Tornillo Autorroscante 4x30 (100u)", precioCosto: 3200, precioVenta: 5200, stock: 28, categoria: "Fijaciones", proveedor: "Proveedor K", codigoBarras: "779123456502" },
-                    { codigo: "FJ003", nombre: "Taco Plástico 8x40 (50u)", precioCosto: 950, precioVenta: 1800, stock: 45, categoria: "Fijaciones", proveedor: "Proveedor K", codigoBarras: "779123456503" },
-                    { codigo: "FJ004", nombre: "Clavo de Construcción 3\" (1kg)", precioCosto: 1200, precioVenta: 2200, stock: 40, categoria: "Fijaciones", proveedor: "Proveedor L", codigoBarras: "779123456504" },
-                    
-                    // Jardinería
-                    { codigo: "JA001", nombre: "Manguera de Jardín 1/2\" x 50m", precioCosto: 12500, precioVenta: 18500, stock: 15, categoria: "Jardinería", proveedor: "Proveedor M", codigoBarras: "779123456601" },
-                    { codigo: "JA002", nombre: "Pistola para Manguera 6 Funciones", precioCosto: 2200, precioVenta: 3800, stock: 25, categoria: "Jardinería", proveedor: "Proveedor M", codigoBarras: "779123456602" },
-                    { codigo: "JA003", nombre: "Tijera de Podar 8\"", precioCosto: 3200, precioVenta: 5200, stock: 18, categoria: "Jardinería", proveedor: "Proveedor N", codigoBarras: "779123456603" },
-                    { codigo: "JA004", nombre: "Rastrillo de Jardín 16 Dientes", precioCosto: 2800, precioVenta: 4500, stock: 20, categoria: "Jardinería", proveedor: "Proveedor N", codigoBarras: "779123456604" },
-                    
-                    // Materiales de Construcción
-                    { codigo: "MC001", nombre: "Cemento Portland 50kg", precioCosto: 3200, precioVenta: 5200, stock: 50, categoria: "Materiales de Construcción", proveedor: "Proveedor O", codigoBarras: "779123456701" },
-                    { codigo: "MC002", nombre: "Cal Hidratada 25kg", precioCosto: 1800, precioVenta: 3200, stock: 30, categoria: "Materiales de Construcción", proveedor: "Proveedor O", codigoBarras: "779123456702" },
-                    { codigo: "MC003", nombre: "Arena por m3", precioCosto: 8500, precioVenta: 12500, stock: 10, categoria: "Materiales de Construcción", proveedor: "Proveedor O", codigoBarras: "779123456703" },
-                    
-                    // Cerraduras y Seguridad
-                    { codigo: "CS001", nombre: "Cerradura Doble Paleta Bronce", precioCosto: 4200, precioVenta: 7200, stock: 15, categoria: "Cerraduras y Seguridad", proveedor: "Proveedor P", codigoBarras: "779123456801" },
-                    { codigo: "CS002", nombre: "Candado de Seguridad 40mm", precioCosto: 2200, precioVenta: 3800, stock: 25, categoria: "Cerraduras y Seguridad", proveedor: "Proveedor P", codigoBarras: "779123456802" },
-                    { codigo: "CS003", nombre: "Pomo Interior Níquel", precioCosto: 1800, precioVenta: 3200, stock: 20, categoria: "Cerraduras y Seguridad", proveedor: "Proveedor P", codigoBarras: "779123456803" },
-                    
-                    // Iluminación
-                    { codigo: "IL001", nombre: "LED Empotrable 12W Blanco", precioCosto: 650, precioVenta: 1200, stock: 60, categoria: "Iluminación", proveedor: "Proveedor Q", codigoBarras: "779123456901" },
-                    { codigo: "IL002", nombre: "Tubo LED 18W 120cm", precioCosto: 2200, precioVenta: 3800, stock: 35, categoria: "Iluminación", proveedor: "Proveedor Q", codigoBarras: "779123456902" },
-                    { codigo: "IL003", nombre: "Foco LED E27 9W", precioCosto: 450, precioVenta: 850, stock: 100, categoria: "Iluminación", proveedor: "Proveedor Q", codigoBarras: "779123456903" }
-                ];
-                
-                // Crear productos en lote
-                const batch = db.batch();
-                let contador = 0;
-                
-                for (const producto of productos) {
-                    const productoRef = db.collection('productos').doc();
-                    
-                    const productoData = {
-                        ...producto,
-                        sucursalId: 'principal',
-                        estado: 'activo',
-                        controlStock: true,
-                        stockMinimo: 5,
-                        iva: 21,
-                        fechaCreacion: new Date(),
-                        fechaActualizacion: new Date(),
-                        vendidosTotal: 0,
-                        ubicacion: 'Estantería ' + Math.floor(Math.random() * 10) + 1
-                    };
-                    
-                    batch.set(productoRef, productoData);
-                    contador++;
-                    
-                    // Firestore tiene límite de 500 operaciones por batch
-                    if (contador % 400 === 0) {
-                        await batch.commit();
-                        logMessage(`${contador} productos creados...`, 'info');
-                    }
-                }
-                
-                // Commit final si queda algo pendiente
-                if (contador % 400 !== 0) {
-                    await batch.commit();
-                }
-                
-                logMessage(`${contador} productos de ferretería creados exitosamente`, 'success');
-                updateProgress(3, `${contador} productos creados`);
-                
-            } catch (error) {
-                logMessage('Error creando productos: ' + error.message, 'error');
-            }
-        }
-
-        async function crearClientesProveedores() {
-            try {
-                logMessage('Creando clientes y proveedores...');
-                
-                // Clientes
-                const clientes = [
-                    {
-                        nombre: "Consumidor Final",
-                        tipo: "consumidor_final",
-                        documento: "99999999",
-                        email: "consumidor@final.com",
-                        telefono: "11-0000-0000",
-                        direccion: "Varios",
-                        saldo: 0,
-                        limiteCredito: 0
-                    },
-                    {
-                        nombre: "Constructora El Progreso S.A.",
-                        tipo: "empresa",
-                        documento: "30-12345678-9",
-                        email: "contacto@elprogreso.com",
-                        telefono: "11-4321-5678",
-                        direccion: "Av. Industrial 2345, Pilar",
-                        saldo: 0,
-                        limiteCredito: 500000,
-                        contacto: "Juan Pérez"
-                    },
-                    {
-                        nombre: "Distribuidora Mayorista Central",
-                        tipo: "empresa",
-                        documento: "30-87654321-0",
-                        email: "ventas@mayoristacentral.com",
-                        telefono: "11-8765-4321",
-                        direccion: "Zona Industrial Norte, Lote 45",
-                        saldo: 0,
-                        limiteCredito: 300000,
-                        contacto: "María González"
-                    },
-                    {
-                        nombre: "Carlos Rodríguez",
-                        tipo: "particular",
-                        documento: "20-12345678",
-                        email: "carlos.rodriguez@gmail.com",
-                        telefono: "11-1234-9876",
-                        direccion: "Calle Falsa 123, CABA",
-                        saldo: 0,
-                        limiteCredito: 50000
-                    },
-                    {
-                        nombre: "María Lopez",
-                        tipo: "particular",
-                        documento: "27-87654321",
-                        email: "maria.lopez@hotmail.com",
-                        telefono: "11-9876-1234",
-                        direccion: "Av. Siempre Viva 742, Springfield",
-                        saldo: 0,
-                        limiteCredito: 30000
-                    }
-                ];
-                
-                for (const cliente of clientes) {
-                    await db.collection('clientes').add({
-                        ...cliente,
-                        sucursalId: 'principal',
-                        estado: 'activo',
-                        fechaRegistro: new Date(),
-                        comprasTotal: 0,
-                        ultimaCompra: null
-                    });
-                }
-                
-                logMessage(`${clientes.length} clientes creados`, 'success');
-                
-                // Proveedores
-                const proveedores = [
-                    {
-                        nombre: "Industrias Metálicas S.A.",
-                        documento: "30-11222333-4",
-                        contacto: "Roberto Martínez",
-                        email: "ventas@industriasmetalicas.com",
-                        telefono: "11-2233-4455",
-                        direccion: "Parque Industrial Pilar, Lote 12",
-                        productos: ["Herramientas Manuales", "Herramientas Eléctricas"],
-                        estado: "activo"
-                    },
-                    {
-                        nombre: "Distribuidora de Herramientas Norte",
-                        documento: "30-44555666-7",
-                        contacto: "Laura Fernández",
-                        email: "laura@herramientasnorte.com",
-                        telefono: "11-3344-5566",
-                        direccion: "Ruta 9 Km 45, Escobar",
-                        productos: ["Herramientas Manuales", "Fijaciones", "Electricidad"],
-                        estado: "activo"
-                    },
-                    {
-                        nombre: "Pinturerías del Sur S.R.L.",
-                        documento: "30-77888999-1",
-                        contacto: "Diego Sánchez",
-                        email: "diego@pintureriassur.com",
-                        telefono: "11-4455-6677",
-                        direccion: "Av. San Martín 2345, Quilmes",
-                        productos: ["Pinturas", "Rodillos", "Brochas"],
-                        estado: "activo"
-                    },
-                    {
-                        nombre: "Materiales de Construcción La Estrella",
-                        documento: "30-99888777-6",
-                        contacto: "Ana Torres",
-                        email: "ana@materialesestrella.com",
-                        telefono: "11-5566-7788",
-                        direccion: "Ruta 2 Km 60, La Plata",
-                        productos: ["Materiales de Construcción", "Fontanería"],
-                        estado: "activo"
-                    },
-                    {
-                        nombre: "Iluminación LED Argentina",
-                        documento: "30-66777888-9",
-                        contacto: "Pablo Gómez",
-                        email: "pablo@ledargentina.com",
-                        telefono: "11-6677-8899",
-                        direccion: "Av. Cabildo 3456, CABA",
-                        productos: ["Iluminación", "Electricidad"],
-                        estado: "activo"
-                    }
-                ];
-                
-                for (const proveedor of proveedores) {
-                    await db.collection('proveedores').add({
-                        ...proveedor,
-                        sucursalId: 'principal',
-                        fechaRegistro: new Date()
-                    });
-                }
-                
-                logMessage(`${proveedores.length} proveedores creados`, 'success');
-                updateProgress(4, 'Clientes y proveedores creados');
-                
-            } catch (error) {
-                logMessage('Error creando clientes/proveedores: ' + error.message, 'error');
-            }
-        }
-
-        async function setupCompleto() {
-            try {
-                logMessage('=== INICIANDO SETUP COMPLETO ===', 'info');
-                
-                // 1. Configuración inicial
-                await crearConfiguracionInicial();
-                
-                // 2. Usuarios de prueba
-                await crearUsuariosPrueba();
-                
-                // 3. Productos de ferretería
-                await crearProductosFerreteria();
-                
-                // 4. Clientes y proveedores
-                await crearClientesProveedores();
-                
-                logMessage('=== SETUP COMPLETADO EXITOSAMENTE ===', 'success');
-                updateProgress(5, 'Setup completo');
-                
-                // Mostrar mensaje final
+                // Mostrar pantalla de éxito
                 setTimeout(() => {
-                    alert('✅ Setup completado exitosamente!\n\nAhora puedes acceder al sistema con:\nEmail: admin@ferreteria.com\nContraseña: ferreteria123\n\nHaz clic en "Volver al Login" para comenzar.');
+                    setupForm.style.display = 'none';
+                    setupComplete.style.display = 'block';
                 }, 1000);
                 
             } catch (error) {
-                logMessage('Error en setup completo: ' + error.message, 'error');
+                showError(`Error durante la configuración: ${error.message}`);
+                console.error('Setup error:', error);
+                isConfiguring = false;
+                startSetupBtn.disabled = false;
+                startSetupBtn.textContent = 'Iniciar Configuración';
             }
+        });
+        
+        // Funciones de configuración
+        async function createDatabaseStructure() {
+            // Crear colecciones base con documentos iniciales
+            const collections = [
+                'businesses',
+                'locals',
+                'users',
+                'products',
+                'categories',
+                'clients',
+                'providers',
+                'sales',
+                'budgets',
+                'cashboxes',
+                'settings'
+            ];
+            
+            // Solo creamos documentos de configuración, Firestore crea colecciones al primer documento
+            await db.collection('system').doc('config').set({
+                version: '1.0.0',
+                setupDate: new Date().toISOString(),
+                setupCompleted: true
+            });
         }
-
-        // ============================================
-        // FUNCIONES DE LIMPIEZA (ZONA PELIGROSA)
-        // ============================================
-        async function eliminarTodosDatos() {
-            const confirmacion = document.getElementById('confirmPassword').value;
-            
-            if (confirmacion !== 'CONFIRMAR') {
-                alert('Debe escribir "CONFIRMAR" en el campo de contraseña para proceder');
-                return;
-            }
-            
-            if (!confirm('⚠️ ¿ESTÁ SEGURO?\n\nEsta acción eliminará TODOS los datos de la base de datos y no se puede deshacer.')) {
-                return;
-            }
-            
-            try {
-                logMessage('Eliminando todos los datos...', 'warning');
-                
-                // Lista de colecciones a limpiar
-                const colecciones = [
-                    'usuarios',
-                    'productos', 
-                    'clientes',
-                    'proveedores',
-                    'categorias',
-                    'ventas',
-                    'turnos',
-                    'configuracion',
-                    'contadores_facturas',
-                    'eventos_sistema'
-                ];
-                
-                for (const coleccion of colecciones) {
-                    try {
-                        const snapshot = await db.collection(coleccion).get();
-                        const batch = db.batch();
-                        
-                        snapshot.forEach(doc => {
-                            batch.delete(doc.ref);
-                        });
-                        
-                        await batch.commit();
-                        logMessage(`Colección ${coleccion} eliminada`, 'success');
-                        
-                    } catch (error) {
-                        logMessage(`Error eliminando ${coleccion}: ${error.message}`, 'error');
-                    }
-                }
-                
-                // También eliminar usuarios de Auth (esto es más complejo y requiere admin SDK)
-                logMessage('Nota: Los usuarios de Firebase Auth deben eliminarse manualmente desde la consola', 'warning');
-                
-                logMessage('Todos los datos han sido eliminados', 'success');
-                updateProgress(0, 'Datos eliminados');
-                
-            } catch (error) {
-                logMessage('Error eliminando datos: ' + error.message, 'error');
-            }
+        
+        async function createBusiness(data) {
+            const businessRef = db.collection('businesses').doc();
+            await businessRef.set({
+                ...data,
+                id: businessRef.id,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
+            return businessRef.id;
         }
-
-        async function resetearProductos() {
-            const confirmacion = document.getElementById('confirmPassword').value;
+        
+        async function createLocal(data, businessId) {
+            const localRef = db.collection('locals').doc();
+            await localRef.set({
+                ...data,
+                id: localRef.id,
+                businessId: businessId,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
+            return localRef.id;
+        }
+        
+        async function createUsers(adminEmail, localId) {
+            // Usuario Administrador
+            await auth.createUserWithEmailAndPassword(adminEmail, 'admin123');
             
-            if (confirmacion !== 'CONFIRMAR') {
-                alert('Debe escribir "CONFIRMAR" en el campo de contraseña para proceder');
-                return;
-            }
+            const adminUserRef = db.collection('users').doc();
+            await adminUserRef.set({
+                id: adminUserRef.id,
+                email: adminEmail,
+                name: 'Administrador Principal',
+                role: 'admin',
+                localId: localId,
+                isActive: true,
+                createdAt: new Date().toISOString(),
+                createdBy: 'system'
+            });
             
-            if (!confirm('¿Resetear todos los productos? Esto eliminará todos los productos existentes.')) {
-                return;
-            }
+            // Usuario Cajero
+            await auth.createUserWithEmailAndPassword('cajero@comercio.com', 'cajero123');
             
-            try {
-                logMessage('Reseteando productos...', 'warning');
-                
-                // Eliminar productos existentes
-                const snapshot = await db.collection('productos').get();
-                const batch = db.batch();
-                
-                snapshot.forEach(doc => {
-                    batch.delete(doc.ref);
+            const cashierUserRef = db.collection('users').doc();
+            await cashierUserRef.set({
+                id: cashierUserRef.id,
+                email: 'cajero@comercio.com',
+                name: 'Cajero de Prueba',
+                role: 'cajero',
+                localId: localId,
+                isActive: true,
+                createdAt: new Date().toISOString(),
+                createdBy: 'system'
+            });
+            
+            // Usuario Vendedor
+            await auth.createUserWithEmailAndPassword('vendedor@comercio.com', 'vendedor123');
+            
+            const sellerUserRef = db.collection('users').doc();
+            await sellerUserRef.set({
+                id: sellerUserRef.id,
+                email: 'vendedor@comercio.com',
+                name: 'Vendedor de Prueba',
+                role: 'vendedor',
+                localId: localId,
+                isActive: true,
+                createdAt: new Date().toISOString(),
+                createdBy: 'system'
+            });
+        }
+        
+        async function createSampleProducts(localId, category) {
+            const sampleProducts = generateSampleProducts(50, category);
+            
+            // Crear categoría
+            const categoryRef = db.collection('categories').doc();
+            await categoryRef.set({
+                id: categoryRef.id,
+                name: category.charAt(0).toUpperCase() + category.slice(1),
+                localId: localId,
+                isActive: true,
+                createdAt: new Date().toISOString()
+            });
+            
+            // Crear productos
+            for (const product of sampleProducts) {
+                const productRef = db.collection('products').doc();
+                await productRef.set({
+                    ...product,
+                    id: productRef.id,
+                    localId: localId,
+                    categoryId: categoryRef.id,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
                 });
-                
-                await batch.commit();
-                logMessage('Productos existentes eliminados', 'success');
-                
-                // Crear productos de prueba nuevamente
-                await crearProductosFerreteria();
-                
-                logMessage('Productos reseteados exitosamente', 'success');
-                
-            } catch (error) {
-                logMessage('Error reseteando productos: ' + error.message, 'error');
             }
         }
+        
+        async function setupInitialPermissions(localId) {
+            // Configuración inicial de permisos
+            const settingsRef = db.collection('settings').doc('permissions');
+            await settingsRef.set({
+                localId: localId,
+                roles: {
+                    admin: ['all'],
+                    supervisor: ['read', 'write', 'approve'],
+                    cajero: ['sales', 'cashbox', 'read_products'],
+                    vendedor: ['sales', 'read_products', 'budgets']
+                },
+                updatedAt: new Date().toISOString()
+            });
+        }
+        
+        function generateSampleProducts(count, category) {
+            const products = [];
+            const categories = {
+                alimentos: ['Arroz', 'Fideos', 'Aceite', 'Harina', 'Azúcar', 'Sal', 'Galletas', 'Conservas'],
+                bebidas: ['Agua', 'Gaseosa', 'Jugo', 'Cerveza', 'Vino', 'Refresco', 'Energizante'],
+                limpieza: ['Jabón', 'Detergente', 'Lavandina', 'Desinfectante', 'Esponja', 'Papel Higiénico'],
+                electronica: ['Cable USB', 'Pila AA', 'Foco LED', 'Adaptador', 'Batería', 'Cargador'],
+                general: ['Cuaderno', 'Lápiz', 'Resma Papel', 'Cinta', 'Tijera', 'Goma', 'Marcador']
+            };
+            
+            const baseProducts = categories[category] || categories.general;
+            
+            for (let i = 1; i <= count; i++) {
+                const nameIndex = i % baseProducts.length;
+                const product = {
+                    code: `PROD${String(i).padStart(5, '0')}`,
+                    barcode: `789${String(1000000 + i).padStart(10, '0')}`,
+                    name: `${baseProducts[nameIndex]} ${i}`,
+                    description: `${baseProducts[nameIndex]} de prueba ${i}`,
+                    cost: parseFloat((Math.random() * 100 + 10).toFixed(2)),
+                    margin: parseFloat((Math.random() * 50 + 20).toFixed(2)),
+                    price: 0, // Se calcula en la función
+                    stock: Math.floor(Math.random() * 100),
+                    minStock: 10,
+                    unit: 'unidad',
+                    isActive: true,
+                    hasStockControl: true
+                };
+                
+                product.price = parseFloat((product.cost * (1 + product.margin / 100)).toFixed(2));
+                
+                products.push(product);
+            }
+            
+            return products;
+        }
+        
+        function validateRequiredFields() {
+            const requiredFields = [
+                'business-name',
+                'local-name',
+                'local-code'
+            ];
+            
+            let isValid = true;
+            
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    field.style.borderColor = '#dc2626';
+                    isValid = false;
+                } else {
+                    field.style.borderColor = '';
+                }
+            });
+            
+            if (!isValid) {
+                showError('Completa todos los campos requeridos (*)');
+            }
+            
+            return isValid;
+        }
+        
+        function updateProgress(message, percentage) {
+            currentOperation.textContent = message;
+            progressFill.style.width = `${percentage}%`;
+            
+            // Mostrar mensaje de progreso
+            const progressMsg = document.createElement('div');
+            progressMsg.className = 'status-info';
+            progressMsg.textContent = `✓ ${message}`;
+            statusMessages.appendChild(progressMsg);
+            
+            // Scroll al final
+            statusMessages.scrollTop = statusMessages.scrollHeight;
+        }
+        
+        function showError(message) {
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'status-error';
+            errorMsg.textContent = message;
+            statusMessages.appendChild(errorMsg);
+            
+            // Scroll al final
+            statusMessages.scrollTop = statusMessages.scrollHeight;
+        }
+        
+        // Inicializar botón
+        startSetupBtn.disabled = true;
     </script>
 </body>
 </html>
