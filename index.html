@@ -3,320 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema POS - Facturación Comercial</title>
+    <title>POS CommerceFire | Sistema de Punto de Venta</title>
     <link rel="stylesheet" href="styles.css">
-    
-    <!-- Firebase SDK vía CDN -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
-    <!-- Iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- HTML2PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
-    <!-- SheetJS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏪</text></svg>">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-    <!-- Pantalla de Login (visible solo sin sesión) -->
-    <div id="loginScreen" class="login-screen">
+    <!-- Pantalla de Login (inicial) -->
+    <div id="login-screen" class="screen active">
         <div class="login-container">
             <div class="login-header">
-                <h1><i class="fas fa-cash-register"></i> Sistema POS Comercial</h1>
-                <p>Sistema de Facturación y Gestión Multipuesto</p>
+                <h1>POS CommerceFire</h1>
+                <p class="subtitle">Sistema de Punto de Venta Offline-First</p>
+                <div class="status-indicator">
+                    <span id="connection-status" class="status-offline">● Sin conexión</span>
+                    <span id="local-indicator">Local: No asignado</span>
+                </div>
             </div>
             
             <div class="login-card">
                 <h2>Iniciar Sesión</h2>
+                
                 <div class="form-group">
-                    <label for="loginEmail"><i class="fas fa-envelope"></i> Email</label>
-                    <input type="email" id="loginEmail" class="form-control" placeholder="usuario@comercio.com">
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword"><i class="fas fa-lock"></i> Contraseña</label>
-                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••">
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="rememberMe"> Recordar sesión
-                    </label>
+                    <label for="email">Correo electrónico</label>
+                    <input type="email" id="email" placeholder="usuario@comercio.com">
                 </div>
                 
-                <button id="btnLogin" class="btn btn-primary btn-block" onclick="login()">
-                    <i class="fas fa-sign-in-alt"></i> Ingresar al Sistema
-                </button>
-                
-                <div class="login-footer">
-                    <p>Versión 2.0 • Sistema multipuesto con Firebase</p>
-                    <p class="firebase-status" id="firebaseStatus">Conectando...</p>
-                </div>
-            </div>
-            
-            <!-- Selector de sucursal para usuarios con múltiples sucursales -->
-            <div id="sucursalSelector" class="login-card" style="display: none; margin-top: 20px;">
-                <h3>Seleccionar Sucursal</h3>
                 <div class="form-group">
-                    <select id="selectSucursalLogin" class="form-control">
-                        <option value="">Cargando sucursales...</option>
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" placeholder="••••••••">
+                </div>
+                
+                <div class="form-group">
+                    <label for="local">Local</label>
+                    <select id="local-select">
+                        <option value="">Cargando locales...</option>
                     </select>
                 </div>
-                <button id="btnSelectSucursal" class="btn btn-success btn-block" onclick="seleccionarSucursal()">
-                    <i class="fas fa-store"></i> Ingresar a esta sucursal
+                
+                <div class="form-group">
+                    <label for="turno">Turno</label>
+                    <select id="turno-select">
+                        <option value="mañana">Mañana</option>
+                        <option value="tarde">Tarde</option>
+                    </select>
+                </div>
+                
+                <button id="login-btn" class="btn-primary">
+                    <span class="btn-text">Iniciar Sesión</span>
+                    <span class="btn-spinner" style="display: none;">⌛</span>
                 </button>
-            </div>
-        </div>
-        
-        <!-- Información del sistema -->
-        <div class="system-info">
-            <div class="info-card">
-                <h3><i class="fas fa-check-circle"></i> Sistema en Producción</h3>
-                <ul>
-                    <li><i class="fas fa-check"></i> Login real con Firebase Auth</li>
-                    <li><i class="fas fa-check"></i> Concurrencia multipuesto con transacciones</li>
-                    <li><i class="fas fa-check"></i> Control de stock en tiempo real</li>
-                    <li><i class="fas fa-check"></i> Multicaja y turnos</li>
-                    <li><i class="fas fa-check"></i> Cuenta corriente de clientes</li>
-                    <li><i class="fas fa-check"></i> Modo emergencia offline</li>
-                </ul>
+                
+                <div id="login-error" class="error-message" style="display: none;"></div>
+                
+                <div class="login-footer">
+                    <p>Sistema diseñado para funcionar sin internet</p>
+                    <p class="small">v1.0.0 | Firebase Spark Plan</p>
+                </div>
             </div>
         </div>
     </div>
-
-    <!-- Sistema Principal (visible solo con sesión) -->
-    <div id="mainSystem" class="app-container" style="display: none;">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2 id="empresaNombre">🏪 Sistema POS</h2>
-                <small id="sucursalNombre">Sucursal principal</small>
-                <div class="sidebar-status">
-                    <span id="sidebarUserRole">Cargando...</span>
-                    <span class="status-dot online" id="sidebarStatus"></span>
+    
+    <!-- Aplicación Principal (oculta inicialmente) -->
+    <div id="app-screen" class="screen">
+        <!-- Barra Superior -->
+        <header class="app-header">
+            <div class="header-left">
+                <button id="menu-toggle" class="icon-btn">☰</button>
+                <div class="business-info">
+                    <h2 id="business-name">--</h2>
+                    <div class="session-info">
+                        <span id="current-user">Usuario</span>
+                        <span class="divider">|</span>
+                        <span id="current-local">Local</span>
+                        <span class="divider">|</span>
+                        <span id="current-turn">Turno</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="sidebar-menu">
-                <!-- Menú dinámico según rol -->
-                <div id="menuContent">
-                    <!-- Se carga dinámicamente según rol -->
-                </div>
-                
-                <!-- Sección común -->
-                <div class="menu-section">
-                    <h4>Sistema</h4>
-                    <a href="#" class="menu-item" data-view="configuracion">
-                        <i class="fas fa-cog"></i> Configuración
-                    </a>
-                    <a href="#" class="menu-item" onclick="exportarBackup()">
-                        <i class="fas fa-download"></i> Exportar Backup
-                    </a>
-                    <a href="#" class="menu-item" onclick="importarBackup()">
-                        <i class="fas fa-upload"></i> Importar Backup
-                    </a>
-                    <a href="#" class="menu-item logout-item" onclick="logout()">
-                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                    </a>
+            <div class="header-center">
+                <div class="connection-status">
+                    <span id="app-connection-status" class="status-offline">OFFLINE</span>
+                    <span id="pending-sync" class="sync-indicator" style="display: none;">🔄 0 pendientes</span>
                 </div>
             </div>
-        </div>
-
-        <!-- Contenido Principal -->
-        <div class="main-content">
-            <!-- Barra superior -->
-            <div class="top-nav">
-                <div class="nav-left">
-                    <button class="menu-toggle" id="menuToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
+            
+            <div class="header-right">
+                <button id="cashbox-btn" class="header-btn">💰 Caja</button>
+                <button id="cart-btn" class="header-btn primary">🛒 <span id="cart-count">0</span></button>
+                <button id="logout-btn" class="header-btn danger">Salir</button>
+            </div>
+        </header>
+        
+        <!-- Contenedor Principal -->
+        <div class="main-container">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="sidebar">
+                <div class="sidebar-header">
+                    <h3>Operaciones</h3>
+                </div>
+                
+                <ul class="nav-menu">
+                    <li><a href="#" data-section="pos" class="nav-link active">🏪 POS Ventas</a></li>
+                    <li><a href="#" data-section="products" class="nav-link">📦 Productos</a></li>
+                    <li><a href="#" data-section="clients" class="nav-link">👥 Clientes</a></li>
+                    <li><a href="#" data-section="budgets" class="nav-link">📄 Presupuestos</a></li>
+                    <li><a href="#" data-section="sales" class="nav-link">📊 Ventas</a></li>
+                    <li><a href="#" data-section="reports" class="nav-link">📈 Reportes</a></li>
+                    <li><a href="#" data-section="providers" class="nav-link">🚚 Proveedores</a></li>
+                    <li><a href="#" data-section="cashbox" class="nav-link">💰 Caja Diaria</a></li>
                     
-                    <div class="system-indicators">
-                        <div class="indicator" id="turnoIndicator">
-                            <i class="fas fa-user-clock"></i>
-                            <span id="turnoText">Sin turno</span>
-                        </div>
-                        <div class="indicator" id="cajaIndicator">
-                            <i class="fas fa-cash-register"></i>
-                            <span id="cajaText">Caja 1</span>
-                        </div>
-                        <div class="indicator" id="onlineIndicator">
-                            <i class="fas fa-wifi"></i>
-                            <span>Online</span>
-                        </div>
-                    </div>
-                </div>
+                    <li class="nav-divider">Administración</li>
+                    <li><a href="#" data-section="users" class="nav-link">👤 Usuarios</a></li>
+                    <li><a href="#" data-section="locals" class="nav-link">🏪 Locales</a></li>
+                    <li><a href="#" data-section="config" class="nav-link">⚙️ Configuración</a></li>
+                </ul>
                 
-                <div class="nav-right">
-                    <div class="user-profile">
-                        <div class="user-info">
-                            <strong id="userName">Usuario</strong>
-                            <small id="userRole">Rol</small>
+                <div class="sidebar-footer">
+                    <div class="storage-info">
+                        <div class="storage-bar">
+                            <div class="storage-fill" style="width: 0%"></div>
                         </div>
-                        <div class="user-avatar" id="userAvatar">U</div>
+                        <small>Offline: <span id="storage-used">0</span>MB</small>
                     </div>
                 </div>
-            </div>
-
-            <!-- Contenedor de Vistas -->
-            <div id="viewContainer">
-                <!-- Todas las vistas se cargan dinámicamente -->
-                <div id="loadingView" class="view active">
-                    <div class="loading-content">
-                        <div class="loader"></div>
-                        <p>Inicializando sistema...</p>
+            </nav>
+            
+            <!-- Contenido Dinámico -->
+            <main id="main-content" class="content">
+                <!-- Se cargará dinámicamente por app.js -->
+                <div class="content-placeholder">
+                    <div class="placeholder-icon">🏪</div>
+                    <h2>Sistema POS CommerceFire</h2>
+                    <p>Selecciona una operación del menú lateral</p>
+                    <div class="placeholder-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-products">0</div>
+                            <div class="stat-label">Productos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-sales-today">0</div>
+                            <div class="stat-label">Ventas Hoy</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-pending">0</div>
+                            <div class="stat-label">Pendientes</div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
-    </div>
-
-    <!-- Modal base -->
-    <div id="modalBase" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">Modal</h3>
-                <button class="modal-close" onclick="cerrarModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Contenido dinámico -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Scanner de código de barras -->
-    <div id="barcodeScanner" class="barcode-scanner">
-        <div class="scanner-header">
-            <h3>Escanear código de barras</h3>
-            <button class="btn btn-danger" onclick="cerrarScanner()">
-                <i class="fas fa-times"></i> Cerrar
+        
+        <!-- Carrito Flotante (minimizado) -->
+        <div id="cart-minimized" class="cart-minimized">
+            <button id="toggle-cart" class="cart-toggle">
+                <span>🛒 Carrito:</span>
+                <span id="cart-total">$0</span>
+                <span id="cart-items">0 items</span>
             </button>
         </div>
-        <div class="scanner-body">
-            <div id="scannerVideoContainer">
-                <!-- Video del scanner -->
-            </div>
-            <div class="scanner-fallback">
-                <p>O ingresa el código manualmente:</p>
-                <input type="text" id="manualBarcode" placeholder="Código de barras" 
-                       class="form-control" style="margin-bottom: 10px;">
-                <button class="btn btn-primary" onclick="procesarCodigoManual()">
-                    <i class="fas fa-check"></i> Buscar
-                </button>
-            </div>
-        </div>
     </div>
-
-    <!-- Ticket oculto para impresión -->
-    <div id="ticketContainer" style="display: none;"></div>
-
-    <!-- Input oculto para importaciones -->
-    <input type="file" id="fileImport" style="display: none;">
-
-    <!-- Script principal -->
+    
+    <!-- Scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/offline.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/realtime.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/sales.js"></script>
+    <script src="js/budgets.js"></script>
+    <script src="js/clients.js"></script>
+    <script src="js/providers.js"></script>
+    <script src="js/cashbox.js"></script>
+    <script src="js/reports.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/utils.js"></script>
     <script src="app.js"></script>
-
-<!-- Modal para clientes -->
-<div id="clienteModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3><i class="fas fa-user-plus"></i> Nuevo Cliente</h3>
-            <button class="modal-close" onclick="cerrarClienteModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form id="formCliente" onsubmit="guardarCliente(event)">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Nombre *</label>
-                        <input type="text" id="clienteNombre" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Documento</label>
-                        <input type="text" id="clienteDocumento" class="form-control">
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Teléfono</label>
-                        <input type="tel" id="clienteTelefono" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="clienteEmail" class="form-control">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Dirección</label>
-                    <input type="text" id="clienteDireccion" class="form-control">
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Tipo de Cliente</label>
-                        <select id="clienteTipo" class="form-control">
-                            <option value="consumidor">Consumidor Final</option>
-                            <option value="responsable">Responsable Inscripto</option>
-                            <option value="monotributo">Monotributista</option>
-                            <option value="exento">Exento</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Límite de Crédito</label>
-                        <input type="number" id="clienteLimite" class="form-control" value="0" min="0" step="0.01">
-                    </div>
-                </div>
-                
-                <div class="flex gap-2 mt-4">
-                    <button type="button" class="btn btn-outline" onclick="cerrarClienteModal()">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Guardar Cliente
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para productos rápidos -->
-<div id="productosModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 800px;">
-        <div class="modal-header">
-            <h3><i class="fas fa-boxes"></i> Productos</h3>
-            <button class="modal-close" onclick="cerrarProductosModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="search-box" style="margin-bottom: 20px;">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" id="buscarProductoModal" class="search-input" 
-                       placeholder="Buscar producto por código o nombre...">
-            </div>
-            <div class="quick-products" id="quickProductsGrid">
-                <!-- Productos cargados dinámicamente -->
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de confirmación rápida -->
-<div id="confirmModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 400px;">
-        <div class="modal-body text-center">
-            <div class="mb-4">
-                <i class="fas fa-question-circle" style="font-size: 3rem; color: var(--warning);"></i>
-            </div>
-            <h4 id="confirmTitle">¿Confirmar acción?</h4>
-            <p id="confirmMessage">Esta acción no se puede deshacer.</p>
-            <div class="flex gap-2 mt-4">
-                <button class="btn btn-outline" style="flex: 1;" onclick="cerrarConfirmModal()">Cancelar</button>
-                <button class="btn btn-primary" style="flex: 1;" id="confirmActionBtn">Confirmar</button>
-            </div>
-        </div>
-    </div>
-</div>
+    
+    <!-- Inicialización Firebase -->
+    <script>
+        // Configuración Firebase - REEMPLAZAR POR LA CONFIG REAL DEL PROYECTO
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROYECTO",
+            storageBucket: "TU_PROYECTO.appspot.com",
+            messagingSenderId: "TU_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+        
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        
+        // Habilitar persistencia offline
+        db.enablePersistence()
+            .catch((err) => {
+                console.warn("Persistencia no soportada:", err.code);
+            });
+    </script>
 </body>
 </html>
