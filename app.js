@@ -1,794 +1,1164 @@
-// app.js - Sistema POS Ferretería - Versión corregida
-// Compatible con todos los archivos JS existentes
+/**
+ * Sistema POS CommerceFire - Aplicación Principal
+ * Arquitectura: Firebase Compat + IndexedDB + Offline-First
+ */
 
-// ============================================
-// INICIALIZACIÓN Y CONFIGURACIÓN GLOBAL
-// ============================================
+// Importar módulos
+import { loginUser, logoutUser, getCurrentUser, auth, db } from './js/auth.js';
 
-// Variables globales (se sobreescriben si ya existen)
-window.db = window.db || null;
-window.auth = window.auth || null;
-window.currentUser = window.currentUser || null;
-window.currentLocal = window.currentLocal || null;
-window.currentTurn = window.currentTurn || null;
-window.isOnline = window.isOnline || navigator.onLine;
+// Variables globales de la aplicación
+let currentUser = null;
+let currentLocal = null;
+let currentTurn = null;
+let isOnline = navigator.onLine;
+let pendingOperations = [];
+let cart = [];
+let ui = null;
 
-// Managers globales
-window.AuthManager = window.AuthManager || null;
-window.OfflineManager = window.OfflineManager || null;
-window.UIManager = window.UIManager || null;
-window.ProductManager = window.ProductManager || null;
-window.CartManager = window.CartManager || null;
+// Configuración de Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
+    authDomain: "whatsappau-30dc1.firebaseapp.com",
+    projectId: "whatsappau-30dc1",
+    storageBucket: "whatsappau-30dc1.firebasestorage.app",
+    messagingSenderId: "456068013185",
+    appId: "1:456068013185:web:5bdd49337fb622e56f0180"
+};
 
-// ============================================
-// FUNCIONES DE INICIALIZACIÓN
-// ============================================
+// Sistema de Logging
+const logger = {
+    log: (message, ...args) => console.log(`📝 ${message}`, ...args),
+    info: (message, ...args) => console.info(`ℹ️ ${message}`, ...args),
+    warn: (message, ...args) => console.warn(`⚠️ ${message}`, ...args),
+    error: (message, ...args) => console.error(`❌ ${message}`, ...args),
+    success: (message, ...args) => console.log(`✅ ${message}`, ...args)
+};
 
 /**
- * Inicializa la aplicación completa
+ * Clase UI - Gestión de interfaz de usuario
  */
-async function initializeApp() {
-    console.log('🚀 Inicializando POS Ferretería...');
-    
-    try {
-        // 1. Inicializar Firebase
-        await initializeFirebase();
-        
-        // 2. Configurar listeners globales
-        setupGlobalListeners();
-        
-        // 3. Verificar autenticación previa
-        await checkPreviousSession();
-        
-        // 4. Cargar datos iniciales
-        await loadInitialData();
-        
-        // 5. Inicializar UI
-        initializeUI();
-        
-        console.log('✅ Aplicación inicializada correctamente');
-        
-    } catch (error) {
-        console.error('❌ Error inicializando aplicación:', error);
-        showError('Error al iniciar la aplicación: ' + error.message);
-    }
-}
-
-/**
- * Inicializa Firebase
- */
-async function initializeFirebase() {
-    console.log('🔥 Inicializando Firebase...');
-    
-    // Configuración de Firebase
-    const firebaseConfig = {
-        apiKey: "AIzaSyCtOiUy2tUQeixUiJxTdI_ESULY4WpqXzw",
-        authDomain: "whatsappau-30dc1.firebaseapp.com",
-        projectId: "whatsappau-30dc1",
-        storageBucket: "whatsappau-30dc1.firebasestorage.app",
-        messagingSenderId: "456068013185",
-        appId: "1:456068013185:web:5bdd49337fb622e56f0180"
-    };
-    
-    // Evitar inicialización múltiple
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+class UI {
+    constructor() {
+        this.isSidebarOpen = true;
+        this.currentSection = 'pos';
     }
     
-    // Asignar a variables globales
-    window.db = firebase.firestore();
-    window.auth = firebase.auth();
-    
-    // Habilitar persistencia offline
-    try {
-        await window.db.enablePersistence();
-        console.log('✅ Persistencia offline habilitada');
-    } catch (err) {
-        console.warn('⚠️ Persistencia no disponible:', err.message);
+    init() {
+        logger.info('Inicializando UI...');
+        
+        // Configurar listeners
+        this.setupEventListeners();
+        
+        // Configurar estado inicial
+        this.updateConnectionStatus();
+        this.setupConnectionListeners();
+        
+        // Cargar sección inicial
+        this.loadSection('pos');
+        
+        logger.success('UI inicializada');
     }
     
-    console.log('✅ Firebase inicializado');
-}
-
-/**
- * Configura listeners globales
- */
-function setupGlobalListeners() {
-    console.log('🎧 Configurando listeners...');
-    
-    // Conexión/desconexión
-    window.addEventListener('online', updateConnectionStatus);
-    window.addEventListener('offline', updateConnectionStatus);
-    
-    // Login button
-    const loginBtn = document.getElementById('login-btn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', handleLogin);
-    }
-    
-    // Login con Enter
-    document.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && isLoginScreenVisible()) {
-            handleLogin();
-        }
-    });
-    
-    // Logout button
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
-    
-    // Toggle sidebar
-    const menuToggle = document.getElementById('menu-toggle');
-    if (menuToggle) {
-        menuToggle.addEventListener('click', toggleSidebar);
-    }
-    
-    // Navegación
-    setupNavigationListeners();
-    
-    console.log('✅ Listeners configurados');
-}
-
-/**
- * Configura listeners de navegación
- */
-function setupNavigationListeners() {
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const section = this.getAttribute('data-section');
-            loadSection(section);
+    setupEventListeners() {
+        // Login
+        document.getElementById('login-btn')?.addEventListener('click', () => this.handleLogin());
+        document.getElementById('password')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.handleLogin();
         });
-    });
-}
-
-/**
- * Verifica sesión previa
- */
-async function checkPreviousSession() {
-    console.log('🔍 Verificando sesión previa...');
-    
-    // Verificar en localStorage
-    const savedSession = localStorage.getItem('pos_session');
-    if (savedSession) {
-        try {
-            const session = JSON.parse(savedSession);
-            
-            // Autorellenar formulario
-            const emailInput = document.getElementById('email');
-            if (emailInput) emailInput.value = session.email || '';
-            
-            // Cargar locales disponibles
-            await loadLocals();
-            
-            // Seleccionar local guardado si existe
-            const localSelect = document.getElementById('local-select');
-            if (localSelect && session.localId) {
-                setTimeout(() => {
-                    localSelect.value = session.localId;
-                }, 500);
-            }
-            
-        } catch (error) {
-            console.warn('⚠️ Error restaurando sesión:', error);
-        }
+        
+        // Navegación
+        document.getElementById('menu-toggle')?.addEventListener('click', () => this.toggleSidebar());
+        document.getElementById('logout-btn')?.addEventListener('click', () => this.handleLogout());
+        document.getElementById('cart-btn')?.addEventListener('click', () => this.showCart());
+        document.getElementById('cashbox-btn')?.addEventListener('click', () => this.loadSection('cashbox'));
+        document.getElementById('toggle-cart')?.addEventListener('click', () => this.showCart());
+        
+        // Navegación del sidebar
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = e.target.dataset.section || e.target.closest('a').dataset.section;
+                this.loadSection(section);
+            });
+        });
+        
+        // Cargar locales al iniciar
+        this.loadLocals();
+        
+        logger.info('Listeners de UI configurados');
     }
     
-    // Verificar usuario autenticado en Firebase
-    if (window.auth && window.auth.currentUser) {
-        console.log('✅ Usuario ya autenticado');
-        await handleAuthSuccess(window.auth.currentUser);
-    }
-}
-
-/**
- * Carga datos iniciales
- */
-async function loadInitialData() {
-    console.log('📊 Cargando datos iniciales...');
-    
-    // Solo cargar si hay usuario autenticado
-    if (!window.currentUser) return;
-    
-    // Cargar locales
-    await loadLocals();
-    
-    // Actualizar estadísticas
-    updateStats();
-    
-    console.log('✅ Datos iniciales cargados');
-}
-
-/**
- * Inicializa la interfaz de usuario
- */
-function initializeUI() {
-    console.log('🎨 Inicializando UI...');
-    
-    // Actualizar estado de conexión
-    updateConnectionStatus();
-    
-    // Actualizar año actual
-    const yearElements = document.querySelectorAll('.current-year');
-    yearElements.forEach(el => {
-        el.textContent = new Date().getFullYear();
-    });
-    
-    // Configurar carrito minimizado
-    const cartToggle = document.getElementById('toggle-cart');
-    if (cartToggle) {
-        cartToggle.addEventListener('click', function() {
-            loadSection('cart');
+    setupConnectionListeners() {
+        window.addEventListener('online', () => {
+            isOnline = true;
+            this.updateConnectionStatus();
+            this.syncPendingOperations();
+        });
+        
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            this.updateConnectionStatus();
         });
     }
     
-    // Inicializar managers UI si existen
-    if (window.UIManager && typeof window.UIManager.init === 'function') {
-        try {
-            // Parche para función faltante
-            if (!window.UIManager.setupGlobalListeners) {
-                window.UIManager.setupGlobalListeners = function() {
-                    console.log('UIManager.setupGlobalListeners llamado');
-                };
-            }
-            window.UIManager.init();
-        } catch (error) {
-            console.warn('⚠️ Error inicializando UIManager:', error);
-        }
-    }
-    
-    console.log('✅ UI inicializada');
-}
-
-// ============================================
-// MANEJO DE AUTENTICACIÓN
-// ============================================
-
-/**
- * Maneja el proceso de login
- */
-async function handleLogin() {
-    console.log('🔐 Procesando login...');
-    
-    // Obtener valores del formulario
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    const localId = document.getElementById('local-select').value;
-    const turno = document.getElementById('turno-select').value;
-    
-    // Validar campos
-    if (!email || !password || !localId || !turno) {
-        showError('Por favor, completa todos los campos');
-        return;
-    }
-    
-    // Mostrar loading
-    showLoginLoading(true);
-    
-    try {
-        // Usar AuthManager si existe, si no usar Firebase directamente
-        let userCredential;
+    updateConnectionStatus() {
+        const statusElement = document.getElementById('connection-status');
+        const appStatusElement = document.getElementById('app-connection-status');
         
-        if (window.AuthManager && typeof window.AuthManager.login === 'function') {
-            const result = await window.AuthManager.login(email, password, localId, turno);
-            if (!result.success) throw new Error(result.error);
-            userCredential = { user: result.user };
+        if (isOnline) {
+            statusElement?.classList.remove('status-offline');
+            statusElement?.classList.add('status-online');
+            statusElement && (statusElement.textContent = '● Conectado');
+            
+            appStatusElement?.classList.remove('status-offline');
+            appStatusElement?.classList.add('status-online');
+            appStatusElement && (appStatusElement.textContent = 'ONLINE');
         } else {
-            // Login directo con Firebase
-            userCredential = await window.auth.signInWithEmailAndPassword(email, password);
-        }
-        
-        // Guardar sesión
-        await saveSession(email, localId, turno, userCredential.user.uid);
-        
-        // Manejar éxito
-        await handleAuthSuccess(userCredential.user, localId, turno);
-        
-    } catch (error) {
-        console.error('❌ Error en login:', error);
-        showLoginError(error);
-    } finally {
-        showLoginLoading(false);
-    }
-}
-
-/**
- * Maneja logout
- */
-async function handleLogout() {
-    console.log('🚪 Cerrando sesión...');
-    
-    try {
-        // Cerrar sesión en Firebase
-        if (window.auth) {
-            await window.auth.signOut();
-        }
-        
-        // Limpiar datos locales
-        localStorage.removeItem('pos_session');
-        localStorage.removeItem('pos_user_data');
-        
-        window.currentUser = null;
-        window.currentLocal = null;
-        window.currentTurn = null;
-        
-        // Recargar para mostrar login
-        window.location.reload();
-        
-    } catch (error) {
-        console.error('❌ Error en logout:', error);
-        showError('Error al cerrar sesión');
-    }
-}
-
-/**
- * Guarda la sesión en localStorage
- */
-async function saveSession(email, localId, turno, userId) {
-    const sessionData = {
-        email: email,
-        localId: localId,
-        turno: turno,
-        userId: userId,
-        timestamp: new Date().toISOString()
-    };
-    
-    localStorage.setItem('pos_session', JSON.stringify(sessionData));
-}
-
-/**
- * Maneja éxito de autenticación
- */
-async function handleAuthSuccess(user, localId = null, turno = null) {
-    console.log('✅ Autenticación exitosa');
-    
-    // Actualizar variables globales
-    window.currentUser = user;
-    window.currentLocal = localId || window.currentLocal;
-    window.currentTurn = turno || window.currentTurn;
-    
-    // Ocultar login, mostrar app
-    showAppScreen();
-    
-    // Actualizar información de usuario
-    updateUserInfo();
-    
-    // Cargar datos del usuario
-    await loadUserData(user.uid);
-    
-    // Inicializar otros managers
-    initializeOtherManagers();
-}
-
-/**
- * Carga datos del usuario
- */
-async function loadUserData(userId) {
-    try {
-        if (!window.db) return;
-        
-        const userDoc = await window.db.collection('users').doc(userId).get();
-        if (userDoc.exists) {
-            const userData = userDoc.data();
-            localStorage.setItem('pos_user_data', JSON.stringify(userData));
+            statusElement?.classList.remove('status-online');
+            statusElement?.classList.add('status-offline');
+            statusElement && (statusElement.textContent = '● Sin conexión');
             
-            // Actualizar variables
-            window.currentLocal = userData.localId || window.currentLocal;
-            window.currentTurn = userData.currentTurn || window.currentTurn;
+            appStatusElement?.classList.remove('status-online');
+            appStatusElement?.classList.add('status-offline');
+            appStatusElement && (appStatusElement.textContent = 'OFFLINE');
         }
-    } catch (error) {
-        console.warn('⚠️ Error cargando datos de usuario:', error);
-    }
-}
-
-// ============================================
-// MANEJO DE UI
-// ============================================
-
-/**
- * Muestra/oculta pantalla de login
- */
-function showAppScreen() {
-    const loginScreen = document.getElementById('login-screen');
-    const appScreen = document.getElementById('app-screen');
-    
-    if (loginScreen) loginScreen.classList.remove('active');
-    if (appScreen) appScreen.style.display = 'flex';
-}
-
-/**
- * Verifica si la pantalla de login es visible
- */
-function isLoginScreenVisible() {
-    const loginScreen = document.getElementById('login-screen');
-    return loginScreen && loginScreen.classList.contains('active');
-}
-
-/**
- * Actualiza información del usuario en la UI
- */
-function updateUserInfo() {
-    if (!window.currentUser) return;
-    
-    // Email del usuario
-    const userEmail = window.currentUser.email || '';
-    const userName = userEmail.split('@')[0] || 'Usuario';
-    
-    // Actualizar elementos
-    const userElements = {
-        'current-user': userName,
-        'current-local': window.currentLocal || 'No asignado',
-        'current-turn': window.currentTurn || '--'
-    };
-    
-    Object.keys(userElements).forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent = userElements[id];
-        }
-    });
-}
-
-/**
- * Actualiza estado de conexión
- */
-function updateConnectionStatus() {
-    const isOnline = navigator.onLine;
-    window.isOnline = isOnline;
-    
-    // Actualizar indicadores
-    const statusElements = [
-        { id: 'connection-status', onlineText: '● Conectado', offlineText: '● Sin conexión' },
-        { id: 'app-connection-status', onlineText: 'ONLINE', offlineText: 'OFFLINE' }
-    ];
-    
-    statusElements.forEach(item => {
-        const element = document.getElementById(item.id);
-        if (element) {
-            element.textContent = isOnline ? item.onlineText : item.offlineText;
-            element.className = isOnline ? 'status-online' : 'status-offline';
-        }
-    });
-    
-    // Mostrar/ocultar indicador de sincronización
-    const syncIndicator = document.getElementById('pending-sync');
-    if (syncIndicator) {
-        // Aquí podríamos verificar operaciones pendientes
-        syncIndicator.style.display = 'none';
-    }
-}
-
-/**
- * Carga una sección específica
- */
-function loadSection(section) {
-    console.log('📂 Cargando sección:', section);
-    
-    // Remover active de todos los links
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
-    });
-    
-    // Activar link actual
-    const activeLink = document.querySelector(`.nav-link[data-section="${section}"]`);
-    if (activeLink) {
-        activeLink.classList.add('active');
     }
     
-    // Aquí se cargaría el contenido dinámico
-    // Por ahora solo actualizamos el placeholder
-    const content = document.getElementById('main-content');
-    if (content) {
-        content.innerHTML = `
-            <div class="content-placeholder">
-                <div class="placeholder-icon">${getSectionIcon(section)}</div>
-                <h2>${getSectionTitle(section)}</h2>
-                <p>Sección en desarrollo. Próximamente disponible.</p>
-                <div class="placeholder-stats">
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-products">0</div>
-                        <div class="stat-label">Productos</div>
+    async loadLocals() {
+        try {
+            const localsSelect = document.getElementById('local-select');
+            if (!localsSelect) return;
+            
+            // Intentar obtener locales desde Firestore
+            const localsSnapshot = await db.collection('locals').get();
+            
+            localsSelect.innerHTML = '<option value="">Seleccionar local...</option>';
+            
+            localsSnapshot.forEach(doc => {
+                const local = doc.data();
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.textContent = local.name || `Local ${doc.id}`;
+                localsSelect.appendChild(option);
+            });
+            
+            // Si no hay conexión o no hay locales, usar opciones por defecto
+            if (localsSnapshot.empty) {
+                const defaultLocals = [
+                    { id: 'local1', name: 'Local Central' },
+                    { id: 'local2', name: 'Sucursal Norte' },
+                    { id: 'local3', name: 'Sucursal Sur' }
+                ];
+                
+                defaultLocals.forEach(local => {
+                    const option = document.createElement('option');
+                    option.value = local.id;
+                    option.textContent = local.name;
+                    localsSelect.appendChild(option);
+                });
+            }
+            
+        } catch (error) {
+            logger.error('Error cargando locales:', error);
+            
+            // Crear opciones por defecto
+            const localsSelect = document.getElementById('local-select');
+            if (localsSelect) {
+                localsSelect.innerHTML = `
+                    <option value="">Seleccionar local...</option>
+                    <option value="local1">Local Central</option>
+                    <option value="local2">Sucursal Norte</option>
+                    <option value="local3">Sucursal Sur</option>
+                `;
+            }
+        }
+    }
+    
+    async handleLogin() {
+        try {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const localId = document.getElementById('local-select').value;
+            const turno = document.getElementById('turno-select').value;
+            
+            // Validaciones
+            if (!email || !password) {
+                this.showError('Por favor, completa todos los campos');
+                return;
+            }
+            
+            if (!localId) {
+                this.showError('Por favor, selecciona un local');
+                return;
+            }
+            
+            // Mostrar loading
+            const loginBtn = document.getElementById('login-btn');
+            const btnText = loginBtn.querySelector('.btn-text');
+            const btnSpinner = loginBtn.querySelector('.btn-spinner');
+            
+            btnText.style.display = 'none';
+            btnSpinner.style.display = 'inline';
+            loginBtn.disabled = true;
+            
+            // Limpiar errores previos
+            this.hideError();
+            
+            logger.info(`Intentando login: ${email}, local: ${localId}, turno: ${turno}`);
+            
+            // Intentar login
+            const userData = await loginUser(email, password, localId, turno);
+            
+            if (userData) {
+                currentUser = userData;
+                currentLocal = localId;
+                currentTurn = turno;
+                
+                logger.success(`Login exitoso: ${userData.name || userData.email}`);
+                
+                // Guardar en localStorage para persistencia
+                localStorage.setItem('lastLogin', JSON.stringify({
+                    email,
+                    localId,
+                    turno,
+                    timestamp: Date.now()
+                }));
+                
+                // Mostrar aplicación principal
+                this.showApp();
+                
+                // Actualizar UI con datos del usuario
+                this.updateUserInfo(userData);
+                
+                // Cargar datos iniciales
+                this.loadInitialData();
+            }
+            
+        } catch (error) {
+            logger.error('Error en login:', error);
+            this.showError(error.message || 'Error al iniciar sesión');
+        } finally {
+            // Restaurar botón
+            const loginBtn = document.getElementById('login-btn');
+            if (loginBtn) {
+                const btnText = loginBtn.querySelector('.btn-text');
+                const btnSpinner = loginBtn.querySelector('.btn-spinner');
+                
+                btnText.style.display = 'inline';
+                btnSpinner.style.display = 'none';
+                loginBtn.disabled = false;
+            }
+        }
+    }
+    
+    async handleLogout() {
+        try {
+            if (confirm('¿Estás seguro de que quieres salir?')) {
+                await logoutUser();
+                
+                // Limpiar estado
+                currentUser = null;
+                currentLocal = null;
+                currentTurn = null;
+                cart = [];
+                
+                // Limpiar localStorage
+                localStorage.removeItem('lastLogin');
+                
+                // Mostrar pantalla de login
+                this.showLogin();
+                
+                logger.success('Sesión cerrada correctamente');
+            }
+        } catch (error) {
+            logger.error('Error al cerrar sesión:', error);
+            this.showError('Error al cerrar sesión');
+        }
+    }
+    
+    showLogin() {
+        document.getElementById('login-screen').classList.add('active');
+        document.getElementById('app-screen').classList.remove('active');
+    }
+    
+    showApp() {
+        document.getElementById('login-screen').classList.remove('active');
+        document.getElementById('app-screen').classList.add('active');
+    }
+    
+    updateUserInfo(userData) {
+        // Actualizar barra superior
+        const userElement = document.getElementById('current-user');
+        const localElement = document.getElementById('current-local');
+        const turnElement = document.getElementById('current-turn');
+        
+        if (userElement) userElement.textContent = userData.name || userData.email;
+        if (localElement) {
+            // Obtener nombre del local desde el select
+            const select = document.getElementById('local-select');
+            const selectedOption = select?.options[select.selectedIndex];
+            localElement.textContent = selectedOption?.textContent || currentLocal;
+        }
+        if (turnElement) turnElement.textContent = currentTurn;
+        
+        // Actualizar indicador local
+        const localIndicator = document.getElementById('local-indicator');
+        if (localIndicator) {
+            localIndicator.textContent = `Local: ${currentLocal}`;
+        }
+    }
+    
+    async loadInitialData() {
+        try {
+            logger.info('Cargando datos iniciales...');
+            
+            // Cargar estadísticas
+            await this.loadStats();
+            
+            // Sincronizar operaciones pendientes
+            await this.syncPendingOperations();
+            
+            logger.success('Datos iniciales cargados');
+        } catch (error) {
+            logger.error('Error cargando datos iniciales:', error);
+        }
+    }
+    
+    async loadStats() {
+        try {
+            // Productos
+            const productsSnapshot = await db.collection('products').get();
+            document.getElementById('stat-products').textContent = productsSnapshot.size;
+            
+            // Ventas de hoy
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const salesQuery = db.collection('sales')
+                .where('createdAt', '>=', today)
+                .where('localId', '==', currentLocal);
+                
+            const salesSnapshot = await salesQuery.get();
+            document.getElementById('stat-sales-today').textContent = salesSnapshot.size;
+            
+            // Actualizar contador de pendientes
+            const pendingCount = pendingOperations.length;
+            document.getElementById('stat-pending').textContent = pendingCount;
+            
+            const pendingSync = document.getElementById('pending-sync');
+            if (pendingCount > 0) {
+                pendingSync.style.display = 'inline';
+                pendingSync.textContent = `🔄 ${pendingCount} pendientes`;
+            } else {
+                pendingSync.style.display = 'none';
+            }
+            
+        } catch (error) {
+            logger.error('Error cargando estadísticas:', error);
+        }
+    }
+    
+    async syncPendingOperations() {
+        if (!isOnline || pendingOperations.length === 0) return;
+        
+        logger.info(`Sincronizando ${pendingOperations.length} operaciones pendientes...`);
+        
+        const successOps = [];
+        const failedOps = [];
+        
+        for (const op of pendingOperations) {
+            try {
+                // Ejecutar operación según tipo
+                switch (op.type) {
+                    case 'sale':
+                        await db.collection('sales').add(op.data);
+                        break;
+                    case 'product_update':
+                        await db.collection('products').doc(op.id).update(op.data);
+                        break;
+                    // Agregar más tipos según necesidad
+                }
+                
+                successOps.push(op);
+            } catch (error) {
+                logger.error(`Error sincronizando operación ${op.type}:`, error);
+                failedOps.push({ ...op, error: error.message });
+            }
+        }
+        
+        // Actualizar lista de pendientes
+        pendingOperations = failedOps;
+        
+        // Actualizar UI
+        this.loadStats();
+        
+        if (successOps.length > 0) {
+            logger.success(`${successOps.length} operaciones sincronizadas exitosamente`);
+        }
+        
+        if (failedOps.length > 0) {
+            logger.warn(`${failedOps.length} operaciones fallaron y se mantienen pendientes`);
+        }
+    }
+    
+    loadSection(section) {
+        if (!section) return;
+        
+        logger.info(`Cargando sección: ${section}`);
+        
+        // Actualizar navegación activa
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        document.querySelector(`[data-section="${section}"]`)?.classList.add('active');
+        
+        // Cargar contenido de la sección
+        const contentElement = document.getElementById('main-content');
+        
+        switch (section) {
+            case 'pos':
+                contentElement.innerHTML = this.getPOSContent();
+                this.setupPOSListeners();
+                break;
+                
+            case 'products':
+                contentElement.innerHTML = this.getProductsContent();
+                this.loadProducts();
+                break;
+                
+            case 'clients':
+                contentElement.innerHTML = this.getClientsContent();
+                this.loadClients();
+                break;
+                
+            case 'sales':
+                contentElement.innerHTML = this.getSalesContent();
+                this.loadSales();
+                break;
+                
+            case 'cashbox':
+                contentElement.innerHTML = this.getCashboxContent();
+                this.loadCashbox();
+                break;
+                
+            case 'reports':
+                contentElement.innerHTML = this.getReportsContent();
+                this.loadReports();
+                break;
+                
+            case 'budgets':
+                contentElement.innerHTML = this.getBudgetsContent();
+                this.loadBudgets();
+                break;
+                
+            case 'providers':
+                contentElement.innerHTML = this.getProvidersContent();
+                this.loadProviders();
+                break;
+                
+            default:
+                contentElement.innerHTML = `
+                    <div class="section-header">
+                        <h2>${section.charAt(0).toUpperCase() + section.slice(1)}</h2>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-sales-today">0</div>
-                        <div class="stat-label">Ventas Hoy</div>
+                    <div class="section-content">
+                        <p>Esta sección está en desarrollo.</p>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stat-pending">0</div>
-                        <div class="stat-label">Pendientes</div>
+                `;
+        }
+        
+        this.currentSection = section;
+    }
+    
+    getPOSContent() {
+        return `
+            <div class="pos-container">
+                <div class="pos-header">
+                    <h2>🏪 Punto de Venta</h2>
+                    <div class="pos-actions">
+                        <button id="clear-cart" class="btn-secondary">🗑️ Limpiar</button>
+                        <button id="quick-sale" class="btn-success">💰 Venta Rápida</button>
+                    </div>
+                </div>
+                
+                <div class="pos-grid">
+                    <!-- Panel de productos -->
+                    <div class="pos-products-panel">
+                        <div class="search-bar">
+                            <input type="text" id="product-search" placeholder="🔍 Buscar producto por código o nombre...">
+                            <button id="scan-barcode" class="icon-btn">📷</button>
+                        </div>
+                        
+                        <div class="categories">
+                            <button class="category-btn active" data-category="all">Todos</button>
+                            <button class="category-btn" data-category="herramientas">Herramientas</button>
+                            <button class="category-btn" data-category="electricidad">Electricidad</button>
+                            <button class="category-btn" data-category="fontaneria">Fontanería</button>
+                            <button class="category-btn" data-category="pintura">Pintura</button>
+                        </div>
+                        
+                        <div id="products-grid" class="products-grid">
+                            <!-- Productos cargados dinámicamente -->
+                            <div class="loading-products">Cargando productos...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Panel del carrito -->
+                    <div class="pos-cart-panel">
+                        <div class="cart-header">
+                            <h3>🛒 Carrito de Venta</h3>
+                            <span id="cart-items-count">0 items</span>
+                        </div>
+                        
+                        <div class="cart-items" id="cart-items-list">
+                            <div class="empty-cart">
+                                <p>El carrito está vacío</p>
+                                <p class="small">Agrega productos desde el panel izquierdo</p>
+                            </div>
+                        </div>
+                        
+                        <div class="cart-summary">
+                            <div class="summary-row">
+                                <span>Subtotal:</span>
+                                <span id="cart-subtotal">$0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>IVA (21%):</span>
+                                <span id="cart-tax">$0.00</span>
+                            </div>
+                            <div class="summary-row total">
+                                <span>Total:</span>
+                                <span id="cart-total-amount">$0.00</span>
+                            </div>
+                        </div>
+                        
+                        <div class="cart-actions">
+                            <div class="payment-methods">
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="cash" checked>
+                                    💵 Efectivo
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="card">
+                                    💳 Tarjeta
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="transfer">
+                                    📤 Transferencia
+                                </label>
+                            </div>
+                            
+                            <button id="process-sale" class="btn-primary btn-large">
+                                🧾 Procesar Venta
+                            </button>
+                            
+                            <div class="client-info">
+                                <input type="text" id="client-search" placeholder="👤 Cliente (opcional)">
+                                <button id="add-client" class="btn-secondary">+</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     }
     
-    // Actualizar estadísticas
-    updateStats();
-}
-
-/**
- * Obtiene ícono para sección
- */
-function getSectionIcon(section) {
-    const icons = {
-        'pos': '🏪',
-        'products': '📦',
-        'clients': '👥',
-        'budgets': '📄',
-        'sales': '📊',
-        'reports': '📈',
-        'providers': '🚚',
-        'cashbox': '💰',
-        'users': '👤',
-        'locals': '🏪',
-        'config': '⚙️',
-        'cart': '🛒'
-    };
-    return icons[section] || '📁';
-}
-
-/**
- * Obtiene título para sección
- */
-function getSectionTitle(section) {
-    const titles = {
-        'pos': 'Punto de Venta',
-        'products': 'Productos',
-        'clients': 'Clientes',
-        'budgets': 'Presupuestos',
-        'sales': 'Ventas',
-        'reports': 'Reportes',
-        'providers': 'Proveedores',
-        'cashbox': 'Caja Diaria',
-        'users': 'Usuarios',
-        'locals': 'Locales',
-        'config': 'Configuración',
-        'cart': 'Carrito de Compras'
-    };
-    return titles[section] || 'Sección';
-}
-
-/**
- * Toggle sidebar
- */
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('collapsed');
-    }
-}
-
-// ============================================
-// FUNCIONES DE DATOS
-// ============================================
-
-/**
- * Carga locales disponibles
- */
-async function loadLocals() {
-    const localSelect = document.getElementById('local-select');
-    if (!localSelect) return;
-    
-    try {
-        // Intentar cargar de Firestore
-        if (window.db) {
-            const localsSnapshot = await window.db.collection('locals')
-                .where('isActive', '==', true)
-                .get();
+    getProductsContent() {
+        return `
+            <div class="section-header">
+                <h2>📦 Gestión de Productos</h2>
+                <div class="header-actions">
+                    <button id="add-product" class="btn-primary">➕ Nuevo Producto</button>
+                    <button id="import-products" class="btn-secondary">📥 Importar</button>
+                    <button id="export-products" class="btn-secondary">📤 Exportar</button>
+                </div>
+            </div>
             
-            if (!localsSnapshot.empty) {
-                localSelect.innerHTML = '<option value="">Selecciona un local</option>';
+            <div class="section-content">
+                <div class="filters-bar">
+                    <input type="text" id="filter-products" placeholder="🔍 Buscar productos...">
+                    <select id="filter-category">
+                        <option value="">Todas las categorías</option>
+                        <option value="herramientas">Herramientas</option>
+                        <option value="electricidad">Electricidad</option>
+                        <option value="fontaneria">Fontanería</option>
+                        <option value="pintura">Pintura</option>
+                    </select>
+                    <select id="filter-stock">
+                        <option value="">Todo el stock</option>
+                        <option value="low">Stock bajo</option>
+                        <option value="out">Sin stock</option>
+                    </select>
+                </div>
                 
-                localsSnapshot.forEach(doc => {
-                    const local = doc.data();
-                    const option = document.createElement('option');
-                    option.value = doc.id;
-                    option.textContent = `${local.name} (${local.code})`;
-                    localSelect.appendChild(option);
+                <div class="table-container">
+                    <table id="products-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body">
+                            <!-- Datos cargados dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="table-footer">
+                    <div class="table-info">
+                        Mostrando <span id="products-count">0</span> productos
+                    </div>
+                    <div class="pagination">
+                        <button id="prev-page" disabled>◀</button>
+                        <span>Página <span id="current-page">1</span></span>
+                        <button id="next-page" disabled>▶</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    setupPOSListeners() {
+        // Buscar productos
+        document.getElementById('product-search')?.addEventListener('input', (e) => {
+            this.filterProducts(e.target.value);
+        });
+        
+        // Categorías
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.filterByCategory(e.target.dataset.category);
+            });
+        });
+        
+        // Procesar venta
+        document.getElementById('process-sale')?.addEventListener('click', () => {
+            this.processSale();
+        });
+        
+        // Limpiar carrito
+        document.getElementById('clear-cart')?.addEventListener('click', () => {
+            this.clearCart();
+        });
+    }
+    
+    async loadProducts() {
+        try {
+            const productsSnapshot = await db.collection('products').get();
+            const tbody = document.getElementById('products-table-body');
+            
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            productsSnapshot.forEach(doc => {
+                const product = doc.data();
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${product.code || 'N/A'}</td>
+                    <td>${product.name || 'Sin nombre'}</td>
+                    <td><span class="badge category-${product.category || 'other'}">${product.category || 'General'}</span></td>
+                    <td>${Utils?.formatCurrency?.(product.price) || `$${product.price || '0.00'}`}</td>
+                    <td>
+                        <span class="stock-badge ${product.stock <= 5 ? 'low' : product.stock <= 0 ? 'out' : 'ok'}">
+                            ${product.stock || 0}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${product.active ? 'active' : 'inactive'}">
+                            ${product.active ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-icon" onclick="app.ui.editProduct('${doc.id}')">✏️</button>
+                        <button class="btn-icon" onclick="app.ui.deleteProduct('${doc.id}')">🗑️</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            // Actualizar contador
+            document.getElementById('products-count').textContent = productsSnapshot.size;
+            
+        } catch (error) {
+            logger.error('Error cargando productos:', error);
+            
+            // Mostrar mensaje de error
+            const tbody = document.getElementById('products-table-body');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="error-message">
+                            ❌ Error cargando productos: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+    }
+    
+    filterProducts(searchTerm) {
+        // Implementar búsqueda de productos
+        console.log('Buscando:', searchTerm);
+    }
+    
+    filterByCategory(category) {
+        // Implementar filtro por categoría
+        console.log('Filtrando por categoría:', category);
+    }
+    
+    async processSale() {
+        if (cart.length === 0) {
+            this.showError('El carrito está vacío');
+            return;
+        }
+        
+        try {
+            const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'cash';
+            const clientInput = document.getElementById('client-search')?.value || '';
+            
+            // Calcular totales
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * 0.21;
+            const total = subtotal + tax;
+            
+            // Crear objeto de venta
+            const sale = {
+                items: cart.map(item => ({
+                    productId: item.id,
+                    code: item.code,
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    subtotal: item.price * item.quantity
+                })),
+                subtotal,
+                tax,
+                total,
+                paymentMethod,
+                client: clientInput || null,
+                localId: currentLocal,
+                userId: currentUser?.uid,
+                userName: currentUser?.name || currentUser?.email,
+                turn: currentTurn,
+                status: isOnline ? 'completed' : 'pending',
+                createdAt: new Date().toISOString(),
+                offline: !isOnline
+            };
+            
+            // Guardar venta
+            if (isOnline) {
+                await db.collection('sales').add(sale);
+                logger.success('Venta procesada exitosamente');
+                
+                // Mostrar comprobante
+                this.showReceipt(sale);
+            } else {
+                // Guardar como operación pendiente
+                pendingOperations.push({
+                    type: 'sale',
+                    data: sale,
+                    timestamp: Date.now()
                 });
                 
-                console.log(`✅ ${localsSnapshot.size} locales cargados`);
-                return;
+                this.showSuccess('Venta guardada localmente. Se sincronizará cuando haya conexión.');
+                
+                // Guardar en IndexedDB para persistencia
+                await this.savePendingOperations();
+            }
+            
+            // Limpiar carrito
+            this.clearCart();
+            
+            // Actualizar estadísticas
+            this.loadStats();
+            
+        } catch (error) {
+            logger.error('Error procesando venta:', error);
+            this.showError('Error al procesar la venta: ' + error.message);
+        }
+    }
+    
+    clearCart() {
+        cart = [];
+        this.updateCartUI();
+        logger.info('Carrito limpiado');
+    }
+    
+    updateCartUI() {
+        // Actualizar contador en header
+        document.getElementById('cart-count').textContent = cart.length;
+        document.getElementById('cart-items-count').textContent = `${cart.length} items`;
+        
+        // Actualizar lista de productos en el carrito
+        const cartItemsList = document.getElementById('cart-items-list');
+        if (cartItemsList) {
+            if (cart.length === 0) {
+                cartItemsList.innerHTML = `
+                    <div class="empty-cart">
+                        <p>El carrito está vacío</p>
+                        <p class="small">Agrega productos desde el panel izquierdo</p>
+                    </div>
+                `;
+            } else {
+                let html = '';
+                cart.forEach(item => {
+                    html += `
+                        <div class="cart-item">
+                            <div class="cart-item-info">
+                                <strong>${item.name}</strong>
+                                <small>${item.code}</small>
+                            </div>
+                            <div class="cart-item-controls">
+                                <button class="btn-icon" onclick="app.ui.decreaseQuantity('${item.id}')">-</button>
+                                <span>${item.quantity}</span>
+                                <button class="btn-icon" onclick="app.ui.increaseQuantity('${item.id}')">+</button>
+                            </div>
+                            <div class="cart-item-price">
+                                ${Utils?.formatCurrency?.(item.price * item.quantity) || `$${(item.price * item.quantity).toFixed(2)}`}
+                            </div>
+                            <button class="btn-icon danger" onclick="app.ui.removeFromCart('${item.id}')">×</button>
+                        </div>
+                    `;
+                });
+                cartItemsList.innerHTML = html;
             }
         }
         
-        // Fallback: locales por defecto
-        localSelect.innerHTML = `
-            <option value="local_1">Local Principal</option>
-            <option value="local_2">Sucursal Norte</option>
-            <option value="local_3">Sucursal Sur</option>
+        // Calcular y actualizar totales
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const tax = subtotal * 0.21;
+        const total = subtotal + tax;
+        
+        document.getElementById('cart-subtotal').textContent = 
+            Utils?.formatCurrency?.(subtotal) || `$${subtotal.toFixed(2)}`;
+        document.getElementById('cart-tax').textContent = 
+            Utils?.formatCurrency?.(tax) || `$${tax.toFixed(2)}`;
+        document.getElementById('cart-total-amount').textContent = 
+            Utils?.formatCurrency?.(total) || `$${total.toFixed(2)}`;
+        
+        // Actualizar carrito flotante
+        document.getElementById('cart-total').textContent = 
+            Utils?.formatCurrency?.(total) || `$${total.toFixed(2)}`;
+        document.getElementById('cart-items').textContent = `${cart.length} items`;
+    }
+    
+    showCart() {
+        // Implementar visualización completa del carrito
+        alert(`Carrito: ${cart.length} productos\nTotal: $${cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}`);
+    }
+    
+    showReceipt(sale) {
+        // Crear contenido del comprobante
+        const receiptContent = `
+            <h3>🧾 Comprobante de Venta</h3>
+            <p><strong>Fecha:</strong> ${new Date(sale.createdAt).toLocaleString()}</p>
+            <p><strong>Vendedor:</strong> ${sale.userName}</p>
+            <p><strong>Local:</strong> ${currentLocal}</p>
+            <p><strong>Turno:</strong> ${sale.turn}</p>
+            <p><strong>Método de pago:</strong> ${sale.paymentMethod === 'cash' ? 'Efectivo' : 
+                sale.paymentMethod === 'card' ? 'Tarjeta' : 'Transferencia'}</p>
+            <hr>
+            <h4>Productos:</h4>
+            ${sale.items.map(item => `
+                <p>${item.quantity}x ${item.name} - ${Utils?.formatCurrency?.(item.subtotal) || `$${item.subtotal.toFixed(2)}`}</p>
+            `).join('')}
+            <hr>
+            <p><strong>Subtotal:</strong> ${Utils?.formatCurrency?.(sale.subtotal) || `$${sale.subtotal.toFixed(2)}`}</p>
+            <p><strong>IVA (21%):</strong> ${Utils?.formatCurrency?.(sale.tax) || `$${sale.tax.toFixed(2)}`}</p>
+            <p><strong>TOTAL:</strong> ${Utils?.formatCurrency?.(sale.total) || `$${sale.total.toFixed(2)}`}</p>
+            <hr>
+            <p class="small">Gracias por su compra</p>
         `;
+        
+        // Mostrar modal
+        if (window.showModal) {
+            window.showModal('Comprobante de Venta', receiptContent, [
+                { text: 'Imprimir', action: () => window.print() },
+                { text: 'Cerrar', action: 'close' }
+            ]);
+        } else {
+            alert('Venta completada exitosamente');
+        }
+    }
+    
+    async savePendingOperations() {
+        try {
+            localStorage.setItem('pendingOperations', JSON.stringify(pendingOperations));
+        } catch (error) {
+            logger.error('Error guardando operaciones pendientes:', error);
+        }
+    }
+    
+    loadPendingOperations() {
+        try {
+            const saved = localStorage.getItem('pendingOperations');
+            if (saved) {
+                pendingOperations = JSON.parse(saved) || [];
+                logger.info(`Cargadas ${pendingOperations.length} operaciones pendientes`);
+            }
+        } catch (error) {
+            logger.error('Error cargando operaciones pendientes:', error);
+        }
+    }
+    
+    showError(message) {
+        const errorElement = document.getElementById('login-error');
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            
+            // Auto-ocultar después de 5 segundos
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        } else {
+            alert(`Error: ${message}`);
+        }
+    }
+    
+    showSuccess(message) {
+        // Crear notificación temporal
+        const notification = document.createElement('div');
+        notification.className = 'notification success';
+        notification.innerHTML = `
+            <span>✅ ${message}</span>
+            <button onclick="this.parentElement.remove()">×</button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remover después de 3 segundos
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 3000);
+    }
+    
+    hideError() {
+        const errorElement = document.getElementById('login-error');
+        if (errorElement) {
+            errorElement.style.display = 'none';
+        }
+    }
+    
+    toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        
+        this.isSidebarOpen = !this.isSidebarOpen;
+        
+        if (this.isSidebarOpen) {
+            sidebar.classList.remove('collapsed');
+            mainContent.classList.remove('expanded');
+        } else {
+            sidebar.classList.add('collapsed');
+            mainContent.classList.add('expanded');
+        }
+    }
+    
+    // Métodos para el carrito (disponibles globalmente)
+    addToCart(product) {
+        const existingItem = cart.find(item => item.id === product.id);
+        
+        if (existingItem) {
+            existingItem.quantity += 1;
+        } else {
+            cart.push({
+                ...product,
+                quantity: 1
+            });
+        }
+        
+        this.updateCartUI();
+        this.showSuccess(`${product.name} agregado al carrito`);
+    }
+    
+    removeFromCart(productId) {
+        cart = cart.filter(item => item.id !== productId);
+        this.updateCartUI();
+    }
+    
+    increaseQuantity(productId) {
+        const item = cart.find(item => item.id === productId);
+        if (item) {
+            item.quantity += 1;
+            this.updateCartUI();
+        }
+    }
+    
+    decreaseQuantity(productId) {
+        const item = cart.find(item => item.id === productId);
+        if (item) {
+            if (item.quantity > 1) {
+                item.quantity -= 1;
+            } else {
+                cart = cart.filter(i => i.id !== productId);
+            }
+            this.updateCartUI();
+        }
+    }
+    
+    // Métodos para productos
+    editProduct(productId) {
+        console.log('Editando producto:', productId);
+        // Implementar lógica de edición
+    }
+    
+    deleteProduct(productId) {
+        if (confirm('¿Estás seguro de eliminar este producto?')) {
+            console.log('Eliminando producto:', productId);
+            // Implementar lógica de eliminación
+        }
+    }
+    
+    // Métodos para otras secciones (simplificados)
+    getClientsContent() {
+        return '<h2>👥 Gestión de Clientes</h2><p>Sección en desarrollo.</p>';
+    }
+    
+    getSalesContent() {
+        return '<h2>📊 Historial de Ventas</h2><p>Sección en desarrollo.</p>';
+    }
+    
+    getCashboxContent() {
+        return '<h2>💰 Caja Diaria</h2><p>Sección en desarrollo.</p>';
+    }
+    
+    getReportsContent() {
+        return '<h2>📈 Reportes y Estadísticas</h2><p>Sección en desarrollo.</p>';
+    }
+    
+    getBudgetsContent() {
+        return '<h2>📄 Presupuestos</h2><p>Sección en desarrollo.</p>';
+    }
+    
+    getProvidersContent() {
+        return '<h2>🚚 Proveedores</h2><p>Sección en desarrollo.</p>';
+    }
+    
+    loadClients() { /* Implementar */ }
+    loadSales() { /* Implementar */ }
+    loadCashbox() { /* Implementar */ }
+    loadReports() { /* Implementar */ }
+    loadBudgets() { /* Implementar */ }
+    loadProviders() { /* Implementar */ }
+}
+
+/**
+ * Inicializar aplicación
+ */
+async function initializeApp() {
+    logger.info('🚀 Inicializando POS Ferretería...');
+    
+    try {
+        // Crear instancia de UI
+        ui = new UI();
+        
+        // Verificar si hay una sesión previa
+        const lastLogin = localStorage.getItem('lastLogin');
+        if (lastLogin) {
+            try {
+                const loginData = JSON.parse(lastLogin);
+                
+                // Auto-rellenar formulario
+                const emailInput = document.getElementById('email');
+                const localSelect = document.getElementById('local-select');
+                const turnoSelect = document.getElementById('turno-select');
+                
+                if (emailInput && loginData.email) {
+                    emailInput.value = loginData.email;
+                }
+                
+                if (turnoSelect && loginData.turno) {
+                    turnoSelect.value = loginData.turno;
+                }
+                
+                // Cargar locales y seleccionar el último
+                setTimeout(() => {
+                    if (localSelect && loginData.localId) {
+                        localSelect.value = loginData.localId;
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                logger.warn('Error cargando sesión previa:', error);
+            }
+        }
+        
+        // Cargar operaciones pendientes
+        ui.loadPendingOperations();
+        
+        // Inicializar UI
+        ui.init();
+        
+        // Configurar listener de Firebase Auth
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                // Usuario autenticado
+                try {
+                    const userData = await getCurrentUser();
+                    if (userData) {
+                        currentUser = userData;
+                        logger.success(`Usuario autenticado: ${userData.email}`);
+                        
+                        // Si ya estamos en la app, actualizar info
+                        if (document.getElementById('app-screen').classList.contains('active')) {
+                            ui.updateUserInfo(userData);
+                        }
+                    }
+                } catch (error) {
+                    logger.error('Error obteniendo datos de usuario:', error);
+                }
+            } else {
+                // Usuario no autenticado
+                currentUser = null;
+                logger.info('Usuario no autenticado');
+            }
+        });
+        
+        logger.success('✅ Aplicación inicializada correctamente');
         
     } catch (error) {
-        console.error('❌ Error cargando locales:', error);
-        localSelect.innerHTML = `
-            <option value="local_1">Local Principal</option>
-            <option value="">Error cargando locales</option>
-        `;
-    }
-}
-
-/**
- * Actualiza estadísticas
- */
-function updateStats() {
-    // Valores de ejemplo - en producción vendrían de la base de datos
-    const stats = {
-        'products': Math.floor(Math.random() * 500) + 100,
-        'sales-today': Math.floor(Math.random() * 50) + 5,
-        'pending': Math.floor(Math.random() * 10)
-    };
-    
-    Object.keys(stats).forEach(stat => {
-        const element = document.getElementById(`stat-${stat}`);
-        if (element) {
-            animateCount(element, parseInt(element.textContent) || 0, stats[stat]);
-        }
-    });
-}
-
-/**
- * Animación de conteo
- */
-function animateCount(element, start, end) {
-    if (start === end) return;
-    
-    const duration = 500;
-    const stepTime = 20;
-    const steps = duration / stepTime;
-    const increment = (end - start) / steps;
-    let current = start;
-    
-    const timer = setInterval(() => {
-        current += increment;
-        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
-            current = end;
-            clearInterval(timer);
-        }
-        element.textContent = Math.round(current);
-    }, stepTime);
-}
-
-// ============================================
-// INICIALIZACIÓN DE MANAGERS
-// ============================================
-
-/**
- * Inicializa otros managers
- */
-function initializeOtherManagers() {
-    console.log('🔄 Inicializando managers...');
-    
-    // Lista de managers a inicializar
-    const managers = [
-        { name: 'OfflineManager', initFn: 'init' },
-        { name: 'ProductManager', initFn: 'init' },
-        { name: 'CartManager', initFn: 'init' },
-        { name: 'SyncManager', initFn: 'init' },
-        { name: 'RealtimeManager', initFn: 'init' },
-        { name: 'SalesManager', initFn: 'init' },
-        { name: 'BudgetsManager', initFn: 'init' },
-        { name: 'ClientsManager', initFn: 'init' },
-        { name: 'ProvidersManager', initFn: 'init' },
-        { name: 'CashboxManager', initFn: 'init' },
-        { name: 'ReportsManager', initFn: 'init' }
-    ];
-    
-    managers.forEach(manager => {
-        if (window[manager.name] && typeof window[manager.name][manager.initFn] === 'function') {
-            try {
-                window[manager.name][manager.initFn]();
-                console.log(`✅ ${manager.name} inicializado`);
-            } catch (error) {
-                console.warn(`⚠️ Error inicializando ${manager.name}:`, error);
-            }
-        }
-    });
-}
-
-// ============================================
-// FUNCIONES DE UTILIDAD
-// ============================================
-
-/**
- * Muestra/oculta loading en login
- */
-function showLoginLoading(show) {
-    const loginBtn = document.getElementById('login-btn');
-    if (!loginBtn) return;
-    
-    const btnText = loginBtn.querySelector('.btn-text');
-    const btnSpinner = loginBtn.querySelector('.btn-spinner');
-    
-    if (btnText && btnSpinner) {
-        if (show) {
-            btnText.style.display = 'none';
-            btnSpinner.style.display = 'inline-block';
-            loginBtn.disabled = true;
-        } else {
-            btnText.style.display = 'inline-block';
-            btnSpinner.style.display = 'none';
-            loginBtn.disabled = false;
+        logger.error('❌ Error inicializando aplicación:', error);
+        
+        // Mostrar error al usuario
+        const errorElement = document.getElementById('login-error');
+        if (errorElement) {
+            errorElement.textContent = 'Error inicializando la aplicación. Recarga la página.';
+            errorElement.style.display = 'block';
         }
     }
 }
 
-/**
- * Muestra error en login
- */
-function showLoginError(error) {
-    const errorDiv = document.getElementById('login-error');
-    if (!errorDiv) return;
-    
-    let message = 'Error al iniciar sesión';
-    
-    if (error.code) {
-        switch(error.code) {
-            case 'auth/user-not-found':
-                message = 'Usuario no encontrado';
-                break;
-            case 'auth/wrong-password':
-                message = 'Contraseña incorrecta';
-                break;
-            case 'auth/too-many-requests':
-                message = 'Demasiados intentos. Intenta más tarde';
-                break;
-            case 'auth/network-request-failed':
-                message = 'Error de conexión. Verifica tu internet';
-                break;
-            default:
-                message = error.message || 'Error desconocido';
-        }
-    } else if (error.message) {
-        message = error.message;
-    }
-    
-    errorDiv.textContent = message;
-    errorDiv.style.display = 'block';
-    
-    // Ocultar después de 5 segundos
-    setTimeout(() => {
-        errorDiv.style.display = 'none';
-    }, 5000);
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
 }
 
-/**
- * Muestra error general
- */
-function showError(message) {
-    console.error('❌ Error:', message);
-    
-    // Intentar usar toast si existe
-    if (window.UIManager && typeof window.UIManager.showToast === 'function') {
-        window.UIManager.showToast(message, 'error');
-    } else {
-        // Fallback: alert simple
-        alert('Error: ' + message);
+// Hacer UI disponible globalmente
+window.app = {
+    ui,
+    cart: {
+        add: (product) => ui.addToCart(product),
+        remove: (productId) => ui.removeFromCart(productId),
+        clear: () => ui.clearCart()
     }
-}
+};
 
-// ============================================
-// INICIALIZACIÓN AL CARGAR LA PÁGINA
-// ============================================
-
-// Esperar a que el DOM esté completamente cargado
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 DOM cargado, iniciando aplicación...');
-    
-    // Inicializar después de un pequeño delay para asegurar que todos los scripts se carguen
-    setTimeout(() => {
-        initializeApp();
-    }, 100);
-});
-
-// Exportar funciones principales para acceso global
-window.initializeApp = initializeApp;
-window.handleLogin = handleLogin;
-window.handleLogout = handleLogout;
-window.loadSection = loadSection;
-window.updateConnectionStatus = updateConnectionStatus;
-
-console.log('✅ app.js cargado correctamente');
+// Exportar para módulos
+export { ui, currentUser, currentLocal, currentTurn };
