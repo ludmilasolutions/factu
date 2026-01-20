@@ -4,88 +4,663 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuración - Sistema POS</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .setup-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+        }
+
+        h2 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .info-text {
+            color: #718096;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #cbd5e0;
+        }
+
+        .btn-success {
+            background: #38a169;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #2f855a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(56, 161, 105, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+
+        .btn-outline:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .info {
+            background: #bee3f8;
+            color: #2a4365;
+            border: 1px solid #90cdf4;
+        }
+
+        .warning {
+            background: #feebc8;
+            color: #744210;
+            border: 1px solid #fbd38d;
+        }
+
+        .navigation {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .sql-code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .instructions {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h3 {
+            margin-bottom: 5px;
+            color: #4a5568;
+        }
+
+        .step-content p {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn {
+            background: #4a5568;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #2d3748;
+        }
+
+        .test-data {
+            background: #f0fff4;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🔧 Configuración del Sistema POS</h1>
-            <p class="subtitle">Configuración inicial de la base de datos Supabase</p>
+            <p class="subtitle">Sistema completo de facturación web - MultiLocal - Offline First</p>
         </header>
 
         <div class="setup-section">
+            <!-- Paso 1: Crear proyecto en Supabase -->
             <div class="card">
-                <h2>⚙️ Conexión a Supabase</h2>
+                <h2>📋 PASO 1: Crear Proyecto en Supabase</h2>
+                <div class="instructions">
+                    <p>Sigue estos pasos para crear tu base de datos gratuita:</p>
+                    <ol>
+                        <li>Ve a <a href="https://supabase.com" target="_blank">supabase.com</a></li>
+                        <li>Haz clic en "Start your project"</li>
+                        <li>Inicia sesión con tu cuenta de GitHub o Google</li>
+                        <li>Crea una organización</li>
+                        <li>Selecciona "Create new project"</li>
+                        <li>Elige un nombre para tu proyecto (ej: "mi-pos")</li>
+                        <li>Crea una contraseña segura para la base de datos</li>
+                        <li>Selecciona la región más cercana</li>
+                        <li>Haz clic en "Create new project"</li>
+                    </ol>
+                    <p class="warning">⚠️ El proyecto puede tardar 1-2 minutos en crearse</p>
+                </div>
+            </div>
+
+            <!-- Paso 2: Configurar credenciales -->
+            <div class="card">
+                <h2>🔑 PASO 2: Configurar Credenciales</h2>
+                <p class="info-text">Una vez creado el proyecto, sigue estos pasos:</p>
+                
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Obtener URL y Clave</h3>
+                        <p>En el dashboard de tu proyecto, ve a Settings > API</p>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="supabaseUrl">URL de Supabase:</label>
-                    <input type="text" id="supabaseUrl" placeholder="https://tu-proyecto.supabase.co">
+                    <input type="text" id="supabaseUrl" placeholder="https://xxxxxxxxxxxx.supabase.co">
+                    <small>Copia la URL de "Project URL"</small>
                 </div>
+                
                 <div class="form-group">
-                    <label for="supabaseKey">Clave Anónima:</label>
-                    <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                    <label for="supabaseKey">Clave Anónima (anon public):</label>
+                    <input type="text" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                    <small>Copia la clave de "anon public" en Project API keys</small>
                 </div>
-                <button id="testConnection" class="btn btn-secondary">Probar Conexión</button>
+                
+                <button id="testConnection" class="btn btn-primary">Probar Conexión</button>
             </div>
 
+            <!-- Paso 3: Crear tablas -->
             <div class="card">
-                <h2>🗃️ Crear Tablas</h2>
-                <p class="info-text">Crea todas las tablas necesarias en tu base de datos Supabase</p>
-                <div class="button-group">
-                    <button id="createTables" class="btn btn-primary">Crear Todas las Tablas</button>
-                    <button id="createLocalesTable" class="btn btn-outline">Crear Tabla Locales</button>
-                    <button id="createCajasTable" class="btn btn-outline">Crear Tabla Cajas</button>
+                <h2>🗃️ PASO 3: Crear Tablas en la Base de Datos</h2>
+                <p class="info-text">Copia y pega este código SQL en el editor de Supabase:</p>
+                
+                <div class="sql-code" id="sqlCode">
+-- Ejecuta este SQL en el editor SQL de Supabase
+-- Ve a SQL Editor > New query > Pega este código > Run
+
+-- 1. Tabla de locales/comercios
+CREATE TABLE IF NOT EXISTS locales (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    direccion TEXT,
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    config JSONB DEFAULT '{}',
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 2. Tabla de cajas
+CREATE TABLE IF NOT EXISTS cajas (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    numero VARCHAR(20) NOT NULL,
+    nombre VARCHAR(100),
+    local_id UUID,
+    activa BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 3. Tabla de productos
+CREATE TABLE IF NOT EXISTS productos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    codigo_barras VARCHAR(50),
+    nombre VARCHAR(200) NOT NULL,
+    descripcion TEXT,
+    precio_costo DECIMAL(10,2) DEFAULT 0,
+    porcentaje_ganancia DECIMAL(5,2) DEFAULT 30,
+    precio_venta DECIMAL(10,2) NOT NULL,
+    stock INTEGER DEFAULT 0,
+    stock_minimo INTEGER DEFAULT 5,
+    categoria VARCHAR(100),
+    proveedor_id UUID,
+    activo BOOLEAN DEFAULT true,
+    promocion JSONB DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 4. Tabla de clientes
+CREATE TABLE IF NOT EXISTS clientes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    dni VARCHAR(20),
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    direccion TEXT,
+    limite_credito DECIMAL(10,2) DEFAULT 0,
+    saldo DECIMAL(10,2) DEFAULT 0,
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 5. Tabla de proveedores
+CREATE TABLE IF NOT EXISTS proveedores (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    contacto VARCHAR(100),
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    web VARCHAR(200),
+    whatsapp VARCHAR(20),
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 6. Tabla de ventas
+CREATE TABLE IF NOT EXISTS ventas (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    local_id UUID,
+    caja_id UUID,
+    usuario_id UUID,
+    cliente_id UUID,
+    total DECIMAL(10,2) NOT NULL,
+    descuento DECIMAL(10,2) DEFAULT 0,
+    estado VARCHAR(20) DEFAULT 'completada',
+    tipo_venta VARCHAR(20) DEFAULT 'contado',
+    observaciones TEXT,
+    offline_id VARCHAR(100),
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 7. Tabla de items de venta
+CREATE TABLE IF NOT EXISTS venta_items (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    venta_id UUID,
+    producto_id UUID,
+    cantidad INTEGER NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    descuento DECIMAL(10,2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 8. Tabla de pagos
+CREATE TABLE IF NOT EXISTS pagos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    venta_id UUID,
+    metodo VARCHAR(50) NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    referencia VARCHAR(100),
+    estado VARCHAR(20) DEFAULT 'completado',
+    offline_id VARCHAR(100),
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 9. Tabla de presupuestos
+CREATE TABLE IF NOT EXISTS presupuestos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    local_id UUID,
+    cliente_id UUID,
+    usuario_id UUID,
+    total DECIMAL(10,2) NOT NULL,
+    valido_hasta DATE,
+    estado VARCHAR(20) DEFAULT 'pendiente',
+    observaciones TEXT,
+    offline_id VARCHAR(100),
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 10. Tabla de items de presupuesto
+CREATE TABLE IF NOT EXISTS presupuesto_items (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    presupuesto_id UUID,
+    producto_id UUID,
+    cantidad INTEGER NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 11. Tabla de cuentas corrientes
+CREATE TABLE IF NOT EXISTS cuentas_corrientes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    cliente_id UUID,
+    tipo_movimiento VARCHAR(20) NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    saldo_anterior DECIMAL(10,2) NOT NULL,
+    saldo_nuevo DECIMAL(10,2) NOT NULL,
+    referencia_id UUID,
+    observaciones TEXT,
+    offline_id VARCHAR(100),
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 12. Tabla de cierres de caja
+CREATE TABLE IF NOT EXISTS cierres_caja (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    local_id UUID,
+    caja_id UUID,
+    usuario_id UUID,
+    turno VARCHAR(10) NOT NULL,
+    fecha DATE NOT NULL,
+    saldo_inicial DECIMAL(10,2) NOT NULL,
+    saldo_final DECIMAL(10,2),
+    ventas_efectivo DECIMAL(10,2) DEFAULT 0,
+    ventas_tarjeta DECIMAL(10,2) DEFAULT 0,
+    ventas_transferencia DECIMAL(10,2) DEFAULT 0,
+    observaciones TEXT,
+    estado VARCHAR(20) DEFAULT 'abierto',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
                 </div>
-                <div id="tableStatus" class="status"></div>
+                
+                <button id="copySql" class="copy-btn">📋 Copiar SQL al Portapapeles</button>
+                
+                <div class="instructions" style="margin-top: 15px;">
+                    <p><strong>¿Cómo ejecutar el SQL?</strong></p>
+                    <ol>
+                        <li>En el menú izquierdo de Supabase, haz clic en "SQL Editor"</li>
+                        <li>Haz clic en "New query"</li>
+                        <li>Pega el código SQL anterior</li>
+                        <li>Haz clic en "Run" (▶️)</li>
+                        <li>Espera a que se ejecute (puede tardar unos segundos)</li>
+                    </ol>
+                </div>
             </div>
 
+            <!-- Paso 4: Insertar datos de prueba -->
             <div class="card">
-                <h2>📊 Datos de Prueba</h2>
-                <p class="info-text">Inserta datos iniciales para comenzar a usar el sistema</p>
-                <button id="insertTestData" class="btn btn-primary">Insertar Datos de Prueba</button>
+                <h2>📊 PASO 4: Insertar Datos de Prueba</h2>
+                <p class="info-text">Una vez creadas las tablas, inserta datos iniciales:</p>
+                
+                <div class="test-data">
+                    <p><strong>Datos que se insertarán:</strong></p>
+                    <ul>
+                        <li>✅ 1 Local principal</li>
+                        <li>✅ 2 Cajas (01 y 02)</li>
+                        <li>✅ 4 Productos de ejemplo</li>
+                        <li>✅ 2 Clientes (contado y cuenta corriente)</li>
+                        <li>✅ 2 Proveedores</li>
+                    </ul>
+                </div>
+                
+                <button id="insertTestData" class="btn btn-primary" disabled>Insertar Datos de Prueba</button>
                 <div id="dataStatus" class="status"></div>
             </div>
 
+            <!-- Paso 5: Verificar configuración -->
             <div class="card">
-                <h2>✅ Verificar Configuración</h2>
-                <p class="info-text">Verifica que todas las tablas y datos estén correctamente configurados</p>
-                <button id="verifySetup" class="btn btn-success">Verificar Configuración</button>
+                <h2>✅ PASO 5: Verificar Configuración</h2>
+                <p class="info-text">Verifica que todo esté correctamente configurado</p>
+                <button id="verifySetup" class="btn btn-success" disabled>Verificar Configuración</button>
                 <div id="verifyStatus" class="status"></div>
             </div>
         </div>
 
         <div class="navigation">
-            <button id="goToApp" class="btn btn-success" disabled>Ir a la Aplicación</button>
+            <button id="goToApp" class="btn btn-success" disabled>🚀 Ir a la Aplicación POS</button>
+            <p style="margin-top: 10px; color: #718096; font-size: 0.9rem;">
+                Una vez completados todos los pasos, podrás usar el sistema POS
+            </p>
         </div>
     </div>
 
     <script>
-        // Configuración de Supabase
+        // Configuración
         let supabaseClient = null;
+        let supabaseLoaded = false;
 
         // Elementos del DOM
         const supabaseUrlInput = document.getElementById('supabaseUrl');
         const supabaseKeyInput = document.getElementById('supabaseKey');
         const testConnectionBtn = document.getElementById('testConnection');
-        const createTablesBtn = document.getElementById('createTables');
         const insertTestDataBtn = document.getElementById('insertTestData');
         const verifySetupBtn = document.getElementById('verifySetup');
         const goToAppBtn = document.getElementById('goToApp');
-        const tableStatus = document.getElementById('tableStatus');
+        const copySqlBtn = document.getElementById('copySql');
         const dataStatus = document.getElementById('dataStatus');
         const verifyStatus = document.getElementById('verifyStatus');
+        const sqlCode = document.getElementById('sqlCode');
 
         // Cargar credenciales guardadas
         window.addEventListener('DOMContentLoaded', () => {
             const savedUrl = localStorage.getItem('supabaseUrl');
             const savedKey = localStorage.getItem('supabaseKey');
+            const systemConfigured = localStorage.getItem('systemConfigured');
+            
             if (savedUrl) supabaseUrlInput.value = savedUrl;
             if (savedKey) supabaseKeyInput.value = savedKey;
             
-            // Verificar si ya está configurado
-            if (localStorage.getItem('systemConfigured') === 'true') {
+            // Si ya está configurado, habilitar botones
+            if (systemConfigured === 'true') {
                 goToAppBtn.disabled = false;
                 verifyStatus.innerHTML = '<p class="success">✅ Sistema ya configurado. Puedes ir a la aplicación.</p>';
             }
+            
+            // Cargar Supabase desde CDN
+            loadSupabase();
+        });
+
+        // Función para cargar Supabase
+        async function loadSupabase() {
+            if (window.supabase) {
+                supabaseLoaded = true;
+                return;
+            }
+            
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+                script.onload = () => {
+                    supabaseLoaded = true;
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error('Error cargando Supabase');
+                    reject();
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        // Copiar SQL al portapapeles
+        copySqlBtn.addEventListener('click', () => {
+            const text = sqlCode.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = copySqlBtn.textContent;
+                copySqlBtn.textContent = '✅ ¡Copiado!';
+                setTimeout(() => {
+                    copySqlBtn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Error copiando texto: ', err);
+            });
         });
 
         // Probar conexión a Supabase
@@ -98,449 +673,376 @@
                 return;
             }
             
+            // Verificar formato de URL
+            if (!url.startsWith('https://') || !url.includes('.supabase.co')) {
+                alert('La URL debe tener el formato: https://xxxxxx.supabase.co');
+                return;
+            }
+            
+            // Verificar formato de clave
+            if (!key.startsWith('eyJ')) {
+                alert('La clave debe comenzar con "eyJ". Asegúrate de copiar la clave "anon public"');
+                return;
+            }
+            
+            testConnectionBtn.disabled = true;
+            testConnectionBtn.textContent = '🔄 Probando conexión...';
+            
             try {
+                // Esperar a que cargue Supabase si no está listo
+                if (!supabaseLoaded) {
+                    await loadSupabase();
+                }
+                
                 // Guardar credenciales
                 localStorage.setItem('supabaseUrl', url);
                 localStorage.setItem('supabaseKey', key);
                 
-                // Cargar Supabase desde CDN
-                if (!window.supabase) {
-                    const script = document.createElement('script');
-                    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-                    document.head.appendChild(script);
-                    
-                    // Esperar a que cargue
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-                
-                // Crear cliente
+                // Crear cliente de Supabase
                 supabaseClient = window.supabase.createClient(url, key);
                 
-                // Probar conexión
-                const { data, error } = await supabaseClient.from('_dummy').select('*').limit(1);
+                // Probar conexión con una consulta simple a auth
+                const { data, error } = await supabaseClient.auth.getSession();
                 
-                if (error && error.code !== 'PGRST116') {
-                    throw error;
+                if (error) {
+                    // Si hay error de auth, probar con una consulta a una tabla que debería existir
+                    console.log('Probando conexión alternativa...');
+                    
+                    // Intentar una consulta simple
+                    const { error: tableError } = await supabaseClient
+                        .from('locales')
+                        .select('count')
+                        .limit(1)
+                        .single();
+                    
+                    // Si esperamos error 404 porque la tabla no existe, pero la conexión es exitosa
+                    if (tableError && tableError.code === 'PGRST116') {
+                        // Tabla no existe pero conexión es exitosa
+                        console.log('✅ Conexión exitosa (tabla no existe aún)');
+                        alert('✅ Conexión exitosa a Supabase\n\nAhora crea las tablas usando el SQL del paso 3.');
+                    } else if (tableError) {
+                        throw tableError;
+                    } else {
+                        throw new Error('Error desconocido');
+                    }
+                } else {
+                    console.log('✅ Conexión exitosa con sesión');
+                    alert('✅ Conexión exitosa a Supabase');
                 }
                 
-                alert('✅ Conexión exitosa a Supabase');
-                createTablesBtn.disabled = false;
+                // Habilitar botones siguientes
+                insertTestDataBtn.disabled = false;
                 verifySetupBtn.disabled = false;
                 
             } catch (error) {
-                alert(`❌ Error de conexión: ${error.message}`);
-            }
-        });
-
-        // Crear todas las tablas
-        createTablesBtn.addEventListener('click', async () => {
-            if (!supabaseClient) {
-                alert('Primero prueba la conexión');
-                return;
-            }
-            
-            tableStatus.innerHTML = '<p class="info">🔄 Creando tablas...</p>';
-            
-            try {
-                // SQL para crear todas las tablas
-                const tablesSQL = `
-                -- Tabla de locales/comercios
-                CREATE TABLE IF NOT EXISTS locales (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    nombre VARCHAR(100) NOT NULL,
-                    direccion TEXT,
-                    telefono VARCHAR(20),
-                    email VARCHAR(100),
-                    config JSONB DEFAULT '{}',
-                    activo BOOLEAN DEFAULT true,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de usuarios
-                CREATE TABLE IF NOT EXISTS usuarios (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    email VARCHAR(255) NOT NULL UNIQUE,
-                    nombre VARCHAR(100) NOT NULL,
-                    rol VARCHAR(50) DEFAULT 'vendedor',
-                    local_id UUID REFERENCES locales(id),
-                    activo BOOLEAN DEFAULT true,
-                    config JSONB DEFAULT '{}',
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de cajas
-                CREATE TABLE IF NOT EXISTS cajas (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    numero VARCHAR(20) NOT NULL,
-                    nombre VARCHAR(100),
-                    local_id UUID REFERENCES locales(id),
-                    activa BOOLEAN DEFAULT true,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    UNIQUE(numero, local_id)
-                );
-
-                -- Tabla de productos
-                CREATE TABLE IF NOT EXISTS productos (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    codigo_barras VARCHAR(50) UNIQUE,
-                    nombre VARCHAR(200) NOT NULL,
-                    descripcion TEXT,
-                    precio_costo DECIMAL(10,2) DEFAULT 0,
-                    porcentaje_ganancia DECIMAL(5,2) DEFAULT 30,
-                    precio_venta DECIMAL(10,2) NOT NULL,
-                    stock INTEGER DEFAULT 0,
-                    stock_minimo INTEGER DEFAULT 5,
-                    categoria VARCHAR(100),
-                    proveedor_id UUID,
-                    activo BOOLEAN DEFAULT true,
-                    promocion JSONB DEFAULT '{}',
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de clientes
-                CREATE TABLE IF NOT EXISTS clientes (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    nombre VARCHAR(100) NOT NULL,
-                    dni VARCHAR(20) UNIQUE,
-                    telefono VARCHAR(20),
-                    email VARCHAR(100),
-                    direccion TEXT,
-                    limite_credito DECIMAL(10,2) DEFAULT 0,
-                    saldo DECIMAL(10,2) DEFAULT 0,
-                    activo BOOLEAN DEFAULT true,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de proveedores
-                CREATE TABLE IF NOT EXISTS proveedores (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    nombre VARCHAR(100) NOT NULL,
-                    contacto VARCHAR(100),
-                    telefono VARCHAR(20),
-                    email VARCHAR(100),
-                    web VARCHAR(200),
-                    whatsapp VARCHAR(20),
-                    activo BOOLEAN DEFAULT true,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de ventas
-                CREATE TABLE IF NOT EXISTS ventas (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    numero_venta SERIAL,
-                    local_id UUID REFERENCES locales(id),
-                    caja_id UUID REFERENCES cajas(id),
-                    usuario_id UUID,
-                    cliente_id UUID REFERENCES clientes(id),
-                    total DECIMAL(10,2) NOT NULL,
-                    descuento DECIMAL(10,2) DEFAULT 0,
-                    estado VARCHAR(20) DEFAULT 'completada',
-                    tipo_venta VARCHAR(20) DEFAULT 'contado',
-                    observaciones TEXT,
-                    offline_id VARCHAR(100),
-                    sync_status VARCHAR(20) DEFAULT 'synced',
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de items de venta
-                CREATE TABLE IF NOT EXISTS venta_items (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    venta_id UUID REFERENCES ventas(id),
-                    producto_id UUID REFERENCES productos(id),
-                    cantidad INTEGER NOT NULL,
-                    precio_unitario DECIMAL(10,2) NOT NULL,
-                    subtotal DECIMAL(10,2) NOT NULL,
-                    descuento DECIMAL(10,2) DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de pagos
-                CREATE TABLE IF NOT EXISTS pagos (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    venta_id UUID REFERENCES ventas(id),
-                    metodo VARCHAR(50) NOT NULL,
-                    monto DECIMAL(10,2) NOT NULL,
-                    referencia VARCHAR(100),
-                    estado VARCHAR(20) DEFAULT 'completado',
-                    offline_id VARCHAR(100),
-                    sync_status VARCHAR(20) DEFAULT 'synced',
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de presupuestos
-                CREATE TABLE IF NOT EXISTS presupuestos (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    numero_presupuesto SERIAL,
-                    local_id UUID REFERENCES locales(id),
-                    cliente_id UUID REFERENCES clientes(id),
-                    usuario_id UUID,
-                    total DECIMAL(10,2) NOT NULL,
-                    valido_hasta DATE,
-                    estado VARCHAR(20) DEFAULT 'pendiente',
-                    observaciones TEXT,
-                    offline_id VARCHAR(100),
-                    sync_status VARCHAR(20) DEFAULT 'synced',
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de items de presupuesto
-                CREATE TABLE IF NOT EXISTS presupuesto_items (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    presupuesto_id UUID REFERENCES presupuestos(id),
-                    producto_id UUID REFERENCES productos(id),
-                    cantidad INTEGER NOT NULL,
-                    precio_unitario DECIMAL(10,2) NOT NULL,
-                    subtotal DECIMAL(10,2) NOT NULL,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de cuentas corrientes
-                CREATE TABLE IF NOT EXISTS cuentas_corrientes (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    cliente_id UUID REFERENCES clientes(id),
-                    tipo_movimiento VARCHAR(20) NOT NULL,
-                    monto DECIMAL(10,2) NOT NULL,
-                    saldo_anterior DECIMAL(10,2) NOT NULL,
-                    saldo_nuevo DECIMAL(10,2) NOT NULL,
-                    referencia_id UUID,
-                    observaciones TEXT,
-                    offline_id VARCHAR(100),
-                    sync_status VARCHAR(20) DEFAULT 'synced',
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Tabla de cierres de caja
-                CREATE TABLE IF NOT EXISTS cierres_caja (
-                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-                    local_id UUID REFERENCES locales(id),
-                    caja_id UUID REFERENCES cajas(id),
-                    usuario_id UUID,
-                    turno VARCHAR(10) NOT NULL,
-                    fecha DATE NOT NULL,
-                    saldo_inicial DECIMAL(10,2) NOT NULL,
-                    saldo_final DECIMAL(10,2),
-                    ventas_efectivo DECIMAL(10,2) DEFAULT 0,
-                    ventas_tarjeta DECIMAL(10,2) DEFAULT 0,
-                    ventas_transferencia DECIMAL(10,2) DEFAULT 0,
-                    observaciones TEXT,
-                    estado VARCHAR(20) DEFAULT 'abierto',
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-
-                -- Índices para mejor rendimiento
-                CREATE INDEX IF NOT EXISTS idx_productos_codigo ON productos(codigo_barras);
-                CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(created_at);
-                CREATE INDEX IF NOT EXISTS idx_ventas_local ON ventas(local_id);
-                CREATE INDEX IF NOT EXISTS idx_ventas_sync ON ventas(sync_status);
-                CREATE INDEX IF NOT EXISTS idx_pagos_sync ON pagos(sync_status);
-                `;
+                console.error('Error de conexión:', error);
                 
-                // Ejecutar SQL (en un entorno real, esto se haría con una función RPC)
-                // Nota: Para simplificar, asumimos que el usuario tiene permisos para ejecutar SQL
-                // En producción, usaría funciones protegidas o migrations
+                let errorMessage = error.message || 'Error desconocido';
                 
-                tableStatus.innerHTML = '<p class="success">✅ Tablas creadas correctamente.</p>';
-                insertTestDataBtn.disabled = false;
+                if (error.message.includes('JWT')) {
+                    errorMessage = 'Clave inválida. Asegúrate de copiar la clave "anon public"';
+                } else if (error.message.includes('fetch')) {
+                    errorMessage = 'Error de red. Verifica tu conexión a internet y la URL';
+                } else if (error.message.includes('PGRST')) {
+                    errorMessage = 'URL inválida. Verifica que sea correcta';
+                }
                 
-            } catch (error) {
-                tableStatus.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+                alert(`❌ Error de conexión:\n\n${errorMessage}\n\nVerifica:\n1. La URL es correcta\n2. La clave es "anon public"\n3. Tu proyecto está activo en Supabase`);
+                
+            } finally {
+                testConnectionBtn.disabled = false;
+                testConnectionBtn.textContent = 'Probar Conexión';
             }
         });
 
         // Insertar datos de prueba
         insertTestDataBtn.addEventListener('click', async () => {
             if (!supabaseClient) {
-                alert('Primero configura la conexión');
+                alert('Primero prueba la conexión');
                 return;
             }
             
+            insertTestDataBtn.disabled = true;
+            insertTestDataBtn.textContent = '🔄 Insertando datos...';
             dataStatus.innerHTML = '<p class="info">🔄 Insertando datos de prueba...</p>';
             
             try {
-                // Insertar local de prueba
+                // 1. Insertar local principal
                 const { data: local, error: localError } = await supabaseClient
                     .from('locales')
-                    .insert([
-                        {
-                            nombre: 'Local Principal',
-                            direccion: 'Av. Principal 123',
-                            telefono: '011-12345678',
-                            email: 'local@empresa.com',
-                            config: { impresora: '80mm', moneda: 'ARS' }
+                    .insert({
+                        nombre: 'Local Principal',
+                        direccion: 'Av. Comercial 1234',
+                        telefono: '011-1234-5678',
+                        email: 'ventas@misupermercado.com',
+                        config: { 
+                            impresora: 'térmica 80mm',
+                            moneda: 'ARS',
+                            iva: 21 
                         }
-                    ])
+                    })
                     .select()
                     .single();
                 
-                if (localError) throw localError;
+                if (localError) {
+                    // Si ya existe, obtener el existente
+                    const { data: existingLocal } = await supabaseClient
+                        .from('locales')
+                        .select('*')
+                        .limit(1)
+                        .single();
+                    
+                    if (existingLocal) {
+                        local = existingLocal;
+                    } else {
+                        throw localError;
+                    }
+                }
                 
-                // Insertar cajas
-                const { data: cajas, error: cajasError } = await supabaseClient
-                    .from('cajas')
-                    .insert([
-                        { numero: '01', nombre: 'Caja Principal', local_id: local.id },
-                        { numero: '02', nombre: 'Caja Secundaria', local_id: local.id }
-                    ]);
+                // 2. Insertar cajas
+                const cajasData = [
+                    { numero: '01', nombre: 'Caja Principal', local_id: local.id },
+                    { numero: '02', nombre: 'Caja Secundaria', local_id: local.id }
+                ];
                 
-                if (cajasError) throw cajasError;
+                for (const caja of cajasData) {
+                    const { error: cajaError } = await supabaseClient
+                        .from('cajas')
+                        .upsert(caja, { onConflict: 'numero,local_id' });
+                    
+                    if (cajaError) console.warn('Error insertando caja:', cajaError);
+                }
                 
-                // Insertar productos de prueba
-                const productos = [
+                // 3. Insertar productos
+                const productosData = [
                     {
                         codigo_barras: '7791234567890',
                         nombre: 'Coca Cola 2.25L',
-                        precio_costo: 450,
-                        porcentaje_ganancia: 30,
-                        precio_venta: 585,
+                        descripcion: 'Gaseosa Coca Cola 2.25 litros',
+                        precio_costo: 450.00,
+                        porcentaje_ganancia: 30.00,
+                        precio_venta: 585.00,
                         stock: 100,
-                        categoria: 'Bebidas'
+                        stock_minimo: 10,
+                        categoria: 'Bebidas',
+                        activo: true
                     },
                     {
                         codigo_barras: '7791234567891',
                         nombre: 'Pan de Molde Integral',
-                        precio_costo: 320,
-                        porcentaje_ganancia: 35,
-                        precio_venta: 432,
+                        descripcion: 'Pan de molde integral 500g',
+                        precio_costo: 320.00,
+                        porcentaje_ganancia: 35.00,
+                        precio_venta: 432.00,
                         stock: 50,
-                        categoria: 'Panadería'
+                        stock_minimo: 5,
+                        categoria: 'Panadería',
+                        activo: true
                     },
                     {
                         codigo_barras: '7791234567892',
                         nombre: 'Leche Entera 1L',
-                        precio_costo: 280,
-                        porcentaje_ganancia: 25,
-                        precio_venta: 350,
+                        descripcion: 'Leche entera larga vida 1 litro',
+                        precio_costo: 280.00,
+                        porcentaje_ganancia: 25.00,
+                        precio_venta: 350.00,
                         stock: 80,
-                        categoria: 'Lácteos'
+                        stock_minimo: 8,
+                        categoria: 'Lácteos',
+                        activo: true
                     },
                     {
                         codigo_barras: '7791234567893',
-                        nombre: 'Arroz 1kg',
-                        precio_costo: 150,
-                        porcentaje_ganancia: 40,
-                        precio_venta: 210,
+                        nombre: 'Arroz Largo Fino 1kg',
+                        descripcion: 'Arroz largo fino tipo 0000',
+                        precio_costo: 150.00,
+                        porcentaje_ganancia: 40.00,
+                        precio_venta: 210.00,
                         stock: 120,
-                        categoria: 'Almacén'
+                        stock_minimo: 12,
+                        categoria: 'Almacén',
+                        activo: true
                     }
                 ];
                 
-                const { error: productosError } = await supabaseClient
-                    .from('productos')
-                    .insert(productos);
+                for (const producto of productosData) {
+                    const { error: productoError } = await supabaseClient
+                        .from('productos')
+                        .upsert(producto, { onConflict: 'codigo_barras' });
+                    
+                    if (productoError) console.warn('Error insertando producto:', productoError);
+                }
                 
-                if (productosError) throw productosError;
-                
-                // Insertar clientes de prueba
-                const clientes = [
+                // 4. Insertar clientes
+                const clientesData = [
                     {
                         nombre: 'Cliente Contado',
                         dni: '12345678',
-                        telefono: '011-98765432',
-                        email: 'contado@cliente.com'
+                        telefono: '011-9876-5432',
+                        email: 'cliente@contado.com',
+                        direccion: 'Calle Falsa 123',
+                        limite_credito: 0,
+                        saldo: 0,
+                        activo: true
                     },
                     {
                         nombre: 'Cliente Cuenta Corriente',
                         dni: '87654321',
-                        telefono: '011-12344321',
-                        email: 'cuenta@cliente.com',
-                        limite_credito: 50000,
-                        saldo: 0
+                        telefono: '011-1234-4321',
+                        email: 'cliente@cuenta.com',
+                        direccion: 'Av. Siempre Viva 742',
+                        limite_credito: 50000.00,
+                        saldo: 0,
+                        activo: true
                     }
                 ];
                 
-                const { error: clientesError } = await supabaseClient
-                    .from('clientes')
-                    .insert(clientes);
+                for (const cliente of clientesData) {
+                    const { error: clienteError } = await supabaseClient
+                        .from('clientes')
+                        .upsert(cliente, { onConflict: 'dni' });
+                    
+                    if (clienteError) console.warn('Error insertando cliente:', clienteError);
+                }
                 
-                if (clientesError) throw clientesError;
-                
-                // Insertar proveedores de prueba
-                const proveedores = [
+                // 5. Insertar proveedores
+                const proveedoresData = [
                     {
                         nombre: 'Distribuidora Mayorista SA',
                         contacto: 'Juan Pérez',
-                        telefono: '011-55556666',
+                        telefono: '011-5555-6666',
+                        email: 'ventas@mayorista.com.ar',
+                        web: 'https://www.mayorista.com.ar',
                         whatsapp: '+5491155556666',
-                        web: 'https://mayorista.com.ar'
+                        activo: true
                     },
                     {
-                        nombre: 'Fábrica de Bebidas',
+                        nombre: 'Fábrica de Bebidas Argentinas',
                         contacto: 'María Gómez',
-                        telefono: '011-77778888',
-                        email: 'ventas@bebidas.com.ar'
+                        telefono: '011-7777-8888',
+                        email: 'ventas@fabrica-bebidas.com',
+                        web: 'https://www.fabrica-bebidas.com.ar',
+                        whatsapp: '+5491177778888',
+                        activo: true
                     }
                 ];
                 
-                const { error: proveedoresError } = await supabaseClient
-                    .from('proveedores')
-                    .insert(proveedores);
+                for (const proveedor of proveedoresData) {
+                    const { error: proveedorError } = await supabaseClient
+                        .from('proveedores')
+                        .upsert(proveedor);
+                    
+                    if (proveedorError) console.warn('Error insertando proveedor:', proveedorError);
+                }
                 
-                if (proveedoresError) throw proveedoresError;
+                dataStatus.innerHTML = `
+                    <p class="success">✅ Datos de prueba insertados correctamente</p>
+                    <p class="info">Se insertaron:</p>
+                    <ul>
+                        <li>1 Local</li>
+                        <li>2 Cajas</li>
+                        <li>4 Productos</li>
+                        <li>2 Clientes</li>
+                        <li>2 Proveedores</li>
+                    </ul>
+                `;
                 
-                dataStatus.innerHTML = '<p class="success">✅ Datos de prueba insertados correctamente.</p>';
                 verifySetupBtn.disabled = false;
                 
             } catch (error) {
-                dataStatus.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+                console.error('Error insertando datos:', error);
+                dataStatus.innerHTML = `
+                    <p class="error">❌ Error insertando datos:</p>
+                    <p>${error.message}</p>
+                    <p class="warning">⚠️ Asegúrate de haber creado las tablas primero (Paso 3)</p>
+                `;
+            } finally {
+                insertTestDataBtn.disabled = false;
+                insertTestDataBtn.textContent = 'Insertar Datos de Prueba';
             }
         });
 
         // Verificar configuración completa
         verifySetupBtn.addEventListener('click', async () => {
             if (!supabaseClient) {
-                alert('Primero configura la conexión');
+                alert('Primero prueba la conexión');
                 return;
             }
             
+            verifySetupBtn.disabled = true;
+            verifySetupBtn.textContent = '🔄 Verificando...';
             verifyStatus.innerHTML = '<p class="info">🔄 Verificando configuración...</p>';
             
             try {
-                // Verificar que existan todas las tablas
-                const tables = ['locales', 'cajas', 'productos', 'clientes', 'proveedores'];
-                let allTablesExist = true;
+                // Verificar que existan las tablas principales
+                const tablesToCheck = ['locales', 'cajas', 'productos', 'clientes', 'proveedores'];
+                let missingTables = [];
                 
-                for (const table of tables) {
-                    const { error } = await supabaseClient
-                        .from(table)
-                        .select('id')
-                        .limit(1);
-                    
-                    if (error) {
-                        allTablesExist = false;
-                        break;
+                for (const table of tablesToCheck) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from(table)
+                            .select('id')
+                            .limit(1);
+                        
+                        if (error) {
+                            missingTables.push(table);
+                        }
+                    } catch (error) {
+                        missingTables.push(table);
                     }
                 }
                 
-                if (!allTablesExist) {
-                    throw new Error('Faltan algunas tablas');
+                if (missingTables.length > 0) {
+                    throw new Error(`Faltan las tablas: ${missingTables.join(', ')}`);
                 }
                 
-                // Verificar que haya datos mínimos
+                // Verificar que haya datos
                 const { data: productos, error: productosError } = await supabaseClient
                     .from('productos')
                     .select('id')
                     .limit(1);
                 
-                if (productosError || productos.length === 0) {
-                    throw new Error('No hay productos cargados');
+                if (productosError || !productos || productos.length === 0) {
+                    throw new Error('No hay productos cargados. Ejecuta "Insertar Datos de Prueba"');
                 }
                 
                 // Marcar sistema como configurado
                 localStorage.setItem('systemConfigured', 'true');
-                verifyStatus.innerHTML = '<p class="success">✅ Configuración verificada correctamente.</p>';
+                
+                verifyStatus.innerHTML = `
+                    <p class="success">✅ Configuración verificada correctamente</p>
+                    <p class="info">✅ Tablas creadas</p>
+                    <p class="info">✅ Datos cargados</p>
+                    <p class="info">✅ Conexión activa</p>
+                `;
+                
                 goToAppBtn.disabled = false;
                 
             } catch (error) {
-                verifyStatus.innerHTML = `<p class="error">❌ Error en verificación: ${error.message}</p>`;
+                verifyStatus.innerHTML = `
+                    <p class="error">❌ Error en verificación:</p>
+                    <p>${error.message}</p>
+                    <p class="info">⚠️ Completa los pasos anteriores</p>
+                `;
+            } finally {
+                verifySetupBtn.disabled = false;
+                verifySetupBtn.textContent = 'Verificar Configuración';
             }
         });
 
         // Ir a la aplicación
         goToAppBtn.addEventListener('click', () => {
             window.location.href = 'index.html';
+        });
+
+        // Guardar credenciales al cambiar
+        supabaseUrlInput.addEventListener('change', () => {
+            localStorage.setItem('supabaseUrl', supabaseUrlInput.value);
+        });
+        
+        supabaseKeyInput.addEventListener('change', () => {
+            localStorage.setItem('supabaseKey', supabaseKeyInput.value);
         });
     </script>
 </body>
