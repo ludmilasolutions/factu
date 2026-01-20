@@ -1,5 +1,5 @@
 // ============================================
-// SISTEMA POS - APP.JS - VERSIÓN COMPLETA
+// SISTEMA POS - APP.JS - VERSIÓN COMPLETA Y CORREGIDA
 // ============================================
 
 // Configuración global
@@ -401,6 +401,16 @@ function saveAppState() {
     }
 }
 
+async function loadUserSession() {
+    try {
+        if (APP_STATE.currentUser && APP_STATE.currentUser.email) {
+            await loadUserData(APP_STATE.currentUser.email);
+        }
+    } catch (error) {
+        console.warn('Error cargando sesión de usuario:', error);
+    }
+}
+
 async function loadUserData(email) {
     if (!APP_STATE.supabase) return;
     
@@ -444,7 +454,7 @@ function showAppScreen() {
     
     if (!APP_STATE.currentLocal || !APP_STATE.currentCaja) {
         if (initialConfig) initialConfig.style.display = 'block';
-        if (mainApp) mainApp.display = 'none';
+        if (mainApp) mainApp.style.display = 'none';
         loadLocalesYCajas();
     } else {
         if (initialConfig) initialConfig.style.display = 'none';
@@ -459,7 +469,7 @@ function updateSessionInfo() {
     const cajaInfo = document.getElementById('cajaInfo');
     const turnoInfo = document.getElementById('turnoInfo');
     
-    if (userInfo) userInfo.textContent = `Usuario: ${APP_STATE.currentUser?.nombre || 'Sin nombre'}`;
+    if (userInfo) userInfo.textContent = `Usuario: ${APP_STATE.currentUser?.nombre || APP_STATE.currentUser?.email || 'Sin nombre'}`;
     if (localInfo) localInfo.textContent = `Local: ${APP_STATE.currentLocal?.nombre || 'Sin local'}`;
     if (cajaInfo) cajaInfo.textContent = `Caja: ${APP_STATE.currentCaja?.numero || 'Sin caja'}`;
     if (turnoInfo) turnoInfo.textContent = `Turno: ${APP_STATE.currentTurno || 'Sin turno'}`;
@@ -514,7 +524,29 @@ async function handleLogin() {
         
         if (error) throw error;
         
-        await loadUserData(email);
+        APP_STATE.currentUser = data.user;
+        
+        // Intentar cargar datos adicionales del usuario
+        try {
+            const { data: usuarioData, error: userError } = await APP_STATE.supabase
+                .from('usuarios')
+                .select('*')
+                .eq('email', email)
+                .single();
+            
+            if (!userError && usuarioData) {
+                APP_STATE.currentUser = { ...APP_STATE.currentUser, ...usuarioData };
+            }
+        } catch (userError) {
+            console.warn('No se pudieron cargar datos adicionales del usuario:', userError);
+        }
+        
+        const session = {
+            user: APP_STATE.currentUser,
+            expires: Date.now() + (8 * 60 * 60 * 1000)
+        };
+        
+        localStorage.setItem('pos_session', JSON.stringify(session));
         
         showAppScreen();
         
@@ -522,7 +554,7 @@ async function handleLogin() {
         
     } catch (error) {
         console.error('Error en login:', error);
-        if (status) status.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+        if (status) status.innerHTML = `<p class="error">❌ Error: ${error.message || 'Error desconocido'}</p>`;
     }
 }
 
@@ -571,16 +603,18 @@ async function loadLocalesYCajas() {
     
     try {
         if (APP_STATE.supabase && APP_STATE.isOnline) {
+            // Cargar locales
             const { data: locales, error: errorLocales } = await APP_STATE.supabase
                 .from('locales')
                 .select('*')
                 .eq('activo', true)
                 .order('nombre');
             
+            // Cargar cajas (corregido: 'activo' en lugar de 'activa')
             const { data: cajas, error: errorCajas } = await APP_STATE.supabase
                 .from('cajas')
                 .select('*')
-                .eq('activa', true)
+                .eq('activo', true)
                 .order('numero');
             
             if (!errorLocales && locales) {
@@ -716,9 +750,9 @@ function setupEventListeners() {
     const productSearch = document.getElementById('productSearch');
     const scanBarcode = document.getElementById('scanBarcode');
     const keyboardMode = document.getElementById('keyboardMode');
-    const finalizarVenta = document.getElementById('finalizarVenta');
-    const crearPresupuesto = document.getElementById('crearPresupuesto');
-    const cancelarVenta = document.getElementById('cancelarVenta');
+    const finalizarVentaBtn = document.getElementById('finalizarVenta');
+    const crearPresupuestoBtn = document.getElementById('crearPresupuesto');
+    const cancelarVentaBtn = document.getElementById('cancelarVenta');
     const cartDiscount = document.getElementById('cartDiscount');
     
     if (productSearch) {
@@ -733,9 +767,9 @@ function setupEventListeners() {
     
     if (scanBarcode) scanBarcode.addEventListener('click', toggleScanner);
     if (keyboardMode) keyboardMode.addEventListener('click', activateKeyboardMode);
-    if (finalizarVenta) finalizarVenta.addEventListener('click', finalizarVenta);
-    if (crearPresupuesto) crearPresupuesto.addEventListener('click', crearPresupuesto);
-    if (cancelarVenta) cancelarVenta.addEventListener('click', cancelarVenta);
+    if (finalizarVentaBtn) finalizarVentaBtn.addEventListener('click', finalizarVenta);
+    if (crearPresupuestoBtn) crearPresupuestoBtn.addEventListener('click', crearPresupuesto);
+    if (cancelarVentaBtn) cancelarVentaBtn.addEventListener('click', cancelarVenta);
     if (cartDiscount) cartDiscount.addEventListener('input', updateCartTotal);
     
     // Modal de pagos
@@ -765,7 +799,7 @@ function setupEventListeners() {
     const filterStockBajo = document.getElementById('filterStockBajo');
     
     if (nuevoProducto) nuevoProducto.addEventListener('click', showNuevoProductoModal);
-    if (filterProductos) filterProductos.addEventListener('input', filterProductos);
+    if (filterProductos) filterProductos.addEventListener('input', handleFilterProductos);
     if (importarExcel) importarExcel.addEventListener('click', importarExcelProductos);
     if (exportarExcel) exportarExcel.addEventListener('click', exportarExcelProductos);
     if (filterStockBajo) filterStockBajo.addEventListener('click', () => filterProductosPorStock('bajo'));
@@ -1001,6 +1035,130 @@ async function syncVenta(ventaData) {
     }
 }
 
+async function syncPago(pagoData) {
+    if (!APP_STATE.supabase) return false;
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('pagos')
+            .insert([pagoData]);
+        
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error sincronizando pago:', error);
+        return false;
+    }
+}
+
+async function syncCliente(clienteData) {
+    if (!APP_STATE.supabase) return false;
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('clientes')
+            .insert([clienteData]);
+        
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error sincronizando cliente:', error);
+        return false;
+    }
+}
+
+async function syncProducto(productoData) {
+    if (!APP_STATE.supabase) return false;
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('productos')
+            .insert([productoData]);
+        
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error sincronizando producto:', error);
+        return false;
+    }
+}
+
+async function syncPresupuesto(presupuestoData) {
+    if (!APP_STATE.supabase) return false;
+    
+    try {
+        const { data: presupuesto, error: errorPresupuesto } = await APP_STATE.supabase
+            .from('presupuestos')
+            .insert([presupuestoData.presupuesto])
+            .select()
+            .single();
+        
+        if (errorPresupuesto) throw errorPresupuesto;
+        
+        for (const item of presupuestoData.items) {
+            item.presupuesto_id = presupuesto.id;
+            const { error: errorItem } = await APP_STATE.supabase
+                .from('presupuesto_items')
+                .insert([item]);
+            
+            if (errorItem) throw errorItem;
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error sincronizando presupuesto:', error);
+        return false;
+    }
+}
+
+async function syncCierreCaja(cierreData) {
+    if (!APP_STATE.supabase) return false;
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('cierres_caja')
+            .insert([cierreData]);
+        
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error sincronizando cierre de caja:', error);
+        return false;
+    }
+}
+
+async function syncMovimientoInventario(movimientoData) {
+    if (!APP_STATE.supabase) return false;
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('inventario')
+            .insert([movimientoData]);
+        
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error sincronizando movimiento de inventario:', error);
+        return false;
+    }
+}
+
+async function syncProveedor(proveedorData) {
+    if (!APP_STATE.supabase) return false;
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('proveedores')
+            .insert([proveedorData]);
+        
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error sincronizando proveedor:', error);
+        return false;
+    }
+}
+
 async function syncProductosCache() {
     if (!APP_STATE.supabase) return;
     
@@ -1021,6 +1179,74 @@ async function syncProductosCache() {
         console.log(`✅ Cache de productos actualizado: ${productos.length} productos`);
     } catch (error) {
         console.error('❌ Error actualizando cache de productos:', error);
+    }
+}
+
+async function syncClientesCache() {
+    if (!APP_STATE.supabase) return;
+    
+    try {
+        const { data: clientes, error } = await APP_STATE.supabase
+            .from('clientes')
+            .select('*')
+            .eq('activo', true)
+            .order('nombre')
+            .limit(200);
+        
+        if (error) throw error;
+        
+        for (const cliente of clientes) {
+            await indexedDBOperation('clientes_cache', 'put', cliente);
+        }
+        
+        console.log(`✅ Cache de clientes actualizado: ${clientes.length} clientes`);
+    } catch (error) {
+        console.error('❌ Error actualizando cache de clientes:', error);
+    }
+}
+
+async function syncProveedoresCache() {
+    if (!APP_STATE.supabase) return;
+    
+    try {
+        const { data: proveedores, error } = await APP_STATE.supabase
+            .from('proveedores')
+            .select('*')
+            .eq('activo', true)
+            .order('nombre')
+            .limit(100);
+        
+        if (error) throw error;
+        
+        for (const proveedor of proveedores) {
+            await indexedDBOperation('proveedores_cache', 'put', proveedor);
+        }
+        
+        console.log(`✅ Cache de proveedores actualizado: ${proveedores.length} proveedores`);
+    } catch (error) {
+        console.error('❌ Error actualizando cache de proveedores:', error);
+    }
+}
+
+async function syncCategoriasCache() {
+    if (!APP_STATE.supabase) return;
+    
+    try {
+        const { data: categorias, error } = await APP_STATE.supabase
+            .from('categorias')
+            .select('*')
+            .eq('activo', true)
+            .order('nombre');
+        
+        if (error) throw error;
+        
+        for (const categoria of categorias) {
+            await indexedDBOperation('categorias_cache', 'put', categoria);
+        }
+        
+        console.log(`✅ Cache de categorías actualizado: ${categorias.length} categorías`);
+    } catch (error) {
+        console.error('❌ Error actualizando cache de categorías:', error);
     }
 }
 
@@ -1171,7 +1397,7 @@ function displayProductos(productos) {
     });
 }
 
-function filterProductos() {
+function handleFilterProductos() {
     const searchInput = document.getElementById('filterProductos');
     if (!searchInput) return;
     
@@ -1794,6 +2020,19 @@ function imprimirTicket() {
     ventana.print();
 }
 
+function enviarTicketWhatsapp() {
+    const ticketContent = document.getElementById('ticketContent');
+    if (!ticketContent) return;
+    
+    const texto = `📋 Ticket de Compra\n${ticketContent.innerText}`;
+    const telefono = prompt('Ingrese el número de WhatsApp (sin + ni 0):', '5491122334455');
+    
+    if (telefono) {
+        const url = `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`;
+        window.open(url, '_blank');
+    }
+}
+
 // ============================================
 // PRESUPUESTOS COMPLETOS
 // ============================================
@@ -1945,6 +2184,16 @@ async function loadPresupuestos() {
     }
 }
 
+function verPresupuesto(presupuestoId) {
+    alert(`Ver presupuesto ${presupuestoId}. Implementación pendiente.`);
+}
+
+function convertirPresupuestoAVenta(presupuestoId) {
+    if (confirm('¿Convertir este presupuesto en una venta?')) {
+        alert(`Presupuesto ${presupuestoId} convertido a venta. Implementación pendiente.`);
+    }
+}
+
 // ============================================
 // CLIENTES Y CUENTA CORRIENTE
 // ============================================
@@ -2023,27 +2272,12 @@ async function loadClientesParaVenta() {
     }
 }
 
-async function syncClientesCache() {
-    if (!APP_STATE.supabase) return;
-    
-    try {
-        const { data: clientes, error } = await APP_STATE.supabase
-            .from('clientes')
-            .select('*')
-            .eq('activo', true)
-            .order('nombre')
-            .limit(200);
-        
-        if (error) throw error;
-        
-        for (const cliente of clientes) {
-            await indexedDBOperation('clientes_cache', 'put', cliente);
-        }
-        
-        console.log(`✅ Cache de clientes actualizado: ${clientes.length} clientes`);
-    } catch (error) {
-        console.error('❌ Error actualizando cache de clientes:', error);
-    }
+function verCliente(clienteId) {
+    alert(`Ver cliente ${clienteId}. Implementación pendiente.`);
+}
+
+function editarCliente(clienteId) {
+    alert(`Editar cliente ${clienteId}. Implementación pendiente.`);
 }
 
 // ============================================
@@ -2264,27 +2498,8 @@ async function loadProveedores() {
     }
 }
 
-async function syncProveedoresCache() {
-    if (!APP_STATE.supabase) return;
-    
-    try {
-        const { data: proveedores, error } = await APP_STATE.supabase
-            .from('proveedores')
-            .select('*')
-            .eq('activo', true)
-            .order('nombre')
-            .limit(100);
-        
-        if (error) throw error;
-        
-        for (const proveedor of proveedores) {
-            await indexedDBOperation('proveedores_cache', 'put', proveedor);
-        }
-        
-        console.log(`✅ Cache de proveedores actualizado: ${proveedores.length} proveedores`);
-    } catch (error) {
-        console.error('❌ Error actualizando cache de proveedores:', error);
-    }
+function verProveedor(proveedorId) {
+    alert(`Ver proveedor ${proveedorId}. Implementación pendiente.`);
 }
 
 function contactarProveedor(telefono, nombre) {
@@ -2540,6 +2755,31 @@ function handleModalCancel() {
     if (modal) modal.style.display = 'none';
 }
 
+// Funciones de modales (stubs para evitar errores)
+function showNuevoProductoModal() {
+    alert('Funcionalidad de nuevo producto - Implementación pendiente');
+}
+
+function showNuevoClienteModal() {
+    alert('Funcionalidad de nuevo cliente - Implementación pendiente');
+}
+
+function showNuevoProveedorModal() {
+    alert('Funcionalidad de nuevo proveedor - Implementación pendiente');
+}
+
+function importarExcelProductos() {
+    alert('Funcionalidad de importar Excel - Implementación pendiente');
+}
+
+function exportarExcelProductos() {
+    alert('Funcionalidad de exportar Excel - Implementación pendiente');
+}
+
+function editarProducto(productoId) {
+    alert(`Editar producto ${productoId} - Implementación pendiente`);
+}
+
 function generarProductosEjemplo() {
     return [
         {
@@ -2596,6 +2836,29 @@ window.updateCantidad = updateCantidad;
 window.removeFromCart = removeFromCart;
 window.changePrice = changePrice;
 window.handleProductSearch = handleProductSearch;
+window.finalizarVenta = finalizarVenta;
+window.crearPresupuesto = crearPresupuesto;
+window.cancelarVenta = cancelarVenta;
+window.updateCartTotal = updateCartTotal;
+window.simularPagoQR = simularPagoQR;
+window.confirmarPago = confirmarPago;
+window.imprimirTicket = imprimirTicket;
+window.enviarTicketWhatsapp = enviarTicketWhatsapp;
+window.showNuevoProductoModal = showNuevoProductoModal;
+window.showNuevoClienteModal = showNuevoClienteModal;
+window.showNuevoProveedorModal = showNuevoProveedorModal;
+window.importarExcelProductos = importarExcelProductos;
+window.exportarExcelProductos = exportarExcelProductos;
+window.editarProducto = editarProducto;
+window.verCliente = verCliente;
+window.editarCliente = editarCliente;
+window.verProveedor = verProveedor;
+window.contactarProveedor = contactarProveedor;
+window.verPresupuesto = verPresupuesto;
+window.convertirPresupuestoAVenta = convertirPresupuestoAVenta;
+window.toggleScanner = toggleScanner;
+window.stopScanner = stopScanner;
+window.activateKeyboardMode = activateKeyboardMode;
 
 // ============================================
 // REAL-TIME SUBSCRIPTIONS
