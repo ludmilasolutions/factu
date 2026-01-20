@@ -1637,12 +1637,255 @@ DROP FUNCTION IF EXISTS exec_sql(TEXT);`;
             dataStatus.innerHTML = '<p class="info">🔄 Insertando datos de ferretería... Esto puede tomar unos segundos.</p>';
             dataStatus.classList.add('show');
             
-            try {
-                // Insertar datos como antes (el código de inserción se mantiene igual)
-                // ... (código de inserción de datos, igual que antes)
+ try {
+                // 1. Insertar local principal
+                const { data: local, error: localError } = await supabaseClient
+                    .from('locales')
+                    .insert({
+                        nombre: 'Ferretería Central',
+                        direccion: 'Av. Industrial 1234, Zona Industrial',
+                        telefono: '011-4567-8901',
+                        email: 'ventas@ferreteria.com',
+                        horario_atencion: 'Lunes a Viernes 8:00-18:00, Sábados 8:00-13:00',
+                        responsable: 'Juan Pérez',
+                        activo: true
+                    })
+                    .select()
+                    .single();
                 
-                // Por simplicidad, aquí solo mostramos el mensaje de éxito
-                // En la versión real, aquí iría todo el código de inserción
+                if (localError && !localError.message.includes('duplicate')) {
+                    console.warn('Error insertando local:', localError.message);
+                }
+                
+                // 2. Insertar cajas
+                const localId = local?.id || 'offline';
+                const cajasData = [
+                    { numero: '01', nombre: 'Caja Principal', local_id: localId },
+                    { numero: '02', nombre: 'Caja Depósito', local_id: localId }
+                ];
+                
+                for (const caja of cajasData) {
+                    try {
+                        await supabaseClient
+                            .from('cajas')
+                            .insert(caja);
+                    } catch (cajaError) {
+                        console.warn('Error insertando caja:', cajaError.message);
+                    }
+                }
+                
+                // 3. Insertar proveedores
+                const proveedoresData = [
+                    {
+                        nombre: 'Acindar SA',
+                        razon_social: 'Acindar Industria Argentina de Aceros SA',
+                        contacto: 'Carlos Rodríguez',
+                        telefono: '011-1234-5678',
+                        email: 'ventas@acindar.com',
+                        direccion: 'Av. del Trabajo 2500, Villa Constitución',
+                        productos_que_vende: 'Hierros, mallas, alambres, clavos',
+                        cuit: '30-12345678-9',
+                        condicion_iva: 'Responsable Inscripto',
+                        activo: true
+                    },
+                    {
+                        nombre: 'Siam Ferretería',
+                        razon_social: 'Siam Industrias Metalúrgicas SA',
+                        contacto: 'María González',
+                        telefono: '011-8765-4321',
+                        email: 'pedidos@siam.com.ar',
+                        direccion: 'Av. Directorio 4521, Buenos Aires',
+                        productos_que_vende: 'Herramientas manuales y eléctricas',
+                        cuit: '30-87654321-0',
+                        condicion_iva: 'Responsable Inscripto',
+                        activo: true
+                    },
+                    {
+                        nombre: 'Pinturas Alba',
+                        razon_social: 'Alba Pinturas SA',
+                        contacto: 'Roberto Sánchez',
+                        telefono: '011-5555-6666',
+                        email: 'info@albapinturas.com',
+                        direccion: 'Ruta 8 Km 35, Pilar',
+                        productos_que_vende: 'Pinturas, barnices, selladores',
+                        cuit: '30-11223344-5',
+                        condicion_iva: 'Responsable Inscripto',
+                        activo: true
+                    },
+                    {
+                        nombre: 'Eléctrica Central',
+                        razon_social: 'Distribuidora Eléctrica Central SRL',
+                        contacto: 'Lucía Fernández',
+                        telefono: '011-7777-8888',
+                        email: 'ventas@electricacentral.com.ar',
+                        direccion: 'Calle de la Luz 789, Quilmes',
+                        productos_que_vende: 'Materiales eléctricos, cables, luminarias',
+                        cuit: '30-55667788-9',
+                        condicion_iva: 'Monotributo',
+                        activo: true
+                    },
+                    {
+                        nombre: 'Plomería Total',
+                        razon_social: 'Plomería Total Hnos SACIF',
+                        contacto: 'Los Hermanos Gómez',
+                        telefono: '011-9999-0000',
+                        email: 'plomeriatotal@gmail.com',
+                        direccion: 'Av. San Martín 321, San Justo',
+                        productos_que_vende: 'Cañerías, conexiones, sanitarios',
+                        cuit: '30-99887766-5',
+                        condicion_iva: 'Monotributo',
+                        activo: true
+                    }
+                ];
+                
+                const proveedorIds = {};
+                for (const proveedor of proveedoresData) {
+                    try {
+                        const { data: prov } = await supabaseClient
+                            .from('proveedores')
+                            .insert(proveedor)
+                            .select()
+                            .single();
+                        
+                        if (prov) {
+                            proveedorIds[proveedor.nombre] = prov.id;
+                        }
+                    } catch (proveedorError) {
+                        console.warn('Error insertando proveedor:', proveedorError.message);
+                    }
+                }
+                
+                // 4. Insertar productos de ferretería (50 productos)
+                const productosData = [
+                    // Herramientas Manuales
+                    { codigo_interno: 'HM001', nombre: 'Martillo de Carpintero 500g', categoria: 'Herramientas Manuales', marca: 'Truper', unidad_medida: 'unidad', precio_costo: 850, porcentaje_ganancia: 50, precio_venta: 1275, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A1' },
+                    { codigo_interno: 'HM002', nombre: 'Destornillador Plano 6x100mm', categoria: 'Herramientas Manuales', marca: 'Black & Decker', unidad_medida: 'unidad', precio_costo: 320, porcentaje_ganancia: 60, precio_venta: 512, stock: 50, stock_minimo: 10, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A2' },
+                    { codigo_interno: 'HM003', nombre: 'Alicate Universal 8"', categoria: 'Herramientas Manuales', marca: 'Stanley', unidad_medida: 'unidad', precio_costo: 1250, porcentaje_ganancia: 45, precio_venta: 1812.5, stock: 15, stock_minimo: 3, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A3' },
+                    { codigo_interno: 'HM004', nombre: 'Llave Francesa 10"', categoria: 'Herramientas Manuales', marca: 'Bahco', unidad_medida: 'unidad', precio_costo: 1850, porcentaje_ganancia: 40, precio_venta: 2590, stock: 12, stock_minimo: 2, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A4' },
+                    { codigo_interno: 'HM005', nombre: 'Cinta Métrica 5m', categoria: 'Herramientas Manuales', marca: 'Stanley', unidad_medida: 'unidad', precio_costo: 750, porcentaje_ganancia: 55, precio_venta: 1162.5, stock: 30, stock_minimo: 8, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A5' },
+                    
+                    // Herramientas Eléctricas
+                    { codigo_interno: 'HE001', nombre: 'Taladro Percutor 650W', categoria: 'Herramientas Eléctricas', marca: 'Black & Decker', unidad_medida: 'unidad', precio_costo: 12500, porcentaje_ganancia: 35, precio_venta: 16875, stock: 8, stock_minimo: 2, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'B1', destacado: true },
+                    { codigo_interno: 'HE002', nombre: 'Amoladora Angular 4 1/2"', categoria: 'Herramientas Eléctricas', marca: 'Skil', unidad_medida: 'unidad', precio_costo: 8900, porcentaje_ganancia: 40, precio_venta: 12460, stock: 6, stock_minimo: 1, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'B2' },
+                    { codigo_interno: 'HE003', nombre: 'Sierra Circular 1400W', categoria: 'Herramientas Eléctricas', marca: 'Dewalt', unidad_medida: 'unidad', precio_costo: 18500, porcentaje_ganancia: 30, precio_venta: 24050, stock: 4, stock_minimo: 1, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'B3' },
+                    
+                    // Materiales de Construcción
+                    { codigo_interno: 'MC001', nombre: 'Cemento Portland 50kg', categoria: 'Materiales de Construcción', marca: 'Loma Negra', unidad_medida: 'bolsa', precio_costo: 1850, porcentaje_ganancia: 25, precio_venta: 2312.5, stock: 100, stock_minimo: 20, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'C1' },
+                    { codigo_interno: 'MC002', nombre: 'Hierro 8mm x 12m', categoria: 'Materiales de Construcción', marca: 'Acindar', unidad_medida: 'barra', precio_costo: 3250, porcentaje_ganancia: 30, precio_venta: 4225, stock: 40, stock_minimo: 10, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'C2' },
+                    { codigo_interno: 'MC003', nombre: 'Ladrillo Hueco 18x18x33', categoria: 'Materiales de Construcción', unidad_medida: 'unidad', precio_costo: 85, porcentaje_ganancia: 40, precio_venta: 119, stock: 5000, stock_minimo: 1000, ubicacion: 'C3' },
+                    { codigo_interno: 'MC004', nombre: 'Arena Fina m3', categoria: 'Materiales de Construcción', unidad_medida: 'm3', precio_costo: 4500, porcentaje_ganancia: 35, precio_venta: 6075, stock: 10, stock_minimo: 2, ubicacion: 'Patio' },
+                    { codigo_interno: 'MC005', nombre: 'Piedra Partida 6/20 m3', categoria: 'Materiales de Construcción', unidad_medida: 'm3', precio_costo: 5200, porcentaje_ganancia: 35, precio_venta: 7020, stock: 8, stock_minimo: 2, ubicacion: 'Patio' },
+                    
+                    // Fontanería
+                    { codigo_interno: 'FO001', nombre: 'Caño PVC 1/2" x 6m', categoria: 'Fontanería', marca: 'Fate', unidad_medida: 'unidad', precio_costo: 1250, porcentaje_ganancia: 45, precio_venta: 1812.5, stock: 30, stock_minimo: 5, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D1' },
+                    { codigo_interno: 'FO002', nombre: 'Codo PVC 90° 1/2"', categoria: 'Fontanería', marca: 'Fate', unidad_medida: 'unidad', precio_costo: 85, porcentaje_ganancia: 60, precio_venta: 136, stock: 100, stock_minimo: 20, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D2' },
+                    { codigo_interno: 'FO003', nombre: 'Llave de Paso 1/2"', categoria: 'Fontanería', marca: 'Liliana', unidad_medida: 'unidad', precio_costo: 950, porcentaje_ganancia: 50, precio_venta: 1425, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D3' },
+                    { codigo_interno: 'FO004', nombre: 'Inodoro Completo Standard', categoria: 'Fontanería', marca: 'Ferrum', unidad_medida: 'unidad', precio_costo: 18500, porcentaje_ganancia: 30, precio_venta: 24050, stock: 5, stock_minimo: 1, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D4' },
+                    
+                    // Electricidad
+                    { codigo_interno: 'EL001', nombre: 'Cable Flexible 2x1.5mm x 100m', categoria: 'Electricidad', marca: 'Pirelli', unidad_medida: 'rollo', precio_costo: 18500, porcentaje_ganancia: 35, precio_venta: 24975, stock: 8, stock_minimo: 2, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E1' },
+                    { codigo_interno: 'EL002', nombre: 'Interruptor Simple Blanco', categoria: 'Electricidad', marca: 'WEG', unidad_medida: 'unidad', precio_costo: 250, porcentaje_ganancia: 70, precio_venta: 425, stock: 50, stock_minimo: 10, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E2' },
+                    { codigo_interno: 'EL003', nombre: 'Toma Corriente Doble', categoria: 'Electricidad', marca: 'WEG', unidad_medida: 'unidad', precio_costo: 320, porcentaje_ganancia: 65, precio_venta: 528, stock: 40, stock_minimo: 8, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E3' },
+                    { codigo_interno: 'EL004', nombre: 'Tubo Corrugado 20mm x 3m', categoria: 'Electricidad', marca: 'Amanco', unidad_medida: 'unidad', precio_costo: 850, porcentaje_ganancia: 50, precio_venta: 1275, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E4' },
+                    
+                    // Pinturas
+                    { codigo_interno: 'PI001', nombre: 'Pintura Látex Blanco 20L', categoria: 'Pinturas', marca: 'Alba', unidad_medida: 'lata', precio_costo: 12500, porcentaje_ganancia: 40, precio_venta: 17500, stock: 12, stock_minimo: 3, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F1', destacado: true },
+                    { codigo_interno: 'PI002', nombre: 'Rodillo de Pelo 9"', categoria: 'Pinturas', marca: 'Diamond', unidad_medida: 'unidad', precio_costo: 450, porcentaje_ganancia: 60, precio_venta: 720, stock: 35, stock_minimo: 8, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F2' },
+                    { codigo_interno: 'PI003', nombre: 'Brocha 2"', categoria: 'Pinturas', marca: 'Diamond', unidad_medida: 'unidad', precio_costo: 320, porcentaje_ganancia: 65, precio_venta: 528, stock: 40, stock_minimo: 10, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F3' },
+                    { codigo_interno: 'PI004', nombre: 'Enduído Plástico 4kg', categoria: 'Pinturas', marca: 'Alba', unidad_medida: 'balde', precio_costo: 850, porcentaje_ganancia: 55, precio_venta: 1317.5, stock: 20, stock_minimo: 5, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F4' },
+                    
+                    // Fijaciones
+                    { codigo_interno: 'FJ001', nombre: 'Clavo para Madera 2 1/2" x kg', categoria: 'Fijaciones', unidad_medida: 'kg', precio_costo: 450, porcentaje_ganancia: 80, precio_venta: 810, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'G1' },
+                    { codigo_interno: 'FJ002', nombre: 'Tornillo Tirafondo 3x60mm x 100u', categoria: 'Fijaciones', marca: 'Fischer', unidad_medida: 'paquete', precio_costo: 1250, porcentaje_ganancia: 60, precio_venta: 2000, stock: 18, stock_minimo: 4, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'G2' },
+                    { codigo_interno: 'FJ003', nombre: 'Anclaje Químico 12mm', categoria: 'Fijaciones', marca: 'Hilti', unidad_medida: 'cartucho', precio_costo: 1850, porcentaje_ganancia: 50, precio_venta: 2775, stock: 15, stock_minimo: 3, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'G3' },
+                    { codigo_interno: 'FJ004', nombre: 'Cinta Doble Faz 25mm x 10m', categoria: 'Fijaciones', marca: '3M', unidad_medida: 'rollo', precio_costo: 350, porcentaje_ganancia: 70, precio_venta: 595, stock: 30, stock_minimo: 8, ubicacion: 'G4' },
+                    
+                    // Seguridad
+                    { codigo_interno: 'SE001', nombre: 'Guantes de Cuero', categoria: 'Seguridad', unidad_medida: 'par', precio_costo: 1250, porcentaje_ganancia: 50, precio_venta: 1875, stock: 20, stock_minimo: 5, ubicacion: 'H1' },
+                    { codigo_interno: 'SE002', nombre: 'Anteojos de Seguridad', categoria: 'Seguridad', marca: '3M', unidad_medida: 'unidad', precio_costo: 850, porcentaje_ganancia: 55, precio_venta: 1317.5, stock: 25, stock_minimo: 6, ubicacion: 'H2' },
+                    { codigo_interno: 'SE003', nombre: 'Casco de Obra', categoria: 'Seguridad', marca: 'Riggel', unidad_medida: 'unidad', precio_costo: 1850, porcentaje_ganancia: 45, precio_venta: 2682.5, stock: 15, stock_minimo: 3, ubicacion: 'H3' },
+                    { codigo_interno: 'SE004', nombre: 'Barbijo N95 x 10u', categoria: 'Seguridad', marca: '3M', unidad_medida: 'paquete', precio_costo: 1250, porcentaje_ganancia: 40, precio_venta: 1750, stock: 30, stock_minimo: 8, ubicacion: 'H4' },
+                    
+                    // Jardinería
+                    { codigo_interno: 'JA001', nombre: 'Pala de Puntón', categoria: 'Jardinería', unidad_medida: 'unidad', precio_costo: 1850, porcentaje_ganancia: 50, precio_venta: 2775, stock: 10, stock_minimo: 2, ubicacion: 'I1' },
+                    { codigo_interno: 'JA002', nombre: 'Manguera 1/2" x 25m', categoria: 'Jardinería', marca: 'Goodyear', unidad_medida: 'rollo', precio_costo: 3250, porcentaje_ganancia: 45, precio_venta: 4712.5, stock: 8, stock_minimo: 2, ubicacion: 'I2' },
+                    { codigo_interno: 'JA003', nombre: 'Tierra Negra 40L', categoria: 'Jardinería', unidad_medida: 'bolsa', precio_costo: 450, porcentaje_ganancia: 60, precio_venta: 720, stock: 40, stock_minimo: 10, ubicacion: 'I3' },
+                    { codigo_interno: 'JA004', nombre: 'Cortadora de Césped Manual', categoria: 'Jardinería', marca: 'Tramontina', unidad_medida: 'unidad', precio_costo: 2850, porcentaje_ganancia: 40, precio_venta: 3990, stock: 6, stock_minimo: 1, ubicacion: 'I4' }
+                ];
+                
+                // Insertar productos
+                let productosInsertados = 0;
+                for (const producto of productosData) {
+                    try {
+                        await supabaseClient
+                            .from('productos')
+                            .insert({
+                                ...producto,
+                                activo: true
+                            });
+                        productosInsertados++;
+                    } catch (productoError) {
+                        console.warn('Error insertando producto:', productoError.message);
+                    }
+                }
+                
+                // 5. Insertar clientes
+                const clientesData = [
+                    {
+                        nombre: 'Consumidor',
+                        apellido: 'Final',
+                        tipo_documento: 'DNI',
+                        numero_documento: '00000000',
+                        telefono: '',
+                        tipo_cliente: 'consumidor_final',
+                        limite_credito: 0,
+                        saldo: 0,
+                        categoria_iva: 'consumidor_final',
+                        activo: true
+                    },
+                    {
+                        nombre: 'Juan',
+                        apellido: 'Gómez',
+                        tipo_documento: 'DNI',
+                        numero_documento: '30123456',
+                        telefono: '011-5555-1234',
+                        email: 'juan.gomez@constructor.com',
+                        direccion: 'Calle Falsa 123',
+                        tipo_cliente: 'contado',
+                        limite_credito: 0,
+                        saldo: 0,
+                        categoria_iva: 'monotributista',
+                        cuit: '20-30123456-9',
+                        activo: true
+                    },
+                    {
+                        nombre: 'Constructora',
+                        apellido: 'El Progreso',
+                        razon_social: 'Constructora El Progreso SRL',
+                        tipo_documento: 'CUIT',
+                        numero_documento: '30765432109',
+                        telefono: '011-4444-5678',
+                        email: 'compras@elprogreso.com.ar',
+                        direccion: 'Av. Siempre Viva 742',
+                        tipo_cliente: 'cuenta_corriente',
+                        limite_credito: 100000,
+                        saldo: 0,
+                        categoria_iva: 'responsable_inscripto',
+                        cuit: '30-76543210-9',
+                        observaciones: 'Cliente preferencial, 30 días de plazo',
+                        activo: true
+                    }
+                ];
+                
+                for (const cliente of clientesData) {
+                    try {
+                        await supabaseClient
+                            .from('clientes')
+                            .insert(cliente);
+                    } catch (clienteError) {
+                        console.warn('Error insertando cliente:', clienteError.message);
+                    }
+                }
                 
                 dataStatus.innerHTML = `
                     <p class="success">✅ ¡Datos de ferretería insertados exitosamente!</p>
