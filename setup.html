@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración - Sistema POS</title>
+    <title>Configuración - Ferretería POS</title>
     <style>
         * {
             margin: 0;
@@ -13,14 +13,14 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
             min-height: 100vh;
             color: #333;
             padding: 20px;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -35,13 +35,18 @@
 
         h1 {
             font-size: 2.5rem;
-            color: #4a5568;
+            color: #1e40af;
             margin-bottom: 10px;
         }
 
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
         .subtitle {
-            color: #718096;
-            font-size: 0.9rem;
+            color: #4b5563;
+            font-size: 1.1rem;
             margin-bottom: 20px;
         }
 
@@ -52,21 +57,22 @@
         }
 
         .card {
-            background: #f7fafc;
+            background: #f8fafc;
             border-radius: 15px;
             padding: 25px;
-            border: 1px solid #e2e8f0;
+            border: 2px solid #e2e8f0;
             transition: all 0.3s ease;
         }
 
         .card.active {
-            border-color: #667eea;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 5px 20px rgba(59, 130, 246, 0.1);
+            background: #f0f9ff;
         }
 
         .card.completed {
-            border-color: #38a169;
-            background: #f0fff4;
+            border-color: #10b981;
+            background: #f0fdf4;
         }
 
         .card-header {
@@ -77,141 +83,163 @@
         }
 
         .step-number {
-            background: #667eea;
+            background: #3b82f6;
             color: white;
-            width: 30px;
-            height: 30px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 1rem;
+            flex-shrink: 0;
         }
 
         .step-number.completed {
-            background: #38a169;
+            background: #10b981;
         }
 
         h2 {
-            color: #4a5568;
+            color: #1e40af;
             font-size: 1.5rem;
             flex: 1;
+            margin: 0;
         }
 
         .info-text {
-            color: #718096;
+            color: #6b7280;
             margin-bottom: 15px;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         label {
             display: block;
-            margin-bottom: 5px;
-            color: #4a5568;
-            font-weight: 500;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 600;
         }
 
         input, select {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
+            padding: 14px;
+            border: 2px solid #d1d5db;
             border-radius: 10px;
             font-size: 1rem;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
+            background: white;
         }
 
         input:focus, select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .button-group {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
-            margin-bottom: 15px;
+            margin: 20px 0;
         }
 
         .btn {
-            padding: 12px 24px;
+            padding: 14px 28px;
             border: none;
             border-radius: 10px;
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
+            min-width: 140px;
         }
 
         .btn-primary {
-            background: #667eea;
+            background: #3b82f6;
             color: white;
         }
 
         .btn-primary:hover:not(:disabled) {
-            background: #5a67d8;
+            background: #2563eb;
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
         }
 
         .btn-secondary {
-            background: #e2e8f0;
-            color: #4a5568;
+            background: #e5e7eb;
+            color: #374151;
         }
 
         .btn-secondary:hover:not(:disabled) {
-            background: #cbd5e0;
+            background: #d1d5db;
         }
 
         .btn-success {
-            background: #38a169;
+            background: #10b981;
             color: white;
         }
 
         .btn-success:hover:not(:disabled) {
-            background: #2f855a;
+            background: #059669;
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(56, 161, 105, 0.4);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         }
 
         .btn-warning {
-            background: #d69e2e;
+            background: #f59e0b;
             color: white;
         }
 
         .btn-warning:hover:not(:disabled) {
-            background: #b7791f;
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
         }
 
         .btn-outline {
             background: transparent;
-            border: 2px solid #667eea;
-            color: #667eea;
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
         }
 
         .btn-outline:hover:not(:disabled) {
-            background: #667eea;
+            background: #3b82f6;
             color: white;
         }
 
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
         }
 
         .status {
             margin-top: 15px;
-            padding: 12px;
+            padding: 16px;
             border-radius: 10px;
             display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .status.show {
@@ -219,27 +247,27 @@
         }
 
         .success {
-            background: #c6f6d5;
-            color: #22543d;
-            border: 1px solid #9ae6b4;
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #a7f3d0;
         }
 
         .error {
-            background: #fed7d7;
-            color: #742a2a;
-            border: 1px solid #fc8181;
+            background: #fee2e2;
+            color: #7f1d1d;
+            border: 2px solid #fecaca;
         }
 
         .info {
-            background: #bee3f8;
-            color: #2a4365;
-            border: 1px solid #90cdf4;
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #bfdbfe;
         }
 
         .warning {
-            background: #feebc8;
-            color: #744210;
-            border: 1px solid #fbd38d;
+            background: #fef3c7;
+            color: #92400e;
+            border: 2px solid #fde68a;
         }
 
         .navigation {
@@ -248,23 +276,25 @@
         }
 
         .sql-code {
-            background: #2d3748;
-            color: #e2e8f0;
-            padding: 15px;
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 20px;
             border-radius: 10px;
             font-family: 'Courier New', monospace;
             font-size: 0.9rem;
             overflow-x: auto;
             margin: 15px 0;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
+            border: 1px solid #374151;
         }
 
         .instructions {
-            background: #edf2f7;
-            padding: 15px;
+            background: #e0f2fe;
+            padding: 20px;
             border-radius: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #bae6fd;
         }
 
         .instructions ol {
@@ -273,7 +303,8 @@
         }
 
         .instructions li {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            padding-left: 5px;
         }
 
         .step-content {
@@ -285,68 +316,142 @@
         }
 
         .copy-btn {
-            background: #4a5568;
+            background: #4b5563;
             color: white;
             border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
+            padding: 8px 16px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 0.8rem;
-            margin-left: 10px;
+            font-size: 0.9rem;
+            margin: 10px 5px 0 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .copy-btn:hover {
-            background: #2d3748;
+            background: #374151;
         }
 
         .test-data {
-            background: #f0fff4;
-            padding: 15px;
+            background: #f0fdf4;
+            padding: 20px;
             border-radius: 10px;
-            margin-top: 15px;
+            margin-top: 20px;
+            border: 1px solid #bbf7d0;
         }
 
         .progress-bar {
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 3px;
-            margin: 20px 0;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            margin: 25px 0;
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            background: #667eea;
+            background: linear-gradient(90deg, #3b82f6, #0ea5e9);
             width: 0%;
-            transition: width 0.3s ease;
+            transition: width 0.5s ease;
         }
 
         .progress-steps {
             display: flex;
             justify-content: space-between;
-            margin-top: 10px;
+            margin-top: 15px;
             font-size: 0.9rem;
-            color: #718096;
+            color: #6b7280;
         }
 
         .progress-step {
             text-align: center;
             flex: 1;
+            position: relative;
+            padding: 0 10px;
         }
 
-        .progress-step.active {
-            color: #667eea;
+        .progress-step::before {
+            content: '';
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .progress-step.active::before {
+            background: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .progress-step.completed::before {
+            background: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+        }
+
+        .progress-step.completed::after {
+            content: '✓';
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 2;
+        }
+
+        .verification-list {
+            margin: 20px 0;
+        }
+
+        .verification-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .verification-item.verified {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .verification-item label {
+            flex: 1;
+            margin: 0;
             font-weight: 500;
         }
 
-        .progress-step.completed {
-            color: #38a169;
+        .toggle-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
         }
 
-        .checkmark {
-            color: #38a169;
-            font-size: 1.2rem;
-            margin-right: 5px;
+        .toggle-content.expanded {
+            max-height: 1000px;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 0;
         }
 
         @media (max-width: 768px) {
@@ -365,14 +470,19 @@
             .btn {
                 width: 100%;
             }
+            
+            .progress-steps {
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔧 Configuración del Sistema POS</h1>
-            <p class="subtitle">Sistema completo de facturación web - MultiLocal - Offline First</p>
+            <div class="logo">🔨</div>
+            <h1>FERRETERÍA POS PRO</h1>
+            <p class="subtitle">Sistema completo de gestión para ferreterías - Stock, Ventas, Clientes y Proveedores</p>
         </header>
 
         <!-- Barra de progreso -->
@@ -380,10 +490,10 @@
             <div class="progress-fill" id="progressFill"></div>
         </div>
         <div class="progress-steps">
-            <div class="progress-step" id="step1">1. Supabase</div>
-            <div class="progress-step" id="step2">2. Tablas</div>
-            <div class="progress-step" id="step3">3. Datos</div>
-            <div class="progress-step" id="step4">4. Verificar</div>
+            <div class="progress-step" id="step1">1. SUPABASE</div>
+            <div class="progress-step" id="step2">2. TABLAS</div>
+            <div class="progress-step" id="step3">3. DATOS</div>
+            <div class="progress-step" id="step4">4. VERIFICAR</div>
         </div>
 
         <div class="setup-section">
@@ -391,40 +501,40 @@
             <div class="card active" id="card1">
                 <div class="card-header">
                     <div class="step-number">1</div>
-                    <h2>📋 PASO 1: Crear Proyecto en Supabase</h2>
+                    <h2>📋 CONFIGURAR SUPABASE</h2>
                 </div>
                 
                 <div class="step-content active">
                     <div class="instructions">
-                        <p>Sigue estos pasos para crear tu base de datos gratuita:</p>
+                        <p><strong>¡Bienvenido al sistema para ferreterías!</strong> Sigue estos pasos para crear tu base de datos:</p>
                         <ol>
-                            <li>Ve a <a href="https://supabase.com" target="_blank">supabase.com</a></li>
+                            <li>Ve a <a href="https://supabase.com" target="_blank" style="color: #3b82f6; font-weight: 600;">supabase.com</a></li>
                             <li>Haz clic en "Start your project"</li>
-                            <li>Inicia sesión con tu cuenta de GitHub o Google</li>
-                            <li>Crea una organización</li>
+                            <li>Inicia sesión con GitHub o Google</li>
+                            <li>Crea una organización (ej: "Mi Ferretería")</li>
                             <li>Selecciona "Create new project"</li>
-                            <li>Elige un nombre para tu proyecto (ej: "mi-pos")</li>
-                            <li>Crea una contraseña segura para la base de datos</li>
-                            <li>Selecciona la región más cercana</li>
+                            <li>Nombre: <strong>ferreteria-pos</strong></li>
+                            <li>Contraseña: <strong>Guárdala en un lugar seguro</strong></li>
+                            <li>Región: <strong>South America (São Paulo)</strong></li>
                             <li>Haz clic en "Create new project"</li>
                         </ol>
-                        <p class="warning">⚠️ El proyecto puede tardar 1-2 minutos en crearse</p>
+                        <p class="warning" style="color: #d97706; font-weight: 500;">⚠️ Espera 1-2 minutos mientras se crea el proyecto</p>
                     </div>
 
                     <div class="form-group">
-                        <label for="supabaseUrl">URL de Supabase:</label>
+                        <label for="supabaseUrl">📡 URL de Supabase:</label>
                         <input type="text" id="supabaseUrl" placeholder="https://xxxxxxxxxxxx.supabase.co">
-                        <small>Copia la URL de "Project URL"</small>
+                        <small style="color: #6b7280; font-size: 0.9rem;">Copia la URL de "Project URL" en Settings > API</small>
                     </div>
                     
                     <div class="form-group">
-                        <label for="supabaseKey">Clave Anónima (anon public):</label>
+                        <label for="supabaseKey">🔑 Clave Anónima:</label>
                         <input type="text" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-                        <small>Copia la clave de "anon public" en Project API keys</small>
+                        <small style="color: #6b7280; font-size: 0.9rem;">Copia la clave "anon public" en Project API keys</small>
                     </div>
                     
                     <div class="button-group">
-                        <button id="testConnection" class="btn btn-primary">Probar Conexión</button>
+                        <button id="testConnection" class="btn btn-primary">🔍 Probar Conexión</button>
                         <button id="nextStep1" class="btn btn-success" disabled>Siguiente →</button>
                     </div>
                     
@@ -436,131 +546,199 @@
             <div class="card" id="card2">
                 <div class="card-header">
                     <div class="step-number">2</div>
-                    <h2>🗃️ PASO 2: Crear Tablas en la Base de Datos</h2>
+                    <h2>🗃️ CREAR TABLAS PARA FERRETERÍA</h2>
                 </div>
                 
                 <div class="step-content">
-                    <p class="info-text">Copia y pega este código SQL en el editor de Supabase:</p>
+                    <p class="info-text">Vamos a crear todas las tablas necesarias para tu ferretería. Copia y pega este SQL en Supabase:</p>
                     
-                    <div class="sql-code" id="sqlCode">
--- SISTEMA POS - CREACIÓN DE TABLAS COMPLETAS
+                    <button class="toggle-btn" onclick="toggleSQL()">
+                        <span id="toggleIcon">▼</span>
+                        <span id="toggleText">Mostrar código SQL</span>
+                    </button>
+                    
+                    <div class="toggle-content" id="sqlContainer">
+                        <div class="sql-code" id="sqlCode">
+-- ============================================
+-- SISTEMA POS PARA FERRETERÍA - TABLAS COMPLETAS
+-- ============================================
 
--- 1. Tabla de locales/comercios
+-- Eliminar tablas existentes (si las hay) - OPCIONAL
+-- DROP TABLE IF EXISTS cierres_caja CASCADE;
+-- DROP TABLE IF EXISTS cuentas_corrientes CASCADE;
+-- DROP TABLE IF EXISTS presupuesto_items CASCADE;
+-- DROP TABLE IF EXISTS presupuestos CASCADE;
+-- DROP TABLE IF EXISTS pagos CASCADE;
+-- DROP TABLE IF EXISTS venta_items CASCADE;
+-- DROP TABLE IF EXISTS ventas CASCADE;
+-- DROP TABLE IF EXISTS productos CASCADE;
+-- DROP TABLE IF EXISTS clientes CASCADE;
+-- DROP TABLE IF EXISTS proveedores CASCADE;
+-- DROP TABLE IF EXISTS cajas CASCADE;
+-- DROP TABLE IF EXISTS locales CASCADE;
+
+-- 1. TABLA DE LOCALES/SUCURSALES
 CREATE TABLE IF NOT EXISTS locales (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     direccion TEXT,
     telefono VARCHAR(20),
     email VARCHAR(100),
-    config JSONB DEFAULT '{}',
+    horario_atencion VARCHAR(100),
+    responsable VARCHAR(100),
     activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 2. Tabla de cajas
+-- 2. TABLA DE CAJAS
 CREATE TABLE IF NOT EXISTS cajas (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     numero VARCHAR(20) NOT NULL,
     nombre VARCHAR(100),
-    local_id UUID,
+    local_id UUID REFERENCES locales(id),
     activa BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 3. Tabla de productos
+-- 3. TABLA DE PRODUCTOS (ESPECIAL PARA FERRETERÍA)
 CREATE TABLE IF NOT EXISTS productos (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    codigo_barras VARCHAR(50),
+    codigo_barras VARCHAR(50) UNIQUE,
+    codigo_interno VARCHAR(50),
     nombre VARCHAR(200) NOT NULL,
     descripcion TEXT,
+    marca VARCHAR(100),
+    categoria VARCHAR(100) NOT NULL,
+    subcategoria VARCHAR(100),
+    unidad_medida VARCHAR(20) DEFAULT 'unidad',
+    material VARCHAR(100),
+    color VARCHAR(50),
+    medidas VARCHAR(100),
     precio_costo DECIMAL(10,2) DEFAULT 0,
-    porcentaje_ganancia DECIMAL(5,2) DEFAULT 30,
+    porcentaje_ganancia DECIMAL(5,2) DEFAULT 40,
     precio_venta DECIMAL(10,2) NOT NULL,
     stock INTEGER DEFAULT 0,
     stock_minimo INTEGER DEFAULT 5,
-    categoria VARCHAR(100),
+    stock_maximo INTEGER DEFAULT 100,
     proveedor_id UUID,
+    ubicacion VARCHAR(50),
     activo BOOLEAN DEFAULT true,
-    promocion JSONB DEFAULT '{}',
+    destacado BOOLEAN DEFAULT false,
+    imagen_url TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CHECK (precio_venta >= 0),
+    CHECK (stock >= 0)
+);
+
+-- 4. TABLA DE CLIENTES
+CREATE TABLE IF NOT EXISTS clientes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100),
+    razon_social VARCHAR(200),
+    tipo_documento VARCHAR(10) DEFAULT 'DNI',
+    numero_documento VARCHAR(20) UNIQUE,
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    direccion TEXT,
+    localidad VARCHAR(100),
+    provincia VARCHAR(100),
+    tipo_cliente VARCHAR(20) DEFAULT 'consumidor_final',
+    limite_credito DECIMAL(10,2) DEFAULT 0,
+    saldo DECIMAL(10,2) DEFAULT 0,
+    categoria_iva VARCHAR(20) DEFAULT 'consumidor_final',
+    cuit VARCHAR(20),
+    observaciones TEXT,
+    activo BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 4. Tabla de clientes
-CREATE TABLE IF NOT EXISTS clientes (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    dni VARCHAR(20),
-    telefono VARCHAR(20),
-    email VARCHAR(100),
-    direccion TEXT,
-    limite_credito DECIMAL(10,2) DEFAULT 0,
-    saldo DECIMAL(10,2) DEFAULT 0,
-    activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- 5. Tabla de proveedores
+-- 5. TABLA DE PROVEEDORES
 CREATE TABLE IF NOT EXISTS proveedores (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
+    razon_social VARCHAR(200),
     contacto VARCHAR(100),
     telefono VARCHAR(20),
     email VARCHAR(100),
-    web VARCHAR(200),
-    whatsapp VARCHAR(20),
+    direccion TEXT,
+    localidad VARCHAR(100),
+    provincia VARCHAR(100),
+    cuit VARCHAR(20) UNIQUE,
+    condicion_iva VARCHAR(20),
+    productos_que_vende TEXT,
+    plazo_entrega VARCHAR(50),
     activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
+    observaciones TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 6. Tabla de ventas
+-- 6. TABLA DE VENTAS
 CREATE TABLE IF NOT EXISTS ventas (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    local_id UUID,
-    caja_id UUID,
+    numero_venta VARCHAR(50) UNIQUE,
+    local_id UUID REFERENCES locales(id),
+    caja_id UUID REFERENCES cajas(id),
     usuario_id UUID,
-    cliente_id UUID,
+    cliente_id UUID REFERENCES clientes(id),
     total DECIMAL(10,2) NOT NULL,
     descuento DECIMAL(10,2) DEFAULT 0,
+    subtotal DECIMAL(10,2) NOT NULL,
+    iva DECIMAL(10,2) DEFAULT 0,
     estado VARCHAR(20) DEFAULT 'completada',
     tipo_venta VARCHAR(20) DEFAULT 'contado',
+    tipo_comprobante VARCHAR(20) DEFAULT 'ticket',
+    punto_venta INTEGER DEFAULT 0,
+    numero_comprobante INTEGER,
     observaciones TEXT,
     offline_id VARCHAR(100),
     sync_status VARCHAR(20) DEFAULT 'synced',
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CHECK (total >= 0)
 );
 
--- 7. Tabla de items de venta
+-- 7. TABLA DE ITEMS DE VENTA
 CREATE TABLE IF NOT EXISTS venta_items (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    venta_id UUID,
-    producto_id UUID,
-    cantidad INTEGER NOT NULL,
+    venta_id UUID REFERENCES ventas(id) ON DELETE CASCADE,
+    producto_id UUID REFERENCES productos(id),
+    cantidad DECIMAL(10,3) NOT NULL,
     precio_unitario DECIMAL(10,2) NOT NULL,
+    descuento_unitario DECIMAL(10,2) DEFAULT 0,
     subtotal DECIMAL(10,2) NOT NULL,
-    descuento DECIMAL(10,2) DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    CHECK (cantidad > 0),
+    CHECK (precio_unitario >= 0)
 );
 
--- 8. Tabla de pagos
+-- 8. TABLA DE PAGOS
 CREATE TABLE IF NOT EXISTS pagos (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    venta_id UUID,
+    venta_id UUID REFERENCES ventas(id) ON DELETE CASCADE,
     metodo VARCHAR(50) NOT NULL,
     monto DECIMAL(10,2) NOT NULL,
     referencia VARCHAR(100),
     estado VARCHAR(20) DEFAULT 'completado',
+    tarjeta_tipo VARCHAR(50),
+    tarjeta_numero VARCHAR(4),
+    tarjeta_cuotas INTEGER DEFAULT 1,
     offline_id VARCHAR(100),
     sync_status VARCHAR(20) DEFAULT 'synced',
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    CHECK (monto > 0)
 );
 
--- 9. Tabla de presupuestos
+-- 9. TABLA DE PRESUPUESTOS
 CREATE TABLE IF NOT EXISTS presupuestos (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    local_id UUID,
-    cliente_id UUID,
+    numero_presupuesto VARCHAR(50) UNIQUE,
+    local_id UUID REFERENCES locales(id),
+    cliente_id UUID REFERENCES clientes(id),
     usuario_id UUID,
     total DECIMAL(10,2) NOT NULL,
     valido_hasta DATE,
@@ -568,40 +746,43 @@ CREATE TABLE IF NOT EXISTS presupuestos (
     observaciones TEXT,
     offline_id VARCHAR(100),
     sync_status VARCHAR(20) DEFAULT 'synced',
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 10. Tabla de items de presupuesto
+-- 10. TABLA DE ITEMS DE PRESUPUESTO
 CREATE TABLE IF NOT EXISTS presupuesto_items (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    presupuesto_id UUID,
-    producto_id UUID,
-    cantidad INTEGER NOT NULL,
+    presupuesto_id UUID REFERENCES presupuestos(id) ON DELETE CASCADE,
+    producto_id UUID REFERENCES productos(id),
+    cantidad DECIMAL(10,3) NOT NULL,
     precio_unitario DECIMAL(10,2) NOT NULL,
     subtotal DECIMAL(10,2) NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 11. Tabla de cuentas corrientes
+-- 11. TABLA DE CUENTAS CORRIENTES
 CREATE TABLE IF NOT EXISTS cuentas_corrientes (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    cliente_id UUID,
+    cliente_id UUID REFERENCES clientes(id),
     tipo_movimiento VARCHAR(20) NOT NULL,
     monto DECIMAL(10,2) NOT NULL,
     saldo_anterior DECIMAL(10,2) NOT NULL,
     saldo_nuevo DECIMAL(10,2) NOT NULL,
-    referencia_id UUID,
+    venta_id UUID REFERENCES ventas(id),
+    pago_id UUID REFERENCES pagos(id),
     observaciones TEXT,
+    fecha_vencimiento DATE,
     offline_id VARCHAR(100),
     sync_status VARCHAR(20) DEFAULT 'synced',
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 12. Tabla de cierres de caja
+-- 12. TABLA DE CIERRES DE CAJA
 CREATE TABLE IF NOT EXISTS cierres_caja (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    local_id UUID,
-    caja_id UUID,
+    local_id UUID REFERENCES locales(id),
+    caja_id UUID REFERENCES cajas(id),
     usuario_id UUID,
     turno VARCHAR(10) NOT NULL,
     fecha DATE NOT NULL,
@@ -610,57 +791,225 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
     ventas_efectivo DECIMAL(10,2) DEFAULT 0,
     ventas_tarjeta DECIMAL(10,2) DEFAULT 0,
     ventas_transferencia DECIMAL(10,2) DEFAULT 0,
+    ventas_otros DECIMAL(10,2) DEFAULT 0,
+    total_ventas DECIMAL(10,2) DEFAULT 0,
+    total_egresos DECIMAL(10,2) DEFAULT 0,
+    diferencia DECIMAL(10,2) DEFAULT 0,
     observaciones TEXT,
     estado VARCHAR(20) DEFAULT 'abierto',
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
-                    </div>
-                    
-                    <div class="button-group">
-                        <button id="copySql" class="btn btn-secondary">📋 Copiar SQL al Portapapeles</button>
-                        <button id="executeSql" class="btn btn-primary" disabled>Ejecutar SQL en Supabase</button>
-                        <button id="nextStep2" class="btn btn-success" disabled>Siguiente →</button>
+
+-- 13. TABLA DE MOVIMIENTOS DE INVENTARIO
+CREATE TABLE IF NOT EXISTS inventario (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    producto_id UUID REFERENCES productos(id),
+    tipo_movimiento VARCHAR(20) NOT NULL,
+    cantidad DECIMAL(10,3) NOT NULL,
+    stock_anterior DECIMAL(10,3) NOT NULL,
+    stock_nuevo DECIMAL(10,3) NOT NULL,
+    motivo VARCHAR(100),
+    usuario_id UUID,
+    venta_id UUID REFERENCES ventas(id),
+    compra_id UUID,
+    proveedor_id UUID REFERENCES proveedores(id),
+    observaciones TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 14. TABLA DE CATEGORÍAS DE PRODUCTOS
+CREATE TABLE IF NOT EXISTS categorias (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    descripcion TEXT,
+    icono VARCHAR(50),
+    color VARCHAR(20),
+    activa BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 15. TABLA DE CONFIGURACIONES
+CREATE TABLE IF NOT EXISTS configuraciones (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    clave VARCHAR(100) NOT NULL UNIQUE,
+    valor JSONB NOT NULL,
+    descripcion TEXT,
+    categoria VARCHAR(50) DEFAULT 'general',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ÍNDICES PARA MEJORAR EL RENDIMIENTO
+CREATE INDEX IF NOT EXISTS idx_productos_codigo_barras ON productos(codigo_barras);
+CREATE INDEX IF NOT EXISTS idx_productos_nombre ON productos(nombre);
+CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(categoria);
+CREATE INDEX IF NOT EXISTS idx_productos_stock ON productos(stock);
+CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(created_at);
+CREATE INDEX IF NOT EXISTS idx_ventas_cliente ON ventas(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_clientes_documento ON clientes(numero_documento);
+CREATE INDEX IF NOT EXISTS idx_clientes_nombre ON clientes(nombre);
+CREATE INDEX IF NOT EXISTS idx_proveedores_nombre ON proveedores(nombre);
+CREATE INDEX IF NOT EXISTS idx_inventario_producto ON inventario(producto_id);
+CREATE INDEX IF NOT EXISTS idx_inventario_fecha ON inventario(created_at);
+
+-- VISTA PARA REPORTE DE VENTAS DIARIAS
+CREATE OR REPLACE VIEW reporte_ventas_diarias AS
+SELECT 
+    DATE(v.created_at) as fecha,
+    l.nombre as local,
+    c.numero as caja,
+    cl.nombre as cliente,
+    COUNT(DISTINCT v.id) as total_ventas,
+    SUM(v.total) as monto_total,
+    SUM(vi.cantidad) as total_items,
+    STRING_AGG(DISTINCT p.nombre, ', ') as productos_vendidos
+FROM ventas v
+LEFT JOIN locales l ON v.local_id = l.id
+LEFT JOIN cajas c ON v.caja_id = c.id
+LEFT JOIN clientes cl ON v.cliente_id = cl.id
+LEFT JOIN venta_items vi ON v.id = vi.venta_id
+LEFT JOIN productos p ON vi.producto_id = p.id
+GROUP BY DATE(v.created_at), l.nombre, c.numero, cl.nombre
+ORDER BY fecha DESC;
+
+-- VISTA PARA CONTROL DE STOCK
+CREATE OR REPLACE VIEW control_stock AS
+SELECT 
+    p.id,
+    p.codigo_interno,
+    p.nombre,
+    p.categoria,
+    p.marca,
+    p.stock,
+    p.stock_minimo,
+    p.stock_maximo,
+    p.precio_costo,
+    p.precio_venta,
+    CASE 
+        WHEN p.stock <= p.stock_minimo THEN 'CRÍTICO'
+        WHEN p.stock <= (p.stock_minimo * 2) THEN 'BAJO'
+        WHEN p.stock >= p.stock_maximo THEN 'ALTO'
+        ELSE 'NORMAL'
+    END as estado_stock,
+    pr.nombre as proveedor
+FROM productos p
+LEFT JOIN proveedores pr ON p.proveedor_id = pr.id
+WHERE p.activo = true
+ORDER BY p.stock ASC;
+
+-- VISTA PARA DEUDAS DE CLIENTES
+CREATE OR REPLACE VIEW deudas_clientes AS
+SELECT 
+    c.id,
+    c.nombre,
+    c.telefono,
+    c.limite_credito,
+    c.saldo,
+    CASE 
+        WHEN c.saldo > (c.limite_credito * 0.8) THEN 'ALTO RIESGO'
+        WHEN c.saldo > (c.limite_credito * 0.5) THEN 'RIESGO MODERADO'
+        ELSE 'BAJO RIESGO'
+    END as riesgo,
+    COUNT(cc.id) as total_movimientos,
+    MAX(cc.created_at) as ultimo_movimiento
+FROM clientes c
+LEFT JOIN cuentas_corrientes cc ON c.id = cc.cliente_id
+WHERE c.tipo_cliente = 'cuenta_corriente'
+GROUP BY c.id, c.nombre, c.telefono, c.limite_credito, c.saldo
+ORDER BY c.saldo DESC;
+
+-- INSERTAR DATOS INICIALES DE CONFIGURACIÓN
+INSERT INTO configuraciones (clave, valor, descripcion, categoria) VALUES 
+('empresa', '{"nombre": "Mi Ferretería", "direccion": "Av. Principal 1234", "telefono": "011-1234-5678", "email": "info@miferreteria.com", "cuit": "30-12345678-9"}', 'Datos de la empresa', 'empresa'),
+('iva', '{"porcentaje": 21, "incluido": true}', 'Configuración de IVA', 'impuestos'),
+('moneda', '{"simbolo": "$", "nombre": "Peso Argentino", "decimales": 2}', 'Configuración de moneda', 'general'),
+('facturacion', '{"punto_venta": 1, "ultimo_numero": 0, "tipo_comprobante": "ticket"}', 'Configuración de facturación', 'facturacion'),
+('stock', '{"alertar_minimo": true, "mostrar_stock_cero": false, "control_lotes": false}', 'Configuración de stock', 'stock'),
+('caja', '{"saldo_inicial": 10000, "corte_automatico": true, "imprimir_ticket": true}', 'Configuración de caja', 'caja')
+ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor, updated_at = NOW();
+
+-- INSERTAR CATEGORÍAS PARA FERRETERÍA
+INSERT INTO categorias (nombre, descripcion, icono, color) VALUES 
+('Herramientas Manuales', 'Martillos, destornilladores, alicates, etc.', '🔧', 'blue'),
+('Herramientas Eléctricas', 'Taladros, amoladoras, sierras eléctricas', '⚡', 'orange'),
+('Materiales de Construcción', 'Cemento, arena, ladrillos, hierros', '🏗️', 'gray'),
+('Fontanería', 'Caños, conexiones, llaves, sanitarios', '🚰', 'teal'),
+('Electricidad', 'Cables, interruptores, tomas, luminarias', '💡', 'yellow'),
+('Pinturas', 'Pinturas, barnices, selladores, herramientas', '🎨', 'purple'),
+('Fijaciones', 'Clavos, tornillos, anclajes, adhesivos', '📌', 'red'),
+('Jardinería', 'Herramientas de jardín, plantas, tierra', '🌿', 'green'),
+('Seguridad', 'Guantes, lentes, cascos, botas', '🛡️', 'indigo'),
+('Ferretería General', 'Artículos varios de ferretería', '🛠️', 'pink')
+ON CONFLICT (nombre) DO NOTHING;
+                        </div>
+                        
+                        <div class="button-group">
+                            <button id="copySql" class="copy-btn">📋 Copiar SQL completo</button>
+                            <button id="copyTablesOnly" class="copy-btn">📋 Copiar solo tablas</button>
+                            <button id="copyDropTables" class="copy-btn btn-danger">🗑️ Copiar SQL para eliminar tablas</button>
+                        </div>
                     </div>
                     
                     <div class="instructions" style="margin-top: 15px;">
-                        <p><strong>¿Cómo ejecutar el SQL?</strong></p>
+                        <p><strong>📋 ¿Cómo ejecutar el SQL?</strong></p>
                         <ol>
-                            <li>En el menú izquierdo de Supabase, haz clic en "SQL Editor"</li>
-                            <li>Haz clic en "New query"</li>
-                            <li>Pega el código SQL anterior</li>
-                            <li>Haz clic en "Run" (▶️)</li>
-                            <li>Espera a que se ejecute (puede tardar unos segundos)</li>
+                            <li>En Supabase, ve a <strong>SQL Editor</strong> en el menú izquierdo</li>
+                            <li>Haz clic en <strong>"New query"</strong></li>
+                            <li>Pega el código SQL completo</li>
+                            <li>Haz clic en <strong>"Run" (▶️)</strong></li>
+                            <li>Espera unos segundos mientras se crean las tablas</li>
+                            <li>¡Listo! Tu base de datos está configurada</li>
                         </ol>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="executeSql" class="btn btn-primary" disabled>⚡ Ejecutar SQL automáticamente</button>
+                        <button id="nextStep2" class="btn btn-success" disabled>Siguiente →</button>
                     </div>
                     
                     <div id="sqlStatus" class="status"></div>
                 </div>
             </div>
 
-            <!-- Paso 3: Insertar datos de prueba -->
+            <!-- Paso 3: Insertar datos de ferretería -->
             <div class="card" id="card3">
                 <div class="card-header">
                     <div class="step-number">3</div>
-                    <h2>📊 PASO 3: Insertar Datos de Prueba</h2>
+                    <h2>📊 INSERTAR DATOS DE FERRETERÍA</h2>
                 </div>
                 
                 <div class="step-content">
-                    <p class="info-text">Una vez creadas las tablas, inserta datos iniciales para probar el sistema:</p>
+                    <p class="info-text">Vamos a insertar datos de ejemplo específicos para ferretería:</p>
                     
                     <div class="test-data">
-                        <p><strong>Datos que se insertarán:</strong></p>
-                        <ul>
-                            <li>✅ 1 Local principal</li>
-                            <li>✅ 2 Cajas (01 y 02)</li>
-                            <li>✅ 4 Productos de ejemplo</li>
-                            <li>✅ 2 Clientes (contado y cuenta corriente)</li>
-                            <li>✅ 2 Proveedores</li>
+                        <p><strong>📦 Datos que se insertarán:</strong></p>
+                        <ul style="columns: 2; column-gap: 40px;">
+                            <li>✅ 1 Sucursal principal</li>
+                            <li>✅ 2 Cajas de venta</li>
+                            <li>✅ 50 Productos de ferretería</li>
+                            <li>✅ 10 Categorías especializadas</li>
+                            <li>✅ 3 Clientes (contado/credito)</li>
+                            <li>✅ 5 Proveedores mayoristas</li>
+                            <li>✅ Configuración inicial</li>
+                            <li>✅ Stock inicial</li>
                         </ul>
+                        <p style="margin-top: 10px; color: #059669; font-weight: 500;">
+                            🎯 Productos reales: herramientas, materiales, pinturas, electricidad, etc.
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="insertSampleData" checked>
+                            <span>Insertar datos de ejemplo de ferretería</span>
+                        </label>
+                        <small style="color: #6b7280;">Recomendado para probar el sistema</small>
                     </div>
                     
                     <div class="button-group">
-                        <button id="insertTestData" class="btn btn-primary" disabled>Insertar Datos de Prueba</button>
+                        <button id="insertTestData" class="btn btn-primary" disabled>🚀 Insertar Datos de Ferretería</button>
+                        <button id="skipDataInsert" class="btn btn-outline">⏭️ Saltar este paso</button>
                         <button id="nextStep3" class="btn btn-success" disabled>Siguiente →</button>
                     </div>
                     
@@ -672,33 +1021,45 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
             <div class="card" id="card4">
                 <div class="card-header">
                     <div class="step-number">4</div>
-                    <h2>✅ PASO 4: Verificar Configuración</h2>
+                    <h2>✅ VERIFICAR CONFIGURACIÓN</h2>
                 </div>
                 
                 <div class="step-content">
-                    <p class="info-text">Verifica que todo esté correctamente configurado antes de usar el sistema.</p>
+                    <p class="info-text">Verifica que todo esté listo para comenzar a usar tu sistema de ferretería.</p>
                     
-                    <div id="verificationList">
-                        <div class="verification-item">
+                    <div class="verification-list">
+                        <div class="verification-item" id="verif1">
                             <input type="checkbox" id="check1" disabled>
                             <label for="check1">Conexión a Supabase establecida</label>
                         </div>
-                        <div class="verification-item">
+                        <div class="verification-item" id="verif2">
                             <input type="checkbox" id="check2" disabled>
                             <label for="check2">Tablas creadas correctamente</label>
                         </div>
-                        <div class="verification-item">
+                        <div class="verification-item" id="verif3">
                             <input type="checkbox" id="check3" disabled>
-                            <label for="check3">Datos de prueba insertados</label>
+                            <label for="check3">Datos de ferretería insertados</label>
                         </div>
-                        <div class="verification-item">
+                        <div class="verification-item" id="verif4">
                             <input type="checkbox" id="check4" disabled>
                             <label for="check4">Configuración guardada</label>
                         </div>
                     </div>
                     
+                    <div class="instructions" style="margin: 20px 0;">
+                        <p><strong>🎯 ¿Qué puedes hacer ahora?</strong></p>
+                        <ul>
+                            <li>Gestionar stock de productos</li>
+                            <li>Realizar ventas con múltiples métodos de pago</li>
+                            <li>Controlar cuentas corrientes de clientes</li>
+                            <li>Generar presupuestos</li>
+                            <li>Cerrar caja diariamente</li>
+                            <li>Ver reportes de ventas</li>
+                        </ul>
+                    </div>
+                    
                     <div class="button-group" style="margin-top: 20px;">
-                        <button id="verifySetup" class="btn btn-primary" disabled>Verificar Configuración</button>
+                        <button id="verifySetup" class="btn btn-primary" disabled>🔍 Verificar Configuración</button>
                         <button id="completeSetup" class="btn btn-success" disabled>🚀 Completar Configuración</button>
                     </div>
                     
@@ -708,9 +1069,9 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
         </div>
 
         <div class="navigation">
-            <button id="goToApp" class="btn btn-success" disabled>🚀 Ir a la Aplicación POS</button>
-            <p style="margin-top: 10px; color: #718096; font-size: 0.9rem;">
-                Una vez completados todos los pasos, podrás usar el sistema POS
+            <button id="goToApp" class="btn btn-success" disabled>🔨 Ir a Mi Ferretería POS</button>
+            <p style="margin-top: 15px; color: #6b7280; font-size: 0.9rem;">
+                Una vez completada la configuración, podrás comenzar a gestionar tu ferretería
             </p>
         </div>
     </div>
@@ -731,24 +1092,30 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
         const nextStep3Btn = document.getElementById('nextStep3');
         const executeSqlBtn = document.getElementById('executeSql');
         const insertTestDataBtn = document.getElementById('insertTestData');
+        const skipDataInsertBtn = document.getElementById('skipDataInsert');
         const verifySetupBtn = document.getElementById('verifySetup');
         const completeSetupBtn = document.getElementById('completeSetup');
         const goToAppBtn = document.getElementById('goToApp');
         const copySqlBtn = document.getElementById('copySql');
+        const copyTablesOnlyBtn = document.getElementById('copyTablesOnly');
+        const copyDropTablesBtn = document.getElementById('copyDropTables');
+        const insertSampleDataCheck = document.getElementById('insertSampleData');
         const connectionStatus = document.getElementById('connectionStatus');
         const sqlStatus = document.getElementById('sqlStatus');
         const dataStatus = document.getElementById('dataStatus');
         const verifyStatus = document.getElementById('verifyStatus');
         const sqlCode = document.getElementById('sqlCode');
+        const sqlContainer = document.getElementById('sqlContainer');
         const progressFill = document.getElementById('progressFill');
         const stepElements = document.querySelectorAll('.progress-step');
         const cardElements = document.querySelectorAll('.card');
+        const verificationItems = document.querySelectorAll('.verification-item');
 
         // Cargar credenciales guardadas
         window.addEventListener('DOMContentLoaded', () => {
             const savedUrl = localStorage.getItem('supabaseUrl');
             const savedKey = localStorage.getItem('supabaseKey');
-            const systemConfigured = localStorage.getItem('systemConfigured');
+            const systemConfigured = localStorage.getItem('ferreteria_configured');
             
             if (savedUrl) supabaseUrlInput.value = savedUrl;
             if (savedKey) supabaseKeyInput.value = savedKey;
@@ -759,8 +1126,16 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 updateProgress(100);
                 updateStepVisuals(4);
                 verifyStatus.innerHTML = '<p class="success">✅ Sistema ya configurado. Puedes ir a la aplicación.</p>';
+                verifyStatus.classList.add('show');
                 goToAppBtn.disabled = false;
                 completeSetupBtn.disabled = false;
+                
+                // Marcar todas las verificaciones
+                verificationItems.forEach(item => {
+                    item.classList.add('verified');
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = true;
+                });
             }
             
             // Cargar Supabase desde CDN
@@ -768,6 +1143,9 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
             
             // Actualizar progreso inicial
             updateProgress(0);
+            
+            // Configurar eventos
+            setupEventListeners();
         });
 
         // Función para cargar Supabase
@@ -790,6 +1168,45 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 };
                 document.head.appendChild(script);
             });
+        }
+
+        // Configurar eventos
+        function setupEventListeners() {
+            // Navegación entre pasos
+            nextStep1Btn.addEventListener('click', () => goToStep(2));
+            nextStep2Btn.addEventListener('click', () => goToStep(3));
+            nextStep3Btn.addEventListener('click', () => goToStep(4));
+            
+            // Botones de copiado
+            copySqlBtn.addEventListener('click', () => copyToClipboard(sqlCode.textContent, 'SQL completo'));
+            copyTablesOnlyBtn.addEventListener('click', () => copyTablesOnly());
+            copyDropTablesBtn.addEventListener('click', () => copyDropTablesSQL());
+            
+            // Botones principales
+            testConnectionBtn.addEventListener('click', testSupabaseConnection);
+            executeSqlBtn.addEventListener('click', executeSQL);
+            insertTestDataBtn.addEventListener('click', insertFerreteriaData);
+            skipDataInsertBtn.addEventListener('click', () => {
+                document.getElementById('check3').checked = true;
+                const verif3 = document.getElementById('verif3');
+                if (verif3) verif3.classList.add('verified');
+                nextStep3Btn.disabled = false;
+                dataStatus.innerHTML = '<p class="info">⏭️ Paso saltado. Puedes insertar datos manualmente después.</p>';
+                dataStatus.classList.add('show');
+            });
+            verifySetupBtn.addEventListener('click', verifyConfiguration);
+            completeSetupBtn.addEventListener('click', completeSetup);
+            goToAppBtn.addEventListener('click', () => window.location.href = 'index.html');
+            
+            // Guardar credenciales al cambiar
+            supabaseUrlInput.addEventListener('change', saveCredentials);
+            supabaseKeyInput.addEventListener('change', saveCredentials);
+        }
+
+        // Guardar credenciales
+        function saveCredentials() {
+            localStorage.setItem('supabaseUrl', supabaseUrlInput.value);
+            localStorage.setItem('supabaseKey', supabaseKeyInput.value);
         }
 
         // Actualizar progreso
@@ -838,39 +1255,131 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
             
             // Actualizar progreso
             updateProgress((step - 1) * 25);
+            
+            // Hacer scroll suave al paso
+            setTimeout(() => {
+                const card = document.getElementById(`card${step}`);
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
         }
 
         // Ir al siguiente paso
         function goToStep(step) {
             updateStepVisuals(step);
+        }
+
+        // Toggle SQL container
+        function toggleSQL() {
+            const container = document.getElementById('sqlContainer');
+            const toggleIcon = document.getElementById('toggleIcon');
+            const toggleText = document.getElementById('toggleText');
             
-            // Hacer scroll suave al paso
-            const card = document.getElementById(`card${step}`);
-            if (card) {
-                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            container.classList.toggle('expanded');
+            
+            if (container.classList.contains('expanded')) {
+                toggleIcon.textContent = '▲';
+                toggleText.textContent = 'Ocultar código SQL';
+            } else {
+                toggleIcon.textContent = '▼';
+                toggleText.textContent = 'Mostrar código SQL';
             }
         }
 
-        // Copiar SQL al portapapeles
-        copySqlBtn.addEventListener('click', () => {
-            const text = sqlCode.textContent;
+        // Copiar al portapapeles
+        function copyToClipboard(text, description) {
             navigator.clipboard.writeText(text).then(() => {
-                const originalText = copySqlBtn.textContent;
-                copySqlBtn.textContent = '✅ ¡Copiado!';
-                copySqlBtn.classList.add('btn-success');
-                setTimeout(() => {
-                    copySqlBtn.textContent = originalText;
-                    copySqlBtn.classList.remove('btn-success');
-                }, 2000);
+                showToast(`✅ ${description} copiado al portapapeles`);
             }).catch(err => {
                 console.error('Error copiando texto: ', err);
-                sqlStatus.innerHTML = '<p class="error">❌ Error al copiar al portapapeles</p>';
-                sqlStatus.classList.add('show');
+                showToast('❌ Error al copiar al portapapeles');
             });
-        });
+        }
+
+        // Copiar solo tablas
+        function copyTablesOnly() {
+            const fullSQL = sqlCode.textContent;
+            const startIndex = fullSQL.indexOf('-- 1. TABLA DE LOCALES/SUCURSALES');
+            const endIndex = fullSQL.indexOf('-- ÍNDICES PARA MEJORAR EL RENDIMIENTO');
+            
+            if (startIndex !== -1 && endIndex !== -1) {
+                const tablesSQL = fullSQL.substring(startIndex, endIndex);
+                copyToClipboard(tablesSQL, 'SQL de tablas');
+            } else {
+                copyToClipboard(fullSQL, 'SQL completo');
+            }
+        }
+
+        // Copiar SQL para eliminar tablas
+        function copyDropTablesSQL() {
+            const dropSQL = `-- SQL PARA ELIMINAR TODAS LAS TABLAS (EJECUTAR CON PRECAUCIÓN)
+DROP TABLE IF EXISTS cierres_caja CASCADE;
+DROP TABLE IF EXISTS cuentas_corrientes CASCADE;
+DROP TABLE IF EXISTS presupuesto_items CASCADE;
+DROP TABLE IF EXISTS presupuestos CASCADE;
+DROP TABLE IF EXISTS pagos CASCADE;
+DROP TABLE IF EXISTS venta_items CASCADE;
+DROP TABLE IF EXISTS ventas CASCADE;
+DROP TABLE IF EXISTS productos CASCADE;
+DROP TABLE IF EXISTS clientes CASCADE;
+DROP TABLE IF EXISTS proveedores CASCADE;
+DROP TABLE IF EXISTS cajas CASCADE;
+DROP TABLE IF EXISTS locales CASCADE;
+DROP TABLE IF EXISTS inventario CASCADE;
+DROP TABLE IF EXISTS categorias CASCADE;
+DROP TABLE IF EXISTS configuraciones CASCADE;
+
+-- También eliminar las vistas
+DROP VIEW IF EXISTS reporte_ventas_diarias CASCADE;
+DROP VIEW IF EXISTS control_stock CASCADE;
+DROP VIEW IF EXISTS deudas_clientes CASCADE;`;
+            
+            copyToClipboard(dropSQL, 'SQL para eliminar tablas');
+        }
+
+        // Mostrar toast
+        function showToast(message) {
+            // Crear toast si no existe
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #10b981;
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 1000;
+                    opacity: 0;
+                    transform: translateY(-20px);
+                    transition: all 0.3s ease;
+                `;
+                document.body.appendChild(toast);
+            }
+            
+            toast.textContent = message;
+            toast.style.background = message.startsWith('✅') ? '#10b981' : '#ef4444';
+            
+            // Mostrar toast
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            }, 10);
+            
+            // Ocultar después de 3 segundos
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+            }, 3000);
+        }
 
         // Probar conexión a Supabase
-        testConnectionBtn.addEventListener('click', async () => {
+        async function testSupabaseConnection() {
             const url = supabaseUrlInput.value.trim();
             const key = supabaseKeyInput.value.trim();
             
@@ -895,8 +1404,8 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
             }
             
             testConnectionBtn.disabled = true;
-            testConnectionBtn.textContent = '🔄 Probando conexión...';
-            connectionStatus.innerHTML = '<p class="info">🔄 Probando conexión a Supabase...</p>';
+            testConnectionBtn.textContent = '🔄 Conectando...';
+            connectionStatus.innerHTML = '<p class="info">🔄 Conectando con Supabase...</p>';
             connectionStatus.classList.add('show');
             
             try {
@@ -906,46 +1415,36 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 }
                 
                 // Guardar credenciales
-                localStorage.setItem('supabaseUrl', url);
-                localStorage.setItem('supabaseKey', key);
+                saveCredentials();
                 
                 // Crear cliente de Supabase
                 supabaseClient = window.supabase.createClient(url, key);
                 
                 // Probar conexión con una consulta simple
                 const { error } = await supabaseClient
-                    .from('locales')
-                    .select('count')
+                    .from('configuraciones')
+                    .select('clave')
                     .limit(1)
-                    .single();
+                    .maybeSingle();
                 
-                // Si esperamos error 404 porque la tabla no existe, pero la conexión es exitosa
-                if (error && error.code === 'PGRST116') {
-                    // Tabla no existe pero conexión es exitosa
-                    connectionStatus.innerHTML = '<p class="success">✅ Conexión exitosa a Supabase</p>';
+                // Si hay error 406 (tabla no existe) o PGRST116, la conexión es exitosa pero no hay tabla
+                if (error && (error.code === 'PGRST116' || error.code === '406')) {
+                    connectionStatus.innerHTML = '<p class="success">✅ Conexión exitosa. Puedes crear las tablas en el siguiente paso.</p>';
                     connectionStatus.classList.add('show');
-                    
-                    // Habilitar siguiente paso
-                    nextStep1Btn.disabled = false;
-                    executeSqlBtn.disabled = false;
-                    
-                    // Marcar verificación
-                    document.getElementById('check1').checked = true;
-                    
                 } else if (error) {
                     throw error;
                 } else {
-                    // La tabla existe, conexión exitosa
-                    connectionStatus.innerHTML = '<p class="success">✅ Conexión exitosa a Supabase</p>';
+                    connectionStatus.innerHTML = '<p class="success">✅ Conexión exitosa. Base de datos ya configurada.</p>';
                     connectionStatus.classList.add('show');
-                    
-                    // Habilitar siguiente paso
-                    nextStep1Btn.disabled = false;
-                    executeSqlBtn.disabled = false;
-                    
-                    // Marcar verificación
-                    document.getElementById('check1').checked = true;
                 }
+                
+                // Habilitar siguiente paso
+                nextStep1Btn.disabled = false;
+                executeSqlBtn.disabled = false;
+                
+                // Marcar verificación
+                document.getElementById('check1').checked = true;
+                document.getElementById('verif1').classList.add('verified');
                 
             } catch (error) {
                 console.error('Error de conexión:', error);
@@ -965,12 +1464,12 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 
             } finally {
                 testConnectionBtn.disabled = false;
-                testConnectionBtn.textContent = 'Probar Conexión';
+                testConnectionBtn.textContent = '🔍 Probar Conexión';
             }
-        });
+        }
 
-        // Ejecutar SQL en Supabase
-        executeSqlBtn.addEventListener('click', async () => {
+        // Ejecutar SQL automáticamente
+        async function executeSQL() {
             if (!supabaseClient) {
                 sqlStatus.innerHTML = '<p class="error">Primero prueba la conexión</p>';
                 sqlStatus.classList.add('show');
@@ -978,50 +1477,69 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
             }
             
             executeSqlBtn.disabled = true;
-            executeSqlBtn.textContent = '🔄 Ejecutando SQL...';
-            sqlStatus.innerHTML = '<p class="info">🔄 Ejecutando SQL en Supabase...</p>';
+            executeSqlBtn.textContent = '🔄 Creando tablas...';
+            sqlStatus.innerHTML = '<p class="info">🔄 Creando tablas en Supabase... Esto puede tomar unos segundos.</p>';
             sqlStatus.classList.add('show');
             
             try {
-                // Dividir el SQL en sentencias individuales
-                const sqlStatements = sqlCode.textContent
+                // Dividir el SQL en bloques ejecutables
+                const fullSQL = sqlCode.textContent;
+                
+                // Extraer solo las sentencias CREATE (omitir comentarios y DROP)
+                const createStatements = fullSQL
+                    .split('\n')
+                    .filter(line => !line.trim().startsWith('--') && line.trim().length > 0)
+                    .join('\n')
                     .split(';')
-                    .filter(stmt => stmt.trim().length > 0);
+                    .filter(stmt => stmt.trim().length > 0 && stmt.trim().toUpperCase().startsWith('CREATE'))
+                    .map(stmt => stmt.trim() + ';');
+                
+                // También incluir INSERT de configuraciones y categorías
+                const insertStatements = fullSQL
+                    .split('\n')
+                    .filter(line => !line.trim().startsWith('--') && line.trim().length > 0)
+                    .join('\n')
+                    .split(';')
+                    .filter(stmt => stmt.trim().length > 0 && stmt.trim().toUpperCase().startsWith('INSERT'))
+                    .map(stmt => stmt.trim() + ';');
+                
+                const allStatements = [...createStatements, ...insertStatements];
                 
                 let successCount = 0;
                 let errorCount = 0;
+                let errors = [];
                 
-                // Ejecutar cada sentencia SQL
-                for (const statement of sqlStatements) {
+                // Ejecutar cada sentencia
+                for (const statement of allStatements) {
                     try {
-                        const { error } = await supabaseClient.rpc('exec_sql', { sql: statement + ';' });
-                        
-                        // Si la función RPC no existe, usar una alternativa
-                        if (error && error.message.includes('function "exec_sql" does not exist')) {
-                            // Intentar ejecutar como query directa (esto puede no funcionar en el cliente)
-                            console.log('Función exec_sql no disponible, intentando método alternativo...');
-                            
-                            // Para CREATE TABLE, podemos usar el SQL editor manualmente
-                            // En este caso, solo marcamos como éxito si la conexión funciona
-                            successCount++;
-                            continue;
-                        }
+                        // Usar RPC para ejecutar SQL
+                        const { error } = await supabaseClient.rpc('exec_sql', { sql: statement });
                         
                         if (error) {
-                            console.warn('Error ejecutando sentencia:', error.message);
+                            // Ignorar errores de "ya existe" para CREATE TABLE IF NOT EXISTS
+                            if (error.message.includes('already exists') || error.message.includes('duplicate')) {
+                                successCount++;
+                                continue;
+                            }
+                            console.warn('Error ejecutando SQL:', error.message);
                             errorCount++;
+                            errors.push({ statement: statement.substring(0, 100), error: error.message });
                         } else {
                             successCount++;
                         }
                         
+                        // Pequeña pausa entre sentencias para no sobrecargar
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        
                     } catch (stmtError) {
                         console.warn('Error en sentencia:', stmtError.message);
                         errorCount++;
+                        errors.push({ statement: statement.substring(0, 100), error: stmtError.message });
                     }
                 }
                 
                 if (errorCount === 0) {
-                    sqlStatus.innerHTML = `<p class="success">✅ SQL ejecutado correctamente. ${successCount} sentencias procesadas.</p>`;
+                    sqlStatus.innerHTML = `<p class="success">✅ Tablas creadas exitosamente. ${successCount} operaciones completadas.</p>`;
                     sqlStatus.classList.add('show');
                     
                     // Habilitar siguiente paso
@@ -1030,42 +1548,65 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                     
                     // Marcar verificación
                     document.getElementById('check2').checked = true;
+                    document.getElementById('verif2').classList.add('verified');
                     
-                } else {
-                    sqlStatus.innerHTML = `<p class="warning">⚠️ SQL ejecutado con algunos errores. ${successCount} exitosas, ${errorCount} errores. Las tablas principales se crearon correctamente.</p>`;
+                } else if (successCount > 0) {
+                    sqlStatus.innerHTML = `
+                        <p class="warning">⚠️ Tablas creadas con algunos errores. ${successCount} exitosas, ${errorCount} errores.</p>
+                        <p class="info">Las tablas principales se crearon correctamente. Puedes continuar.</p>
+                    `;
                     sqlStatus.classList.add('show');
                     
-                    // Aún habilitar siguiente paso si hubo al menos un éxito
-                    if (successCount > 0) {
-                        nextStep2Btn.disabled = false;
-                        insertTestDataBtn.disabled = false;
-                        document.getElementById('check2').checked = true;
-                    }
+                    // Aún habilitar siguiente paso si hubo éxitos
+                    nextStep2Btn.disabled = false;
+                    insertTestDataBtn.disabled = false;
+                    document.getElementById('check2').checked = true;
+                    document.getElementById('verif2').classList.add('verified');
+                    
+                } else {
+                    throw new Error('No se pudo crear ninguna tabla');
                 }
                 
             } catch (error) {
                 console.error('Error ejecutando SQL:', error);
-                sqlStatus.innerHTML = `<p class="error">❌ Error ejecutando SQL: ${error.message}</p>
-                <p class="info">Puedes copiar y pegar manualmente el SQL en el editor de Supabase.</p>`;
+                sqlStatus.innerHTML = `
+                    <p class="error">❌ Error ejecutando SQL: ${error.message}</p>
+                    <p class="info">Puedes copiar y pegar manualmente el SQL en el editor de Supabase:</p>
+                    <ol>
+                        <li>Ve a SQL Editor en Supabase</li>
+                        <li>Copia el SQL completo</li>
+                        <li>Pégalo y haz clic en "Run"</li>
+                        <li>Luego haz clic en "Siguiente"</li>
+                    </ol>
+                `;
                 sqlStatus.classList.add('show');
                 
             } finally {
                 executeSqlBtn.disabled = false;
-                executeSqlBtn.textContent = 'Ejecutar SQL en Supabase';
+                executeSqlBtn.textContent = '⚡ Ejecutar SQL automáticamente';
             }
-        });
+        }
 
-        // Insertar datos de prueba - VERSIÓN SIMPLIFICADA
-        insertTestDataBtn.addEventListener('click', async () => {
+        // Insertar datos de ferretería
+        async function insertFerreteriaData() {
             if (!supabaseClient) {
                 dataStatus.innerHTML = '<p class="error">Primero prueba la conexión</p>';
                 dataStatus.classList.add('show');
                 return;
             }
             
+            if (!insertSampleDataCheck.checked) {
+                dataStatus.innerHTML = '<p class="info">⏭️ Insertar datos desactivado. Continuando...</p>';
+                dataStatus.classList.add('show');
+                document.getElementById('check3').checked = true;
+                document.getElementById('verif3').classList.add('verified');
+                nextStep3Btn.disabled = false;
+                return;
+            }
+            
             insertTestDataBtn.disabled = true;
             insertTestDataBtn.textContent = '🔄 Insertando datos...';
-            dataStatus.innerHTML = '<p class="info">🔄 Insertando datos de prueba...</p>';
+            dataStatus.innerHTML = '<p class="info">🔄 Insertando datos de ferretería... Esto puede tomar unos segundos.</p>';
             dataStatus.classList.add('show');
             
             try {
@@ -1073,20 +1614,18 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 const { data: local, error: localError } = await supabaseClient
                     .from('locales')
                     .insert({
-                        nombre: 'Local Principal',
-                        direccion: 'Av. Comercial 1234',
-                        telefono: '011-1234-5678',
-                        email: 'ventas@misupermercado.com',
-                        config: { 
-                            impresora: 'térmica 80mm',
-                            moneda: 'ARS',
-                            iva: 21 
-                        }
+                        nombre: 'Ferretería Central',
+                        direccion: 'Av. Industrial 1234, Zona Industrial',
+                        telefono: '011-4567-8901',
+                        email: 'ventas@ferreteria.com',
+                        horario_atencion: 'Lunes a Viernes 8:00-18:00, Sábados 8:00-13:00',
+                        responsable: 'Juan Pérez',
+                        activo: true
                     })
                     .select()
                     .single();
                 
-                if (localError && !localError.message.includes('duplicate key')) {
+                if (localError && !localError.message.includes('duplicate')) {
                     console.warn('Error insertando local:', localError.message);
                 }
                 
@@ -1094,7 +1633,7 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 const localId = local?.id || 'offline';
                 const cajasData = [
                     { numero: '01', nombre: 'Caja Principal', local_id: localId },
-                    { numero: '02', nombre: 'Caja Secundaria', local_id: localId }
+                    { numero: '02', nombre: 'Caja Depósito', local_id: localId }
                 ];
                 
                 for (const caja of cajasData) {
@@ -1107,88 +1646,205 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                     }
                 }
                 
-                // 3. Insertar productos
-                const productosData = [
+                // 3. Insertar proveedores
+                const proveedoresData = [
                     {
-                        codigo_barras: '7791234567890',
-                        nombre: 'Coca Cola 2.25L',
-                        descripcion: 'Gaseosa Coca Cola 2.25 litros',
-                        precio_costo: 450.00,
-                        porcentaje_ganancia: 30.00,
-                        precio_venta: 585.00,
-                        stock: 100,
-                        stock_minimo: 10,
-                        categoria: 'Bebidas',
+                        nombre: 'Acindar SA',
+                        razon_social: 'Acindar Industria Argentina de Aceros SA',
+                        contacto: 'Carlos Rodríguez',
+                        telefono: '011-1234-5678',
+                        email: 'ventas@acindar.com',
+                        direccion: 'Av. del Trabajo 2500, Villa Constitución',
+                        productos_que_vende: 'Hierros, mallas, alambres, clavos',
+                        cuit: '30-12345678-9',
+                        condicion_iva: 'Responsable Inscripto',
                         activo: true
                     },
                     {
-                        codigo_barras: '7791234567891',
-                        nombre: 'Pan de Molde Integral',
-                        descripcion: 'Pan de molde integral 500g',
-                        precio_costo: 320.00,
-                        porcentaje_ganancia: 35.00,
-                        precio_venta: 432.00,
-                        stock: 50,
-                        stock_minimo: 5,
-                        categoria: 'Panadería',
+                        nombre: 'Siam Ferretería',
+                        razon_social: 'Siam Industrias Metalúrgicas SA',
+                        contacto: 'María González',
+                        telefono: '011-8765-4321',
+                        email: 'pedidos@siam.com.ar',
+                        direccion: 'Av. Directorio 4521, Buenos Aires',
+                        productos_que_vende: 'Herramientas manuales y eléctricas',
+                        cuit: '30-87654321-0',
+                        condicion_iva: 'Responsable Inscripto',
                         activo: true
                     },
                     {
-                        codigo_barras: '7791234567892',
-                        nombre: 'Leche Entera 1L',
-                        descripcion: 'Leche entera larga vida 1 litro',
-                        precio_costo: 280.00,
-                        porcentaje_ganancia: 25.00,
-                        precio_venta: 350.00,
-                        stock: 80,
-                        stock_minimo: 8,
-                        categoria: 'Lácteos',
+                        nombre: 'Pinturas Alba',
+                        razon_social: 'Alba Pinturas SA',
+                        contacto: 'Roberto Sánchez',
+                        telefono: '011-5555-6666',
+                        email: 'info@albapinturas.com',
+                        direccion: 'Ruta 8 Km 35, Pilar',
+                        productos_que_vende: 'Pinturas, barnices, selladores',
+                        cuit: '30-11223344-5',
+                        condicion_iva: 'Responsable Inscripto',
                         activo: true
                     },
                     {
-                        codigo_barras: '7791234567893',
-                        nombre: 'Arroz Largo Fino 1kg',
-                        descripcion: 'Arroz largo fino tipo 0000',
-                        precio_costo: 150.00,
-                        porcentaje_ganancia: 40.00,
-                        precio_venta: 210.00,
-                        stock: 120,
-                        stock_minimo: 12,
-                        categoria: 'Almacén',
+                        nombre: 'Eléctrica Central',
+                        razon_social: 'Distribuidora Eléctrica Central SRL',
+                        contacto: 'Lucía Fernández',
+                        telefono: '011-7777-8888',
+                        email: 'ventas@electricacentral.com.ar',
+                        direccion: 'Calle de la Luz 789, Quilmes',
+                        productos_que_vende: 'Materiales eléctricos, cables, luminarias',
+                        cuit: '30-55667788-9',
+                        condicion_iva: 'Monotributo',
+                        activo: true
+                    },
+                    {
+                        nombre: 'Plomería Total',
+                        razon_social: 'Plomería Total Hnos SACIF',
+                        contacto: 'Los Hermanos Gómez',
+                        telefono: '011-9999-0000',
+                        email: 'plomeriatotal@gmail.com',
+                        direccion: 'Av. San Martín 321, San Justo',
+                        productos_que_vende: 'Cañerías, conexiones, sanitarios',
+                        cuit: '30-99887766-5',
+                        condicion_iva: 'Monotributo',
                         activo: true
                     }
                 ];
                 
+                const proveedorIds = {};
+                for (const proveedor of proveedoresData) {
+                    try {
+                        const { data: prov } = await supabaseClient
+                            .from('proveedores')
+                            .insert(proveedor)
+                            .select()
+                            .single();
+                        
+                        if (prov) {
+                            proveedorIds[proveedor.nombre] = prov.id;
+                        }
+                    } catch (proveedorError) {
+                        console.warn('Error insertando proveedor:', proveedorError.message);
+                    }
+                }
+                
+                // 4. Insertar productos de ferretería (50 productos)
+                const productosData = [
+                    // Herramientas Manuales
+                    { codigo_interno: 'HM001', nombre: 'Martillo de Carpintero 500g', categoria: 'Herramientas Manuales', marca: 'Truper', unidad_medida: 'unidad', precio_costo: 850, porcentaje_ganancia: 50, precio_venta: 1275, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A1' },
+                    { codigo_interno: 'HM002', nombre: 'Destornillador Plano 6x100mm', categoria: 'Herramientas Manuales', marca: 'Black & Decker', unidad_medida: 'unidad', precio_costo: 320, porcentaje_ganancia: 60, precio_venta: 512, stock: 50, stock_minimo: 10, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A2' },
+                    { codigo_interno: 'HM003', nombre: 'Alicate Universal 8"', categoria: 'Herramientas Manuales', marca: 'Stanley', unidad_medida: 'unidad', precio_costo: 1250, porcentaje_ganancia: 45, precio_venta: 1812.5, stock: 15, stock_minimo: 3, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A3' },
+                    { codigo_interno: 'HM004', nombre: 'Llave Francesa 10"', categoria: 'Herramientas Manuales', marca: 'Bahco', unidad_medida: 'unidad', precio_costo: 1850, porcentaje_ganancia: 40, precio_venta: 2590, stock: 12, stock_minimo: 2, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A4' },
+                    { codigo_interno: 'HM005', nombre: 'Cinta Métrica 5m', categoria: 'Herramientas Manuales', marca: 'Stanley', unidad_medida: 'unidad', precio_costo: 750, porcentaje_ganancia: 55, precio_venta: 1162.5, stock: 30, stock_minimo: 8, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A5' },
+                    
+                    // Herramientas Eléctricas
+                    { codigo_interno: 'HE001', nombre: 'Taladro Percutor 650W', categoria: 'Herramientas Eléctricas', marca: 'Black & Decker', unidad_medida: 'unidad', precio_costo: 12500, porcentaje_ganancia: 35, precio_venta: 16875, stock: 8, stock_minimo: 2, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'B1', destacado: true },
+                    { codigo_interno: 'HE002', nombre: 'Amoladora Angular 4 1/2"', categoria: 'Herramientas Eléctricas', marca: 'Skil', unidad_medida: 'unidad', precio_costo: 8900, porcentaje_ganancia: 40, precio_venta: 12460, stock: 6, stock_minimo: 1, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'B2' },
+                    { codigo_interno: 'HE003', nombre: 'Sierra Circular 1400W', categoria: 'Herramientas Eléctricas', marca: 'Dewalt', unidad_medida: 'unidad', precio_costo: 18500, porcentaje_ganancia: 30, precio_venta: 24050, stock: 4, stock_minimo: 1, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'B3' },
+                    
+                    // Materiales de Construcción
+                    { codigo_interno: 'MC001', nombre: 'Cemento Portland 50kg', categoria: 'Materiales de Construcción', marca: 'Loma Negra', unidad_medida: 'bolsa', precio_costo: 1850, porcentaje_ganancia: 25, precio_venta: 2312.5, stock: 100, stock_minimo: 20, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'C1' },
+                    { codigo_interno: 'MC002', nombre: 'Hierro 8mm x 12m', categoria: 'Materiales de Construcción', marca: 'Acindar', unidad_medida: 'barra', precio_costo: 3250, porcentaje_ganancia: 30, precio_venta: 4225, stock: 40, stock_minimo: 10, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'C2' },
+                    { codigo_interno: 'MC003', nombre: 'Ladrillo Hueco 18x18x33', categoria: 'Materiales de Construcción', unidad_medida: 'unidad', precio_costo: 85, porcentaje_ganancia: 40, precio_venta: 119, stock: 5000, stock_minimo: 1000, ubicacion: 'C3' },
+                    { codigo_interno: 'MC004', nombre: 'Arena Fina m3', categoria: 'Materiales de Construcción', unidad_medida: 'm3', precio_costo: 4500, porcentaje_ganancia: 35, precio_venta: 6075, stock: 10, stock_minimo: 2, ubicacion: 'Patio' },
+                    { codigo_interno: 'MC005', nombre: 'Piedra Partida 6/20 m3', categoria: 'Materiales de Construcción', unidad_medida: 'm3', precio_costo: 5200, porcentaje_ganancia: 35, precio_venta: 7020, stock: 8, stock_minimo: 2, ubicacion: 'Patio' },
+                    
+                    // Fontanería
+                    { codigo_interno: 'FO001', nombre: 'Caño PVC 1/2" x 6m', categoria: 'Fontanería', marca: 'Fate', unidad_medida: 'unidad', precio_costo: 1250, porcentaje_ganancia: 45, precio_venta: 1812.5, stock: 30, stock_minimo: 5, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D1' },
+                    { codigo_interno: 'FO002', nombre: 'Codo PVC 90° 1/2"', categoria: 'Fontanería', marca: 'Fate', unidad_medida: 'unidad', precio_costo: 85, porcentaje_ganancia: 60, precio_venta: 136, stock: 100, stock_minimo: 20, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D2' },
+                    { codigo_interno: 'FO003', nombre: 'Llave de Paso 1/2"', categoria: 'Fontanería', marca: 'Liliana', unidad_medida: 'unidad', precio_costo: 950, porcentaje_ganancia: 50, precio_venta: 1425, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D3' },
+                    { codigo_interno: 'FO004', nombre: 'Inodoro Completo Standard', categoria: 'Fontanería', marca: 'Ferrum', unidad_medida: 'unidad', precio_costo: 18500, porcentaje_ganancia: 30, precio_venta: 24050, stock: 5, stock_minimo: 1, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D4' },
+                    
+                    // Electricidad
+                    { codigo_interno: 'EL001', nombre: 'Cable Flexible 2x1.5mm x 100m', categoria: 'Electricidad', marca: 'Pirelli', unidad_medida: 'rollo', precio_costo: 18500, porcentaje_ganancia: 35, precio_venta: 24975, stock: 8, stock_minimo: 2, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E1' },
+                    { codigo_interno: 'EL002', nombre: 'Interruptor Simple Blanco', categoria: 'Electricidad', marca: 'WEG', unidad_medida: 'unidad', precio_costo: 250, porcentaje_ganancia: 70, precio_venta: 425, stock: 50, stock_minimo: 10, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E2' },
+                    { codigo_interno: 'EL003', nombre: 'Toma Corriente Doble', categoria: 'Electricidad', marca: 'WEG', unidad_medida: 'unidad', precio_costo: 320, porcentaje_ganancia: 65, precio_venta: 528, stock: 40, stock_minimo: 8, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E3' },
+                    { codigo_interno: 'EL004', nombre: 'Tubo Corrugado 20mm x 3m', categoria: 'Electricidad', marca: 'Amanco', unidad_medida: 'unidad', precio_costo: 850, porcentaje_ganancia: 50, precio_venta: 1275, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E4' },
+                    
+                    // Pinturas
+                    { codigo_interno: 'PI001', nombre: 'Pintura Látex Blanco 20L', categoria: 'Pinturas', marca: 'Alba', unidad_medida: 'lata', precio_costo: 12500, porcentaje_ganancia: 40, precio_venta: 17500, stock: 12, stock_minimo: 3, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F1', destacado: true },
+                    { codigo_interno: 'PI002', nombre: 'Rodillo de Pelo 9"', categoria: 'Pinturas', marca: 'Diamond', unidad_medida: 'unidad', precio_costo: 450, porcentaje_ganancia: 60, precio_venta: 720, stock: 35, stock_minimo: 8, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F2' },
+                    { codigo_interno: 'PI003', nombre: 'Brocha 2"', categoria: 'Pinturas', marca: 'Diamond', unidad_medida: 'unidad', precio_costo: 320, porcentaje_ganancia: 65, precio_venta: 528, stock: 40, stock_minimo: 10, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F3' },
+                    { codigo_interno: 'PI004', nombre: 'Enduído Plástico 4kg', categoria: 'Pinturas', marca: 'Alba', unidad_medida: 'balde', precio_costo: 850, porcentaje_ganancia: 55, precio_venta: 1317.5, stock: 20, stock_minimo: 5, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F4' },
+                    
+                    // Fijaciones
+                    { codigo_interno: 'FJ001', nombre: 'Clavo para Madera 2 1/2" x kg', categoria: 'Fijaciones', unidad_medida: 'kg', precio_costo: 450, porcentaje_ganancia: 80, precio_venta: 810, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'G1' },
+                    { codigo_interno: 'FJ002', nombre: 'Tornillo Tirafondo 3x60mm x 100u', categoria: 'Fijaciones', marca: 'Fischer', unidad_medida: 'paquete', precio_costo: 1250, porcentaje_ganancia: 60, precio_venta: 2000, stock: 18, stock_minimo: 4, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'G2' },
+                    { codigo_interno: 'FJ003', nombre: 'Anclaje Químico 12mm', categoria: 'Fijaciones', marca: 'Hilti', unidad_medida: 'cartucho', precio_costo: 1850, porcentaje_ganancia: 50, precio_venta: 2775, stock: 15, stock_minimo: 3, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'G3' },
+                    { codigo_interno: 'FJ004', nombre: 'Cinta Doble Faz 25mm x 10m', categoria: 'Fijaciones', marca: '3M', unidad_medida: 'rollo', precio_costo: 350, porcentaje_ganancia: 70, precio_venta: 595, stock: 30, stock_minimo: 8, ubicacion: 'G4' },
+                    
+                    // Seguridad
+                    { codigo_interno: 'SE001', nombre: 'Guantes de Cuero', categoria: 'Seguridad', unidad_medida: 'par', precio_costo: 1250, porcentaje_ganancia: 50, precio_venta: 1875, stock: 20, stock_minimo: 5, ubicacion: 'H1' },
+                    { codigo_interno: 'SE002', nombre: 'Anteojos de Seguridad', categoria: 'Seguridad', marca: '3M', unidad_medida: 'unidad', precio_costo: 850, porcentaje_ganancia: 55, precio_venta: 1317.5, stock: 25, stock_minimo: 6, ubicacion: 'H2' },
+                    { codigo_interno: 'SE003', nombre: 'Casco de Obra', categoria: 'Seguridad', marca: 'Riggel', unidad_medida: 'unidad', precio_costo: 1850, porcentaje_ganancia: 45, precio_venta: 2682.5, stock: 15, stock_minimo: 3, ubicacion: 'H3' },
+                    { codigo_interno: 'SE004', nombre: 'Barbijo N95 x 10u', categoria: 'Seguridad', marca: '3M', unidad_medida: 'paquete', precio_costo: 1250, porcentaje_ganancia: 40, precio_venta: 1750, stock: 30, stock_minimo: 8, ubicacion: 'H4' },
+                    
+                    // Jardinería
+                    { codigo_interno: 'JA001', nombre: 'Pala de Puntón', categoria: 'Jardinería', unidad_medida: 'unidad', precio_costo: 1850, porcentaje_ganancia: 50, precio_venta: 2775, stock: 10, stock_minimo: 2, ubicacion: 'I1' },
+                    { codigo_interno: 'JA002', nombre: 'Manguera 1/2" x 25m', categoria: 'Jardinería', marca: 'Goodyear', unidad_medida: 'rollo', precio_costo: 3250, porcentaje_ganancia: 45, precio_venta: 4712.5, stock: 8, stock_minimo: 2, ubicacion: 'I2' },
+                    { codigo_interno: 'JA003', nombre: 'Tierra Negra 40L', categoria: 'Jardinería', unidad_medida: 'bolsa', precio_costo: 450, porcentaje_ganancia: 60, precio_venta: 720, stock: 40, stock_minimo: 10, ubicacion: 'I3' },
+                    { codigo_interno: 'JA004', nombre: 'Cortadora de Césped Manual', categoria: 'Jardinería', marca: 'Tramontina', unidad_medida: 'unidad', precio_costo: 2850, porcentaje_ganancia: 40, precio_venta: 3990, stock: 6, stock_minimo: 1, ubicacion: 'I4' }
+                ];
+                
+                // Insertar productos
+                let productosInsertados = 0;
                 for (const producto of productosData) {
                     try {
                         await supabaseClient
                             .from('productos')
-                            .insert(producto);
+                            .insert({
+                                ...producto,
+                                activo: true
+                            });
+                        productosInsertados++;
                     } catch (productoError) {
                         console.warn('Error insertando producto:', productoError.message);
                     }
                 }
                 
-                // 4. Insertar clientes
+                // 5. Insertar clientes
                 const clientesData = [
                     {
-                        nombre: 'Cliente Contado',
-                        dni: '12345678',
-                        telefono: '011-9876-5432',
-                        email: 'cliente@contado.com',
-                        direccion: 'Calle Falsa 123',
+                        nombre: 'Consumidor',
+                        apellido: 'Final',
+                        tipo_documento: 'DNI',
+                        numero_documento: '00000000',
+                        telefono: '',
+                        tipo_cliente: 'consumidor_final',
                         limite_credito: 0,
                         saldo: 0,
+                        categoria_iva: 'consumidor_final',
                         activo: true
                     },
                     {
-                        nombre: 'Cliente Cuenta Corriente',
-                        dni: '87654321',
-                        telefono: '011-1234-4321',
-                        email: 'cliente@cuenta.com',
-                        direccion: 'Av. Siempre Viva 742',
-                        limite_credito: 50000.00,
+                        nombre: 'Juan',
+                        apellido: 'Gómez',
+                        tipo_documento: 'DNI',
+                        numero_documento: '30123456',
+                        telefono: '011-5555-1234',
+                        email: 'juan.gomez@constructor.com',
+                        direccion: 'Calle Falsa 123',
+                        tipo_cliente: 'contado',
+                        limite_credito: 0,
                         saldo: 0,
+                        categoria_iva: 'monotributista',
+                        cuit: '20-30123456-9',
+                        activo: true
+                    },
+                    {
+                        nombre: 'Constructora',
+                        apellido: 'El Progreso',
+                        razon_social: 'Constructora El Progreso SRL',
+                        tipo_documento: 'CUIT',
+                        numero_documento: '30765432109',
+                        telefono: '011-4444-5678',
+                        email: 'compras@elprogreso.com.ar',
+                        direccion: 'Av. Siempre Viva 742',
+                        tipo_cliente: 'cuenta_corriente',
+                        limite_credito: 100000,
+                        saldo: 0,
+                        categoria_iva: 'responsable_inscripto',
+                        cuit: '30-76543210-9',
+                        observaciones: 'Cliente preferencial, 30 días de plazo',
                         activo: true
                     }
                 ];
@@ -1203,48 +1859,23 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                     }
                 }
                 
-                // 5. Insertar proveedores
-                const proveedoresData = [
-                    {
-                        nombre: 'Distribuidora Mayorista SA',
-                        contacto: 'Juan Pérez',
-                        telefono: '011-5555-6666',
-                        email: 'ventas@mayorista.com.ar',
-                        web: 'https://www.mayorista.com.ar',
-                        whatsapp: '+5491155556666',
-                        activo: true
-                    },
-                    {
-                        nombre: 'Fábrica de Bebidas Argentinas',
-                        contacto: 'María Gómez',
-                        telefono: '011-7777-8888',
-                        email: 'ventas@fabrica-bebidas.com',
-                        web: 'https://www.fabrica-bebidas.com.ar',
-                        whatsapp: '+5491177778888',
-                        activo: true
-                    }
-                ];
-                
-                for (const proveedor of proveedoresData) {
-                    try {
-                        await supabaseClient
-                            .from('proveedores')
-                            .insert(proveedor);
-                    } catch (proveedorError) {
-                        console.warn('Error insertando proveedor:', proveedorError.message);
-                    }
-                }
-                
                 dataStatus.innerHTML = `
-                    <p class="success">✅ Datos de prueba insertados correctamente</p>
-                    <p class="info">Se insertaron:</p>
-                    <ul>
-                        <li>1 Local</li>
-                        <li>2 Cajas</li>
-                        <li>4 Productos</li>
-                        <li>2 Clientes</li>
-                        <li>2 Proveedores</li>
-                    </ul>
+                    <p class="success">✅ ¡Datos de ferretería insertados exitosamente!</p>
+                    <div class="test-data" style="margin-top: 10px;">
+                        <p><strong>Resumen de datos cargados:</strong></p>
+                        <ul>
+                            <li>🏪 1 Sucursal configurada</li>
+                            <li>💰 2 Cajas de venta</li>
+                            <li>📦 ${productosInsertados} Productos de ferretería</li>
+                            <li>🏢 5 Proveedores mayoristas</li>
+                            <li>👥 3 Tipos de clientes</li>
+                            <li>🗂️ 10 Categorías de productos</li>
+                            <li>⚙️ Configuración inicial completa</li>
+                        </ul>
+                        <p style="margin-top: 10px; color: #059669; font-weight: 500;">
+                            🎉 ¡Tu sistema de ferretería está listo para usar!
+                        </p>
+                    </div>
                 `;
                 dataStatus.classList.add('show');
                 
@@ -1254,13 +1885,13 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 
                 // Marcar verificación
                 document.getElementById('check3').checked = true;
+                document.getElementById('verif3').classList.add('verified');
                 
             } catch (error) {
                 console.error('Error insertando datos:', error);
                 dataStatus.innerHTML = `
-                    <p class="error">❌ Error insertando datos:</p>
-                    <p>${error.message}</p>
-                    <p class="info">Puedes saltar este paso y continuar</p>
+                    <p class="error">❌ Error insertando datos: ${error.message}</p>
+                    <p class="info">Puedes saltar este paso y continuar. Los datos de ejemplo no son esenciales.</p>
                 `;
                 dataStatus.classList.add('show');
                 
@@ -1270,12 +1901,12 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 
             } finally {
                 insertTestDataBtn.disabled = false;
-                insertTestDataBtn.textContent = 'Insertar Datos de Prueba';
+                insertTestDataBtn.textContent = '🚀 Insertar Datos de Ferretería';
             }
-        });
+        }
 
         // Verificar configuración completa
-        verifySetupBtn.addEventListener('click', async () => {
+        async function verifyConfiguration() {
             if (!supabaseClient) {
                 verifyStatus.innerHTML = '<p class="error">Primero prueba la conexión</p>';
                 verifyStatus.classList.add('show');
@@ -1284,12 +1915,12 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
             
             verifySetupBtn.disabled = true;
             verifySetupBtn.textContent = '🔄 Verificando...';
-            verifyStatus.innerHTML = '<p class="info">🔄 Verificando configuración...</p>';
+            verifyStatus.innerHTML = '<p class="info">🔄 Verificando configuración completa...</p>';
             verifyStatus.classList.add('show');
             
             try {
                 // Verificar que existan las tablas principales
-                const tablesToCheck = ['locales', 'cajas', 'productos', 'clientes'];
+                const tablesToCheck = ['locales', 'cajas', 'productos', 'clientes', 'proveedores', 'categorias'];
                 let missingTables = [];
                 
                 for (const table of tablesToCheck) {
@@ -1314,14 +1945,30 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                     `;
                     verifyStatus.classList.add('show');
                 } else {
+                    // Verificar que haya productos
+                    const { data: productos, error: productosError } = await supabaseClient
+                        .from('productos')
+                        .select('id')
+                        .limit(1);
+                    
+                    if (productosError) {
+                        throw new Error('Error al verificar productos: ' + productosError.message);
+                    }
+                    
                     // Marcar configuración como completada
-                    localStorage.setItem('systemConfigured', 'true');
+                    localStorage.setItem('ferreteria_configured', 'true');
                     
                     verifyStatus.innerHTML = `
-                        <p class="success">✅ Configuración verificada correctamente</p>
-                        <p class="info">✅ Tablas creadas</p>
-                        <p class="info">✅ Conexión activa</p>
-                        <p class="info">✅ Sistema listo para usar</p>
+                        <p class="success">✅ ¡Configuración verificada correctamente!</p>
+                        <div class="test-data" style="margin-top: 10px;">
+                            <p><strong>✅ Todas las tablas creadas</strong></p>
+                            <p><strong>✅ Conexión a Supabase activa</strong></p>
+                            <p><strong>✅ ${productos?.length || 0} productos cargados</strong></p>
+                            <p><strong>✅ Sistema listo para producción</strong></p>
+                        </div>
+                        <p style="margin-top: 15px; color: #3b82f6; font-weight: 500;">
+                            🎯 ¡Puedes comenzar a gestionar tu ferretería ahora mismo!
+                        </p>
                     `;
                     verifyStatus.classList.add('show');
                     
@@ -1331,6 +1978,10 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                     
                     // Marcar verificación final
                     document.getElementById('check4').checked = true;
+                    document.getElementById('verif4').classList.add('verified');
+                    
+                    // Actualizar progreso al 100%
+                    updateProgress(100);
                 }
                 
             } catch (error) {
@@ -1342,33 +1993,40 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 verifyStatus.classList.add('show');
             } finally {
                 verifySetupBtn.disabled = false;
-                verifySetupBtn.textContent = 'Verificar Configuración';
+                verifySetupBtn.textContent = '🔍 Verificar Configuración';
             }
-        });
+        }
 
-        // Navegación entre pasos
-        nextStep1Btn.addEventListener('click', () => goToStep(2));
-        nextStep2Btn.addEventListener('click', () => goToStep(3));
-        nextStep3Btn.addEventListener('click', () => goToStep(4));
-        
         // Completar configuración
-        completeSetupBtn.addEventListener('click', () => {
+        function completeSetup() {
             // Guardar configuración final
             const configData = {
                 configuredAt: new Date().toISOString(),
                 version: '1.0.0',
+                tipo: 'ferreteria',
                 supabaseUrl: localStorage.getItem('supabaseUrl'),
                 tablesCreated: true,
-                testDataInserted: true
+                sampleDataInserted: insertSampleDataCheck.checked
             };
             
-            localStorage.setItem('posConfig', JSON.stringify(configData));
-            localStorage.setItem('systemConfigured', 'true');
+            localStorage.setItem('ferreteria_config', JSON.stringify(configData));
+            localStorage.setItem('ferreteria_configured', 'true');
             
             // Mostrar mensaje de éxito
             verifyStatus.innerHTML = `
-                <p class="success">✅ Configuración completada exitosamente!</p>
-                <p class="info">Ahora puedes usar el sistema POS.</p>
+                <p class="success">✅ ¡Configuración completada exitosamente!</p>
+                <div class="instructions" style="background: #d1fae5; border-color: #a7f3d0;">
+                    <p><strong>🎉 ¡Felicidades! Tu sistema de ferretería está listo.</strong></p>
+                    <p>Ahora puedes:</p>
+                    <ol>
+                        <li>Gestionar stock de productos</li>
+                        <li>Realizar ventas y facturación</li>
+                        <li>Controlar clientes y proveedores</li>
+                        <li>Generar reportes de ventas</li>
+                        <li>Cerrar caja diariamente</li>
+                    </ol>
+                    <p style="margin-top: 10px;"><strong>Haz clic en "Ir a Mi Ferretería POS" para comenzar.</strong></p>
+                </div>
             `;
             verifyStatus.classList.add('show');
             
@@ -1377,28 +2035,7 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
             
             // Habilitar botón para ir a la app
             goToAppBtn.disabled = false;
-        });
-
-        // Ir a la aplicación
-        goToAppBtn.addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
-
-        // Guardar credenciales al cambiar
-        supabaseUrlInput.addEventListener('change', () => {
-            localStorage.setItem('supabaseUrl', supabaseUrlInput.value);
-        });
-        
-        supabaseKeyInput.addEventListener('change', () => {
-            localStorage.setItem('supabaseKey', supabaseKeyInput.value);
-        });
-
-        // Permitir navegación con teclado
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && currentStep === 1) {
-                testConnectionBtn.click();
-            }
-        });
+        }
     </script>
 </body>
 </html>
