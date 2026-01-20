@@ -34,21 +34,6 @@ const APP_STATE = {
 // Base de datos IndexedDB
 let db;
 
-// Depuración - verificar que los botones existen
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        const navButtons = document.querySelectorAll('.nav-btn');
-        console.log('Botones de navegación encontrados:', navButtons.length);
-        navButtons.forEach((btn, i) => {
-            console.log(`Botón ${i}:`, {
-                text: btn.textContent,
-                dataPage: btn.dataset.page,
-                className: btn.className
-            });
-        });
-    }, 1000);
-});
-
 // Inicialización
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Inicializando Sistema POS...');
@@ -400,10 +385,16 @@ function showAppScreen() {
     if (loginScreen) loginScreen.style.display = 'none';
     if (appScreen) appScreen.style.display = 'block';
     
+    // CARGAR LOCALES Y CAJAS SIEMPRE QUE SE MUESTRE LA APP
+    loadLocalesYCajas();
+    
     if (!APP_STATE.currentLocal || !APP_STATE.currentCaja) {
         if (initialConfig) initialConfig.style.display = 'block';
         if (mainApp) mainApp.style.display = 'none';
-        loadLocalesYCajas();
+        // Cargar datos de ejemplo si estamos offline
+        if (!APP_STATE.isOnline) {
+            loadEjemploLocalesYCajas();
+        }
     } else {
         if (initialConfig) initialConfig.style.display = 'none';
         if (mainApp) mainApp.style.display = 'block';
@@ -548,44 +539,134 @@ async function loadLocalesYCajas() {
     if (!localSelect || !cajaSelect) return;
     
     try {
+        // Limpiar selects primero
+        localSelect.innerHTML = '<option value="">Seleccionar local...</option>';
+        cajaSelect.innerHTML = '<option value="">Seleccionar caja...</option>';
+        
         if (APP_STATE.supabase && APP_STATE.isOnline) {
-            // Cargar locales - CORRECTO: usa 'activo'
-            const { data: locales, error: errorLocales } = await APP_STATE.supabase
-                .from('locales')
-                .select('*')
-                .eq('activo', true)
-                .order('nombre');
+            console.log('🌐 Intentando cargar locales y cajas desde Supabase...');
             
-            // Cargar cajas - CORREGIDO: 'activo' en lugar de 'activa'
-            const { data: cajas, error: errorCajas } = await APP_STATE.supabase
-                .from('cajas')
-                .select('*')
-                .eq('activo', true)  // ✅ CORRECCIÓN CRÍTICA AQUÍ
-                .order('numero');
+            // Cargar locales - con manejo de error específico
+            let locales = [];
+            try {
+                const { data, error } = await APP_STATE.supabase
+                    .from('locales')
+                    .select('id, nombre')
+                    .eq('activo', true)
+                    .order('nombre');
+                
+                if (error) {
+                    console.error('Error cargando locales:', error);
+                    throw error;
+                }
+                locales = data || [];
+            } catch (error) {
+                console.warn('No se pudieron cargar locales:', error);
+            }
             
-            if (!errorLocales && locales) {
-                localSelect.innerHTML = '<option value="">Seleccionar local...</option>';
+            // Cargar cajas - con manejo de error específico
+            let cajas = [];
+            try {
+                const { data, error } = await APP_STATE.supabase
+                    .from('cajas')
+                    .select('id, numero, nombre')
+                    .eq('activo', true)
+                    .order('numero');
+                
+                if (error) {
+                    console.error('Error cargando cajas:', error);
+                    throw error;
+                }
+                cajas = data || [];
+            } catch (error) {
+                console.warn('No se pudieron cargar cajas:', error);
+            }
+            
+            // Poblar select de locales
+            if (locales.length > 0) {
                 locales.forEach(local => {
                     const option = document.createElement('option');
                     option.value = local.id;
                     option.textContent = local.nombre;
                     localSelect.appendChild(option);
                 });
+                console.log(`✅ ${locales.length} locales cargados`);
+            } else {
+                // Si no hay locales, agregar opción predeterminada
+                const option = document.createElement('option');
+                option.value = 'local_default';
+                option.textContent = 'Local Principal';
+                localSelect.appendChild(option);
             }
             
-            if (!errorCajas && cajas) {
-                cajaSelect.innerHTML = '<option value="">Seleccionar caja...</option>';
+            // Poblar select de cajas
+            if (cajas.length > 0) {
                 cajas.forEach(caja => {
                     const option = document.createElement('option');
                     option.value = caja.id;
                     option.textContent = `${caja.numero} - ${caja.nombre || ''}`;
                     cajaSelect.appendChild(option);
                 });
+                console.log(`✅ ${cajas.length} cajas cargadas`);
+            } else {
+                // Si no hay cajas, agregar opción predeterminada
+                const option = document.createElement('option');
+                option.value = 'caja_default';
+                option.textContent = 'Caja 1';
+                cajaSelect.appendChild(option);
             }
+            
+        } else {
+            // Modo offline - cargar datos de ejemplo
+            console.log('📴 Modo offline - cargando datos de ejemplo');
+            loadEjemploLocalesYCajas();
         }
+        
     } catch (error) {
-        console.warn('Error cargando locales y cajas:', error);
+        console.error('❌ Error general cargando locales y cajas:', error);
+        // En caso de error, cargar datos de ejemplo
+        loadEjemploLocalesYCajas();
     }
+}
+
+function loadEjemploLocalesYCajas() {
+    const localSelect = document.getElementById('selectLocal');
+    const cajaSelect = document.getElementById('selectCaja');
+    
+    if (!localSelect || !cajaSelect) return;
+    
+    // Limpiar selects
+    localSelect.innerHTML = '<option value="">Seleccionar local...</option>';
+    cajaSelect.innerHTML = '<option value="">Seleccionar caja...</option>';
+    
+    // Datos de ejemplo para modo offline
+    const localesEjemplo = [
+        { id: 'local_offline_1', nombre: 'Local Central (Offline)' },
+        { id: 'local_offline_2', nombre: 'Sucursal Norte (Offline)' }
+    ];
+    
+    const cajasEjemplo = [
+        { id: 'caja_offline_1', numero: 'Caja 1', nombre: 'Caja Principal' },
+        { id: 'caja_offline_2', numero: 'Caja 2', nombre: 'Caja Secundaria' }
+    ];
+    
+    // Agregar locales de ejemplo
+    localesEjemplo.forEach(local => {
+        const option = document.createElement('option');
+        option.value = local.id;
+        option.textContent = local.nombre;
+        localSelect.appendChild(option);
+    });
+    
+    // Agregar cajas de ejemplo
+    cajasEjemplo.forEach(caja => {
+        const option = document.createElement('option');
+        option.value = caja.id;
+        option.textContent = `${caja.numero} - ${caja.nombre}`;
+        cajaSelect.appendChild(option);
+    });
+    
+    console.log('✅ Datos de ejemplo cargados para modo offline');
 }
 
 async function startWorkSession() {
@@ -690,7 +771,7 @@ function setupEventListeners() {
     const startSession = document.getElementById('startSession');
     if (startSession) startSession.addEventListener('click', startWorkSession);
     
-    // Navegación - versión mejorada
+    // Navegación
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             let target = e.target;
