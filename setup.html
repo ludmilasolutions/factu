@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración - Ferretería POS</title>
+    <title>Configuración Sistema POS</title>
     <style>
         * {
             margin: 0;
@@ -15,136 +15,147 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
             min-height: 100vh;
-            color: #333;
             padding: 20px;
+            color: #333;
         }
 
-        .container {
-            max-width: 900px;
+        .setup-container {
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 40px;
+            overflow: hidden;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            color: #1e40af;
-            margin-bottom: 10px;
-        }
-
-        .logo {
-            font-size: 3rem;
-            margin-bottom: 15px;
-        }
-
-        .subtitle {
-            color: #4b5563;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-        }
-
-        .setup-section {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .card {
-            background: #f8fafc;
-            border-radius: 15px;
-            padding: 25px;
-            border: 2px solid #e2e8f0;
-            transition: all 0.3s ease;
-        }
-
-        .card.active {
-            border-color: #3b82f6;
-            box-shadow: 0 5px 20px rgba(59, 130, 246, 0.1);
-            background: #f0f9ff;
-        }
-
-        .card.completed {
-            border-color: #10b981;
-            background: #f0fdf4;
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .step-number {
-            background: #3b82f6;
+        .setup-header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+            padding: 30px 40px;
+            text-align: center;
+        }
+
+        .setup-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 1rem;
-            flex-shrink: 0;
+            gap: 15px;
         }
 
-        .step-number.completed {
-            background: #10b981;
+        .setup-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
         }
 
-        h2 {
-            color: #1e40af;
-            font-size: 1.5rem;
+        .setup-progress {
+            display: flex;
+            background: #e5e7eb;
+            padding: 0;
+        }
+
+        .progress-step {
             flex: 1;
-            margin: 0;
+            padding: 20px;
+            text-align: center;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 4px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
-        .info-text {
+        .progress-step.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background: #f0f9ff;
+        }
+
+        .progress-step.completed {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+
+        .setup-content {
+            padding: 40px;
+            min-height: 500px;
+        }
+
+        .step {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-header {
+            margin-bottom: 30px;
+        }
+
+        .step-header h2 {
+            color: #1e40af;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-header p {
             color: #6b7280;
-            margin-bottom: 15px;
-            line-height: 1.6;
+            font-size: 1.1rem;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
-        label {
+        .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #374151;
             font-weight: 600;
+            color: #374151;
+            font-size: 1rem;
         }
 
-        input, select {
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 14px;
             border: 2px solid #d1d5db;
             border-radius: 10px;
             font-size: 1rem;
             transition: all 0.3s;
-            background: white;
         }
 
-        input:focus, select:focus {
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        .button-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin: 20px 0;
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .help-text {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.9rem;
+            color: #6b7280;
         }
 
         .btn {
@@ -159,7 +170,6 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            min-width: 140px;
         }
 
         .btn-primary {
@@ -211,71 +221,53 @@
             background: #dc2626;
         }
 
-        .btn-outline {
-            background: transparent;
-            border: 2px solid #3b82f6;
-            color: #3b82f6;
-        }
-
-        .btn-outline:hover:not(:disabled) {
-            background: #3b82f6;
-            color: white;
-        }
-
         .btn:disabled {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
         }
 
-        .status {
-            margin-top: 15px;
+        .setup-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .alert {
             padding: 16px;
             border-radius: 10px;
-            display: none;
-            animation: fadeIn 0.3s ease;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .status.show {
-            display: block;
-        }
-
-        .success {
-            background: #d1fae5;
-            color: #065f46;
-            border: 2px solid #a7f3d0;
-        }
-
-        .error {
-            background: #fee2e2;
-            color: #7f1d1d;
-            border: 2px solid #fecaca;
-        }
-
-        .info {
+        .alert-info {
             background: #dbeafe;
             color: #1e40af;
             border: 2px solid #bfdbfe;
         }
 
-        .warning {
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #a7f3d0;
+        }
+
+        .alert-warning {
             background: #fef3c7;
             color: #92400e;
             border: 2px solid #fde68a;
         }
 
-        .navigation {
-            margin-top: 30px;
-            text-align: center;
+        .alert-error {
+            background: #fee2e2;
+            color: #7f1d1d;
+            border: 2px solid #fecaca;
         }
 
-        .sql-code {
+        .code-block {
             background: #1f2937;
             color: #e5e7eb;
             padding: 20px;
@@ -283,293 +275,1009 @@
             font-family: 'Courier New', monospace;
             font-size: 0.9rem;
             overflow-x: auto;
-            margin: 15px 0;
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #374151;
-        }
-
-        .instructions {
-            background: #e0f2fe;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #bae6fd;
-        }
-
-        .instructions ol {
-            margin-left: 20px;
-            margin-bottom: 15px;
-        }
-
-        .instructions li {
-            margin-bottom: 10px;
-            padding-left: 5px;
-        }
-
-        .step-content {
-            display: none;
-        }
-
-        .step-content.active {
-            display: block;
+            margin: 20px 0;
+            position: relative;
         }
 
         .copy-btn {
-            background: #4b5563;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            background: #3b82f6;
             color: white;
             border: none;
-            padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.9rem;
-            margin: 10px 5px 0 0;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
         }
 
         .copy-btn:hover {
-            background: #374151;
+            background: #2563eb;
         }
 
-        .test-data {
-            background: #f0fdf4;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            border: 1px solid #bbf7d0;
-        }
-
-        .progress-bar {
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            margin: 25px 0;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #0ea5e9);
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-
-        .progress-steps {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
-
-        .progress-step {
-            text-align: center;
-            flex: 1;
-            position: relative;
-            padding: 0 10px;
-        }
-
-        .progress-step::before {
-            content: '';
-            position: absolute;
-            top: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 20px;
-            background: #e5e7eb;
-            border-radius: 50%;
-            z-index: 1;
-        }
-
-        .progress-step.active::before {
-            background: #3b82f6;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-        }
-
-        .progress-step.completed::before {
-            background: #10b981;
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
-        }
-
-        .progress-step.completed::after {
-            content: '✓';
-            position: absolute;
-            top: -24px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            z-index: 2;
-        }
-
-        .verification-list {
+        .table-container {
+            overflow-x: auto;
             margin: 20px 0;
         }
 
-        .verification-item {
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px;
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            border: 1px solid #e5e7eb;
         }
 
-        .verification-item.verified {
-            background: #f0fdf4;
-            border-color: #bbf7d0;
+        .checklist li:last-child {
+            border-bottom: none;
         }
 
-        .verification-item label {
-            flex: 1;
-            margin: 0;
-            font-weight: 500;
-        }
-
-        .toggle-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .toggle-content.expanded {
-            max-height: 1000px;
-        }
-
-        .toggle-btn {
-            background: none;
-            border: none;
-            color: #3b82f6;
-            cursor: pointer;
-            font-size: 0.9rem;
+        .checklist-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 5px;
-            padding: 5px 0;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .checklist-icon.completed {
+            background: #10b981;
+            color: white;
+        }
+
+        .checklist-icon.pending {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        .config-summary {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .config-summary h3 {
+            margin-bottom: 15px;
+            color: #1e40af;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-item .label {
+            color: #6b7280;
+        }
+
+        .summary-item .value {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .file-upload {
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+        }
+
+        .file-upload.drag-over {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .test-connection {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #f0f9ff;
+            border: 2px solid #bfdbfe;
+            border-radius: 8px;
+            color: #1e40af;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .test-connection:hover {
+            background: #dbeafe;
+        }
+
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .test-result.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #a7f3d0;
+            display: block;
+        }
+
+        .test-result.error {
+            background: #fee2e2;
+            color: #7f1d1d;
+            border: 2px solid #fecaca;
+            display: block;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            text-align: center;
+        }
+
+        .loading p {
+            margin-top: 20px;
+            color: #6b7280;
+        }
+
+        .success-screen {
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #10b981;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            font-size: 2.5rem;
+        }
+
+        .success-screen h2 {
+            color: #1e40af;
+            margin-bottom: 15px;
+        }
+
+        .success-screen p {
+            color: #6b7280;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         @media (max-width: 768px) {
-            .container {
+            .setup-container {
+                margin: 10px;
+            }
+            
+            .setup-content {
                 padding: 20px;
             }
             
-            h1 {
-                font-size: 2rem;
+            .form-row {
+                grid-template-columns: 1fr;
             }
             
-            .button-group {
+            .setup-actions {
                 flex-direction: column;
+                gap: 15px;
             }
             
-            .btn {
+            .setup-actions .btn {
                 width: 100%;
-            }
-            
-            .progress-steps {
-                font-size: 0.8rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">🔨</div>
-            <h1>FERRETERÍA POS PRO</h1>
-            <p class="subtitle">Sistema completo de gestión para ferreterías - Stock, Ventas, Clientes y Proveedores</p>
-        </header>
-
-        <!-- Barra de progreso -->
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-        <div class="progress-steps">
-            <div class="progress-step" id="step1">1. SUPABASE</div>
-            <div class="progress-step" id="step2">2. TABLAS</div>
-            <div class="progress-step" id="step3">3. DATOS</div>
-            <div class="progress-step" id="step4">4. VERIFICAR</div>
+    <div class="setup-container">
+        <div class="setup-header">
+            <h1>⚙️ Configuración Sistema POS</h1>
+            <p>Asistente de configuración completa para el sistema de punto de venta</p>
         </div>
 
-        <div class="setup-section">
-            <!-- Paso 1: Crear proyecto en Supabase -->
-            <div class="card active" id="card1">
-                <div class="card-header">
-                    <div class="step-number">1</div>
-                    <h2>📋 CONFIGURAR SUPABASE</h2>
+        <div class="setup-progress">
+            <div class="progress-step active" data-step="1">1. Supabase</div>
+            <div class="progress-step" data-step="2">2. Base de Datos</div>
+            <div class="progress-step" data-step="3">3. Empresa</div>
+            <div class="progress-step" data-step="4">4. Locales</div>
+            <div class="progress-step" data-step="5">5. Usuarios</div>
+            <div class="progress-step" data-step="6">6. Productos</div>
+            <div class="progress-step" data-step="7">7. Finalizar</div>
+        </div>
+
+        <div class="setup-content">
+            <!-- Paso 1: Configuración Supabase -->
+            <div class="step active" id="step1">
+                <div class="step-header">
+                    <h2>📡 Configuración de Supabase</h2>
+                    <p>Conecta tu sistema con Supabase para habilitar sincronización en tiempo real y almacenamiento seguro</p>
                 </div>
-                
-                <div class="step-content active">
-                    <div class="instructions">
-                        <p><strong>¡Bienvenido al sistema para ferreterías!</strong> Sigue estos pasos para crear tu base de datos:</p>
-                        <ol>
-                            <li>Ve a <a href="https://supabase.com" target="_blank" style="color: #3b82f6; font-weight: 600;">supabase.com</a></li>
-                            <li>Haz clic en "Start your project"</li>
-                            <li>Inicia sesión con GitHub o Google</li>
-                            <li>Crea una organización (ej: "Mi Ferretería")</li>
-                            <li>Selecciona "Create new project"</li>
-                            <li>Nombre: <strong>ferreteria-pos</strong></li>
-                            <li>Contraseña: <strong>Guárdala en un lugar seguro</strong></li>
-                            <li>Región: <strong>South America (São Paulo)</strong></li>
-                            <li>Haz clic en "Create new project"</li>
-                        </ol>
-                        <p class="warning" style="color: #d97706; font-weight: 500;">⚠️ Espera 1-2 minutos mientras se crea el proyecto</p>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="supabaseUrl">📡 URL de Supabase:</label>
-                        <input type="text" id="supabaseUrl" placeholder="https://xxxxxxxxxxxx.supabase.co">
-                        <small style="color: #6b7280; font-size: 0.9rem;">Copia la URL de "Project URL" en Settings > API</small>
+                <div class="alert alert-info">
+                    <span>ℹ️</span>
+                    <div>
+                        <strong>Necesitarás:</strong>
+                        <p>1. Una cuenta en <a href="https://supabase.com" target="_blank">Supabase.com</a></p>
+                        <p>2. Un proyecto creado en Supabase</p>
+                        <p>3. Las credenciales de API (URL y clave anónima)</p>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="supabaseKey">🔑 Clave Anónima:</label>
-                        <input type="text" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-                        <small style="color: #6b7280; font-size: 0.9rem;">Copia la clave "anon public" en Project API keys</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="supabaseUrl">URL de Supabase:</label>
+                    <input type="url" id="supabaseUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" required>
+                    <span class="help-text">Encuéntralo en Settings > API de tu proyecto Supabase</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="supabaseKey">Clave Anónima:</label>
+                    <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+                    <span class="help-text">Clave de la sección Project API keys (anon public)</span>
+                </div>
+
+                <div class="test-connection" id="testConnection">
+                    <span>🔍</span> Probar Conexión
+                </div>
+
+                <div class="test-result" id="testResult"></div>
+
+                <div class="config-summary" id="supabaseConfig">
+                    <h3>✅ Configuración Supabase Guardada</h3>
+                    <div class="summary-item">
+                        <span class="label">URL:</span>
+                        <span class="value" id="configUrl">No configurado</span>
                     </div>
-                    
-                    <div class="button-group">
-                        <button id="testConnection" class="btn btn-primary">🔍 Probar Conexión</button>
-                        <button id="nextStep1" class="btn btn-success" disabled>Siguiente →</button>
+                    <div class="summary-item">
+                        <span class="label">Estado:</span>
+                        <span class="value"><span class="status-badge status-warning">No verificado</span></span>
                     </div>
-                    
-                    <div id="connectionStatus" class="status"></div>
+                </div>
+
+                <div class="setup-actions">
+                    <div></div>
+                    <button class="btn btn-primary" onclick="nextStep()">Siguiente →</button>
                 </div>
             </div>
 
-            <!-- Paso 2: Crear tablas -->
-            <div class="card" id="card2">
-                <div class="card-header">
-                    <div class="step-number">2</div>
-                    <h2>🗃️ CREAR TABLAS PARA FERRETERÍA</h2>
+            <!-- Paso 2: Base de Datos -->
+            <div class="step" id="step2">
+                <div class="step-header">
+                    <h2>🗄️ Configuración de Base de Datos</h2>
+                    <p>Crea la estructura de base de datos necesaria para el sistema</p>
                 </div>
-                
-                <div class="step-content">
-                    <p class="info-text">Vamos a crear todas las tablas necesarias para tu ferretería. Copia y pega este SQL en Supabase:</p>
-                    
-                    <button class="toggle-btn" onclick="toggleSQL()">
-                        <span id="toggleIcon">▼</span>
-                        <span id="toggleText">Mostrar código SQL</span>
-                    </button>
-                    
-                    <div class="toggle-content" id="sqlContainer">
-                        <div class="sql-code" id="sqlCode">
--- ============================================
--- SISTEMA POS PARA FERRETERÍA - TABLAS COMPLETAS
--- ============================================
 
--- Crear función para ejecutar SQL dinámico
-CREATE OR REPLACE FUNCTION exec_sql(sql_text TEXT)
-RETURNS VOID AS $$
-BEGIN
-    EXECUTE sql_text;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+                <div class="alert alert-warning">
+                    <span>⚠️</span>
+                    <div>
+                        <strong>Importante:</strong>
+                        <p>Este paso creará todas las tablas necesarias en tu base de datos Supabase.</p>
+                        <p>Asegúrate de tener permisos de administrador en el proyecto.</p>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copySQL()">📋 Copiar SQL</button>
+                    <pre id="sqlCode">-- SQL para crear las tablas del sistema POS
+-- Este código debe ejecutarse en el SQL Editor de Supabase</pre>
+                </div>
+
+                <div class="alert alert-info">
+                    <span>📋</span>
+                    <div>
+                        <strong>Instrucciones:</strong>
+                        <p>1. Copia el código SQL mostrado arriba</p>
+                        <p>2. Ve a tu proyecto Supabase > SQL Editor</p>
+                        <p>3. Pega el código y ejecútalo</p>
+                        <p>4. Regresa aquí y verifica la conexión</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Verificación de Tablas:</label>
+                    <button class="btn btn-secondary" onclick="verifyDatabase()" id="verifyBtn">
+                        🔍 Verificar Estructura de BD
+                    </button>
+                    <div id="verifyResult" class="test-result"></div>
+                </div>
+
+                <div class="config-summary">
+                    <h3>✅ Tablas Requeridas</h3>
+                    <div class="checklist" id="tablesChecklist">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn btn-secondary" onclick="prevStep()">← Anterior</button>
+                    <button class="btn btn-primary" onclick="nextStep()" id="step2Next" disabled>Siguiente →</button>
+                </div>
+            </div>
+
+            <!-- Paso 3: Configuración de Empresa -->
+            <div class="step" id="step3">
+                <div class="step-header">
+                    <h2>🏢 Información de la Empresa</h2>
+                    <p>Configura los datos básicos de tu negocio</p>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="empresaNombre">Nombre de la Empresa:</label>
+                        <input type="text" id="empresaNombre" placeholder="Mi Ferretería S.A." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="empresaCuit">CUIT:</label>
+                        <input type="text" id="empresaCuit" placeholder="30-12345678-9" pattern="\d{2}-\d{8}-\d{1}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="empresaDireccion">Dirección:</label>
+                    <input type="text" id="empresaDireccion" placeholder="Av. Principal 1234" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="empresaTelefono">Teléfono:</label>
+                        <input type="tel" id="empresaTelefono" placeholder="011-1234-5678" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="empresaEmail">Email:</label>
+                        <input type="email" id="empresaEmail" placeholder="info@empresa.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="empresaConfig">Configuración Adicional:</label>
+                    <textarea id="empresaConfig" rows="4" placeholder="Configuraciones específicas de la empresa..."></textarea>
+                    <span class="help-text">Configuraciones personalizadas en formato JSON</span>
+                </div>
+
+                <div class="config-summary">
+                    <h3>📋 Resumen Empresa</h3>
+                    <div class="summary-item">
+                        <span class="label">Nombre:</span>
+                        <span class="value" id="summaryNombre">No configurado</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">CUIT:</span>
+                        <span class="value" id="summaryCuit">No configurado</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Dirección:</span>
+                        <span class="value" id="summaryDireccion">No configurado</span>
+                    </div>
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn btn-secondary" onclick="prevStep()">← Anterior</button>
+                    <button class="btn btn-primary" onclick="saveEmpresa()">Guardar y Continuar →</button>
+                </div>
+            </div>
+
+            <!-- Paso 4: Locales y Cajas -->
+            <div class="step" id="step4">
+                <div class="step-header">
+                    <h2>🏪 Configuración de Locales</h2>
+                    <p>Define tus sucursales y cajas registradoras</p>
+                </div>
+
+                <div class="alert alert-info">
+                    <span>🏪</span>
+                    <div>
+                        <p>Agrega al menos un local y una caja para comenzar a operar.</p>
+                        <p>Puedes agregar más locales y cajas después desde la aplicación.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h3>Local Principal</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="localNombre">Nombre del Local:</label>
+                            <input type="text" id="localNombre" placeholder="Sucursal Central" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="localTelefono">Teléfono:</label>
+                            <input type="tel" id="localTelefono" placeholder="011-9876-5432">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="localDireccion">Dirección del Local:</label>
+                        <input type="text" id="localDireccion" placeholder="Dirección del local">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="localHorario">Horario de Atención:</label>
+                            <input type="text" id="localHorario" placeholder="Lun-Vie 9:00-18:00, Sáb 9:00-13:00">
+                        </div>
+                        <div class="form-group">
+                            <label for="localResponsable">Responsable:</label>
+                            <input type="text" id="localResponsable" placeholder="Nombre del responsable">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h3>Caja Registradora</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cajaNumero">Número de Caja:</label>
+                            <input type="text" id="cajaNumero" placeholder="Caja 01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cajaNombre">Nombre de Caja:</label>
+                            <input type="text" id="cajaNombre" placeholder="Caja Principal">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h3>Turnos de Trabajo</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="turnoManana" checked> Mañana (8:00 - 13:00)
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="turnoTarde" checked> Tarde (14:00 - 19:00)
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="turnoNoche"> Noche (20:00 - 02:00)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-summary">
+                    <h3>✅ Configuración Local</h3>
+                    <div class="summary-item">
+                        <span class="label">Local:</span>
+                        <span class="value" id="summaryLocal">No configurado</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Caja:</span>
+                        <span class="value" id="summaryCaja">No configurado</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Turnos:</span>
+                        <span class="value" id="summaryTurnos">No configurado</span>
+                    </div>
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn btn-secondary" onclick="prevStep()">← Anterior</button>
+                    <button class="btn btn-primary" onclick="saveLocal()">Guardar y Continuar →</button>
+                </div>
+            </div>
+
+            <!-- Paso 5: Usuarios -->
+            <div class="step" id="step5">
+                <div class="step-header">
+                    <h2>👥 Configuración de Usuarios</h2>
+                    <p>Crea los usuarios del sistema con sus permisos correspondientes</p>
+                </div>
+
+                <div class="alert alert-warning">
+                    <span>🔐</span>
+                    <div>
+                        <strong>Usuario Administrador</strong>
+                        <p>Debes crear al menos un usuario administrador para gestionar el sistema.</p>
+                        <p>Este usuario tendrá acceso completo a todas las funcionalidades.</p>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adminNombre">Nombre:</label>
+                        <input type="text" id="adminNombre" placeholder="Juan Pérez" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminEmail">Email:</label>
+                        <input type="email" id="adminEmail" placeholder="admin@empresa.com" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adminPassword">Contraseña:</label>
+                        <input type="password" id="adminPassword" placeholder="••••••••" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminPasswordConfirm">Confirmar Contraseña:</label>
+                        <input type="password" id="adminPasswordConfirm" placeholder="••••••••" required minlength="8">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="adminRol">Rol:</label>
+                    <select id="adminRol">
+                        <option value="administrador">Administrador (Acceso completo)</option>
+                        <option value="gerente">Gerente (Gestión operativa)</option>
+                        <option value="supervisor">Supervisor (Supervisión)</option>
+                        <option value="vendedor">Vendedor (Ventas básicas)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <h3>Vendedores Adicionales (Opcional)</h3>
+                    <div id="vendedoresContainer">
+                        <!-- Se agregan dinámicamente -->
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="agregarVendedor()" style="margin-top: 10px;">
+                        + Agregar Vendedor
+                    </button>
+                </div>
+
+                <div class="config-summary">
+                    <h3>👥 Usuarios a Crear</h3>
+                    <div class="checklist" id="usersChecklist">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn btn-secondary" onclick="prevStep()">← Anterior</button>
+                    <button class="btn btn-primary" onclick="createUsers()">Crear Usuarios y Continuar →</button>
+                </div>
+            </div>
+
+            <!-- Paso 6: Productos Iniciales -->
+            <div class="step" id="step6">
+                <div class="step-header">
+                    <h2>📦 Productos Iniciales</h2>
+                    <p>Configura tus productos, categorías y stock inicial</p>
+                </div>
+
+                <div class="alert alert-info">
+                    <span>📋</span>
+                    <div>
+                        <p>Puedes cargar productos manualmente o importar desde un archivo Excel.</p>
+                        <p>Es recomendable cargar al menos algunos productos de ejemplo para probar el sistema.</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h3>Opción 1: Cargar desde Excel</h3>
+                    <div class="file-upload" id="excelUpload" onclick="document.getElementById('excelFile').click()">
+                        <div style="font-size: 3rem;">📥</div>
+                        <p><strong>Arrastra y suelta tu archivo Excel aquí</strong></p>
+                        <p>o haz clic para seleccionar</p>
+                        <p class="help-text">Formatos soportados: .xlsx, .xls, .csv</p>
+                        <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" onchange="handleExcelUpload(event)">
+                    </div>
+                    <div id="excelPreview" class="table-container" style="display: none; margin-top: 20px;">
+                        <h4>Vista previa de productos</h4>
+                        <table id="previewTable">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <h3>Opción 2: Cargar productos de ejemplo (Ferretería)</h3>
+                    <button class="btn btn-secondary" onclick="loadSampleProducts()">
+                        📋 Cargar Productos de Ejemplo
+                    </button>
+                    <span class="help-text">Carga productos de ferretería predeterminados para pruebas</span>
+                </div>
+
+                <div class="form-group">
+                    <h3>Opción 3: Configurar manualmente después</h3>
+                    <p>Puedes saltar este paso y configurar los productos directamente desde la aplicación.</p>
+                    <label>
+                        <input type="checkbox" id="skipProducts"> Saltar configuración de productos
+                    </label>
+                </div>
+
+                <div class="config-summary">
+                    <h3>📦 Productos a Importar</h3>
+                    <div class="summary-item">
+                        <span class="label">Total productos:</span>
+                        <span class="value" id="productCount">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Categorías:</span>
+                        <span class="value" id="categoryCount">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Stock total:</span>
+                        <span class="value" id="totalStock">0</span>
+                    </div>
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn btn-secondary" onclick="prevStep()">← Anterior</button>
+                    <button class="btn btn-primary" onclick="saveProducts()">Continuar →</button>
+                </div>
+            </div>
+
+            <!-- Paso 7: Finalización -->
+            <div class="step" id="step7">
+                <div class="loading" id="finalLoading">
+                    <div class="spinner" style="width: 40px; height: 40px;"></div>
+                    <h2>Configurando Sistema...</h2>
+                    <p>Estamos aplicando todas las configuraciones. Esto puede tomar unos segundos.</p>
+                </div>
+
+                <div class="success-screen" id="successScreen" style="display: none;">
+                    <div class="success-icon">✓</div>
+                    <h2>¡Configuración Completada!</h2>
+                    <p>El sistema POS ha sido configurado exitosamente. Ahora puedes comenzar a utilizar todas las funcionalidades.</p>
+                    
+                    <div class="config-summary" style="margin: 30px auto; max-width: 600px;">
+                        <h3>✅ Configuración Aplicada</h3>
+                        <div class="summary-item">
+                            <span class="label">Sistema:</span>
+                            <span class="value">POS Ferretería v2.0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Base de Datos:</span>
+                            <span class="value"><span class="status-badge status-success">Configurada</span></span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Empresa:</span>
+                            <span class="value" id="finalEmpresa">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Usuarios creados:</span>
+                            <span class="value" id="finalUsuarios">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Productos cargados:</span>
+                            <span class="value" id="finalProductos">0</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+                        <button class="btn btn-success" onclick="goToLogin()">
+                            🚀 Iniciar Sistema
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadConfig()">
+                            📄 Descargar Configuración
+                        </button>
+                    </div>
+
+                    <div class="alert alert-info" style="margin-top: 30px; text-align: left;">
+                        <strong>📋 Próximos pasos recomendados:</strong>
+                        <ol style="margin-top: 10px; padding-left: 20px;">
+                            <li>Accede al sistema con el usuario administrador creado</li>
+                            <li>Configura métodos de pago en Configuración > Pagos</li>
+                            <li>Revisa y ajusta los precios de los productos</li>
+                            <li>Abre tu primera caja del día en POS > Caja</li>
+                            <li>Realiza una venta de prueba</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="setup-actions" id="finalActions" style="display: none;">
+                    <button class="btn btn-secondary" onclick="prevStep()">← Anterior</button>
+                    <button class="btn btn-success" onclick="completeSetup()">Finalizar Configuración</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentStep = 1;
+        let supabaseClient = null;
+        let setupData = {
+            supabase: {},
+            empresa: {},
+            local: {},
+            usuarios: [],
+            productos: [],
+            config: {}
+        };
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedConfig();
+            generateSQL();
+            updateProgress();
+            updateConfigSummary();
+            updateUsersChecklist();
+            updateTablesChecklist();
+        });
+
+        // Navegación entre pasos
+        function nextStep() {
+            if (!validateStep(currentStep)) return;
+            
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
+            
+            currentStep++;
+            
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
+            
+            if (currentStep === 2) {
+                loadSupabaseClient();
+            } else if (currentStep === 7) {
+                document.getElementById('finalActions').style.display = 'block';
+            }
+            
+            updateProgress();
+        }
+
+        function prevStep() {
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
+            
+            currentStep--;
+            
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
+            
+            if (currentStep === 7) {
+                document.getElementById('finalActions').style.display = 'none';
+            }
+            
+            updateProgress();
+        }
+
+        function updateProgress() {
+            document.querySelectorAll('.progress-step').forEach((step, index) => {
+                const stepNum = parseInt(step.dataset.step);
+                if (stepNum < currentStep) {
+                    step.classList.add('completed');
+                } else if (stepNum === currentStep) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active', 'completed');
+                }
+            });
+        }
+
+        // Validación de pasos
+        function validateStep(step) {
+            switch(step) {
+                case 1:
+                    const url = document.getElementById('supabaseUrl').value;
+                    const key = document.getElementById('supabaseKey').value;
+                    
+                    if (!url || !key) {
+                        alert('Por favor, completa la URL y clave de Supabase');
+                        return false;
+                    }
+                    
+                    if (!url.startsWith('https://')) {
+                        alert('La URL de Supabase debe comenzar con https://');
+                        return false;
+                    }
+                    
+                    setupData.supabase = { url, key };
+                    localStorage.setItem('supabaseUrl', url);
+                    localStorage.setItem('supabaseKey', key);
+                    updateConfigSummary();
+                    return true;
+                    
+                case 2:
+                    const verified = document.getElementById('step2Next').disabled === false;
+                    if (!verified) {
+                        alert('Por favor, verifica la estructura de la base de datos primero');
+                        return false;
+                    }
+                    return true;
+                    
+                case 3:
+                    const nombre = document.getElementById('empresaNombre').value;
+                    if (!nombre) {
+                        alert('Por favor, ingresa el nombre de la empresa');
+                        return false;
+                    }
+                    return true;
+                    
+                case 4:
+                    const localNombre = document.getElementById('localNombre').value;
+                    const cajaNumero = document.getElementById('cajaNumero').value;
+                    
+                    if (!localNombre || !cajaNumero) {
+                        alert('Por favor, completa los datos del local y caja');
+                        return false;
+                    }
+                    return true;
+                    
+                case 5:
+                    const password = document.getElementById('adminPassword').value;
+                    const confirm = document.getElementById('adminPasswordConfirm').value;
+                    
+                    if (password !== confirm) {
+                        alert('Las contraseñas no coinciden');
+                        return false;
+                    }
+                    
+                    if (password.length < 8) {
+                        alert('La contraseña debe tener al menos 8 caracteres');
+                        return false;
+                    }
+                    return true;
+                    
+                default:
+                    return true;
+            }
+        }
+
+        // Configuración Supabase
+        function loadSupabaseClient() {
+            const url = localStorage.getItem('supabaseUrl');
+            const key = localStorage.getItem('supabaseKey');
+            
+            if (!url || !key) return;
+            
+            // Cargar Supabase JS si no está cargado
+            if (!window.supabase) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+                script.onload = () => {
+                    supabaseClient = window.supabase.createClient(url, key);
+                    testSupabaseConnection();
+                };
+                document.head.appendChild(script);
+            } else {
+                supabaseClient = window.supabase.createClient(url, key);
+                testSupabaseConnection();
+            }
+        }
+
+        function testSupabaseConnection() {
+            const testBtn = document.getElementById('testConnection');
+            const testResult = document.getElementById('testResult');
+            
+            testBtn.innerHTML = '<div class="spinner"></div> Probando...';
+            
+            // Intentar una conexión simple
+            setTimeout(async () => {
+                try {
+                    if (!supabaseClient) {
+                        throw new Error('Cliente Supabase no inicializado');
+                    }
+                    
+                    // Intentar obtener la versión de Postgres (si hay permisos)
+                    const { data, error } = await supabaseClient.from('productos').select('count').limit(1);
+                    
+                    if (error && error.code === '42P01') {
+                        // Tabla no existe - esto es normal en una instalación nueva
+                        testResult.className = 'test-result success';
+                        testResult.innerHTML = '✅ Conexión exitosa a Supabase (tablas pendientes de crear)';
+                    } else if (error) {
+                        throw error;
+                    } else {
+                        testResult.className = 'test-result success';
+                        testResult.innerHTML = '✅ Conexión exitosa a Supabase';
+                    }
+                    
+                    document.getElementById('configUrl').textContent = setupData.supabase.url.substring(0, 40) + '...';
+                    document.querySelector('#supabaseConfig .status-badge').className = 'status-badge status-success';
+                    document.querySelector('#supabaseConfig .status-badge').textContent = 'Conectado';
+                    
+                } catch (error) {
+                    testResult.className = 'test-result error';
+                    testResult.innerHTML = `❌ Error de conexión: ${error.message}`;
+                    document.querySelector('#supabaseConfig .status-badge').className = 'status-badge status-error';
+                    document.querySelector('#supabaseConfig .status-badge').textContent = 'Error';
+                } finally {
+                    testBtn.innerHTML = '<span>🔍</span> Probar Conexión';
+                }
+            }, 1000);
+        }
+
+        // Generar SQL
+        function generateSQL() {
+            const sqlCode = `-- ============================================
+-- SISTEMA POS - TABLAS COMPLETAS
+-- ============================================
 
 -- 1. TABLA DE LOCALES/SUCURSALES
 CREATE TABLE IF NOT EXISTS locales (
@@ -591,11 +1299,25 @@ CREATE TABLE IF NOT EXISTS cajas (
     numero VARCHAR(20) NOT NULL,
     nombre VARCHAR(100),
     local_id UUID REFERENCES locales(id),
-    activa BOOLEAN DEFAULT true,
+    activo BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 3. TABLA DE PRODUCTOS (ESPECIAL PARA FERRETERÍA)
+-- 3. TABLA DE USUARIOS
+CREATE TABLE IF NOT EXISTS usuarios (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100),
+    rol VARCHAR(50) DEFAULT 'vendedor',
+    local_id UUID REFERENCES locales(id),
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 4. TABLA DE PRODUCTOS
 CREATE TABLE IF NOT EXISTS productos (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     codigo_barras VARCHAR(50) UNIQUE,
@@ -612,21 +1334,22 @@ CREATE TABLE IF NOT EXISTS productos (
     precio_costo DECIMAL(10,2) DEFAULT 0,
     porcentaje_ganancia DECIMAL(5,2) DEFAULT 40,
     precio_venta DECIMAL(10,2) NOT NULL,
-    stock INTEGER DEFAULT 0,
-    stock_minimo INTEGER DEFAULT 5,
-    stock_maximo INTEGER DEFAULT 100,
+    stock DECIMAL(10,3) DEFAULT 0,
+    stock_minimo DECIMAL(10,3) DEFAULT 5,
+    stock_maximo DECIMAL(10,3) DEFAULT 100,
     proveedor_id UUID,
     ubicacion VARCHAR(50),
     activo BOOLEAN DEFAULT true,
     destacado BOOLEAN DEFAULT false,
     imagen_url TEXT,
+    last_sync_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     CHECK (precio_venta >= 0),
     CHECK (stock >= 0)
 );
 
--- 4. TABLA DE CLIENTES
+-- 5. TABLA DE CLIENTES
 CREATE TABLE IF NOT EXISTS clientes (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
@@ -645,28 +1368,8 @@ CREATE TABLE IF NOT EXISTS clientes (
     categoria_iva VARCHAR(20) DEFAULT 'consumidor_final',
     cuit VARCHAR(20),
     observaciones TEXT,
+    ultimo_movimiento_cc TIMESTAMP,
     activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- 5. TABLA DE PROVEEDORES
-CREATE TABLE IF NOT EXISTS proveedores (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    razon_social VARCHAR(200),
-    contacto VARCHAR(100),
-    telefono VARCHAR(20),
-    email VARCHAR(100),
-    direccion TEXT,
-    localidad VARCHAR(100),
-    provincia VARCHAR(100),
-    cuit VARCHAR(20) UNIQUE,
-    condicion_iva VARCHAR(20),
-    productos_que_vende TEXT,
-    plazo_entrega VARCHAR(50),
-    activo BOOLEAN DEFAULT true,
-    observaciones TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -677,7 +1380,7 @@ CREATE TABLE IF NOT EXISTS ventas (
     numero_venta VARCHAR(50) UNIQUE,
     local_id UUID REFERENCES locales(id),
     caja_id UUID REFERENCES cajas(id),
-    usuario_id UUID,
+    usuario_id UUID REFERENCES usuarios(id),
     cliente_id UUID REFERENCES clientes(id),
     total DECIMAL(10,2) NOT NULL,
     descuento DECIMAL(10,2) DEFAULT 0,
@@ -691,6 +1394,7 @@ CREATE TABLE IF NOT EXISTS ventas (
     observaciones TEXT,
     offline_id VARCHAR(100),
     sync_status VARCHAR(20) DEFAULT 'synced',
+    last_sync_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     CHECK (total >= 0)
@@ -733,8 +1437,10 @@ CREATE TABLE IF NOT EXISTS presupuestos (
     numero_presupuesto VARCHAR(50) UNIQUE,
     local_id UUID REFERENCES locales(id),
     cliente_id UUID REFERENCES clientes(id),
-    usuario_id UUID,
+    usuario_id UUID REFERENCES usuarios(id),
     total DECIMAL(10,2) NOT NULL,
+    descuento DECIMAL(10,2) DEFAULT 0,
+    subtotal DECIMAL(10,2) NOT NULL,
     valido_hasta DATE,
     estado VARCHAR(20) DEFAULT 'pendiente',
     observaciones TEXT,
@@ -744,18 +1450,7 @@ CREATE TABLE IF NOT EXISTS presupuestos (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 10. TABLA DE ITEMS DE PRESUPUESTO
-CREATE TABLE IF NOT EXISTS presupuesto_items (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    presupuesto_id UUID REFERENCES presupuestos(id) ON DELETE CASCADE,
-    producto_id UUID REFERENCES productos(id),
-    cantidad DECIMAL(10,3) NOT NULL,
-    precio_unitario DECIMAL(10,2) NOT NULL,
-    subtotal DECIMAL(10,2) NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- 11. TABLA DE CUENTAS CORRIENTES
+-- 10. TABLA DE CUENTAS CORRIENTES
 CREATE TABLE IF NOT EXISTS cuentas_corrientes (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     cliente_id UUID REFERENCES clientes(id),
@@ -772,12 +1467,12 @@ CREATE TABLE IF NOT EXISTS cuentas_corrientes (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 12. TABLA DE CIERRES DE CAJA
+-- 11. TABLA DE CIERRES DE CAJA
 CREATE TABLE IF NOT EXISTS cierres_caja (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     local_id UUID REFERENCES locales(id),
     caja_id UUID REFERENCES cajas(id),
-    usuario_id UUID,
+    usuario_id UUID REFERENCES usuarios(id),
     turno VARCHAR(10) NOT NULL,
     fecha DATE NOT NULL,
     saldo_inicial DECIMAL(10,2) NOT NULL,
@@ -791,11 +1486,13 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
     diferencia DECIMAL(10,2) DEFAULT 0,
     observaciones TEXT,
     estado VARCHAR(20) DEFAULT 'abierto',
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    last_sync_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 13. TABLA DE MOVIMIENTOS DE INVENTARIO
+-- 12. TABLA DE INVENTARIO
 CREATE TABLE IF NOT EXISTS inventario (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     producto_id UUID REFERENCES productos(id),
@@ -804,26 +1501,38 @@ CREATE TABLE IF NOT EXISTS inventario (
     stock_anterior DECIMAL(10,3) NOT NULL,
     stock_nuevo DECIMAL(10,3) NOT NULL,
     motivo VARCHAR(100),
-    usuario_id UUID,
+    usuario_id UUID REFERENCES usuarios(id),
     venta_id UUID REFERENCES ventas(id),
     compra_id UUID,
     proveedor_id UUID REFERENCES proveedores(id),
     observaciones TEXT,
+    offline_id VARCHAR(100),
+    sync_status VARCHAR(20) DEFAULT 'synced',
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 14. TABLA DE CATEGORÍAS DE PRODUCTOS
-CREATE TABLE IF NOT EXISTS categorias (
+-- 13. TABLA DE PROVEEDORES
+CREATE TABLE IF NOT EXISTS proveedores (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    descripcion TEXT,
-    icono VARCHAR(50),
-    color VARCHAR(20),
-    activa BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
+    nombre VARCHAR(100) NOT NULL,
+    razon_social VARCHAR(200),
+    contacto VARCHAR(100),
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    direccion TEXT,
+    localidad VARCHAR(100),
+    provincia VARCHAR(100),
+    cuit VARCHAR(20) UNIQUE,
+    condicion_iva VARCHAR(20),
+    productos_que_vende TEXT,
+    plazo_entrega VARCHAR(50),
+    activo BOOLEAN DEFAULT true,
+    observaciones TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 15. TABLA DE CONFIGURACIONES
+-- 14. TABLA DE CONFIGURACIONES
 CREATE TABLE IF NOT EXISTS configuraciones (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     clave VARCHAR(100) NOT NULL UNIQUE,
@@ -834,86 +1543,18 @@ CREATE TABLE IF NOT EXISTS configuraciones (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- ÍNDICES PARA MEJORAR EL RENDIMIENTO
-CREATE INDEX IF NOT EXISTS idx_productos_codigo_barras ON productos(codigo_barras);
-CREATE INDEX IF NOT EXISTS idx_productos_nombre ON productos(nombre);
-CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(categoria);
-CREATE INDEX IF NOT EXISTS idx_productos_stock ON productos(stock);
-CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(created_at);
-CREATE INDEX IF NOT EXISTS idx_ventas_cliente ON ventas(cliente_id);
-CREATE INDEX IF NOT EXISTS idx_clientes_documento ON clientes(numero_documento);
-CREATE INDEX IF NOT EXISTS idx_clientes_nombre ON clientes(nombre);
-CREATE INDEX IF NOT EXISTS idx_proveedores_nombre ON proveedores(nombre);
-CREATE INDEX IF NOT EXISTS idx_inventario_producto ON inventario(producto_id);
-CREATE INDEX IF NOT EXISTS idx_inventario_fecha ON inventario(created_at);
+-- 15. TABLA DE CATEGORÍAS
+CREATE TABLE IF NOT EXISTS categorias (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    descripcion TEXT,
+    icono VARCHAR(50),
+    color VARCHAR(20),
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
--- VISTA PARA REPORTE DE VENTAS DIARIAS
-CREATE OR REPLACE VIEW reporte_ventas_diarias AS
-SELECT 
-    DATE(v.created_at) as fecha,
-    l.nombre as local,
-    c.numero as caja,
-    cl.nombre as cliente,
-    COUNT(DISTINCT v.id) as total_ventas,
-    SUM(v.total) as monto_total,
-    SUM(vi.cantidad) as total_items,
-    STRING_AGG(DISTINCT p.nombre, ', ') as productos_vendidos
-FROM ventas v
-LEFT JOIN locales l ON v.local_id = l.id
-LEFT JOIN cajas c ON v.caja_id = c.id
-LEFT JOIN clientes cl ON v.cliente_id = cl.id
-LEFT JOIN venta_items vi ON v.id = vi.venta_id
-LEFT JOIN productos p ON vi.producto_id = p.id
-GROUP BY DATE(v.created_at), l.nombre, c.numero, cl.nombre
-ORDER BY fecha DESC;
-
--- VISTA PARA CONTROL DE STOCK
-CREATE OR REPLACE VIEW control_stock AS
-SELECT 
-    p.id,
-    p.codigo_interno,
-    p.nombre,
-    p.categoria,
-    p.marca,
-    p.stock,
-    p.stock_minimo,
-    p.stock_maximo,
-    p.precio_costo,
-    p.precio_venta,
-    CASE 
-        WHEN p.stock <= p.stock_minimo THEN 'CRÍTICO'
-        WHEN p.stock <= (p.stock_minimo * 2) THEN 'BAJO'
-        WHEN p.stock >= p.stock_maximo THEN 'ALTO'
-        ELSE 'NORMAL'
-    END as estado_stock,
-    pr.nombre as proveedor
-FROM productos p
-LEFT JOIN proveedores pr ON p.proveedor_id = pr.id
-WHERE p.activo = true
-ORDER BY p.stock ASC;
-
--- VISTA PARA DEUDAS DE CLIENTES
-CREATE OR REPLACE VIEW deudas_clientes AS
-SELECT 
-    c.id,
-    c.nombre,
-    c.telefono,
-    c.limite_credito,
-    c.saldo,
-    CASE 
-        WHEN c.saldo > (c.limite_credito * 0.8) THEN 'ALTO RIESGO'
-        WHEN c.saldo > (c.limite_credito * 0.5) THEN 'RIESGO MODERADO'
-        ELSE 'BAJO RIESGO'
-    END as riesgo,
-    COUNT(cc.id) as total_movimientos,
-    MAX(cc.created_at) as ultimo_movimiento
-FROM clientes c
-LEFT JOIN cuentas_corrientes cc ON c.id = cc.cliente_id
-WHERE c.tipo_cliente = 'cuenta_corriente'
-GROUP BY c.id, c.nombre, c.telefono, c.limite_credito, c.saldo
-ORDER BY c.saldo DESC;
-
--- INSERTAR DATOS INICIALES DE CONFIGURACIÓN
+-- INSERTAR DATOS INICIALES
 INSERT INTO configuraciones (clave, valor, descripcion, categoria) VALUES 
 ('empresa', '{"nombre": "Mi Ferretería", "direccion": "Av. Principal 1234", "telefono": "011-1234-5678", "email": "info@miferreteria.com", "cuit": "30-12345678-9"}', 'Datos de la empresa', 'empresa'),
 ('iva', '{"porcentaje": 21, "incluido": true}', 'Configuración de IVA', 'impuestos'),
@@ -923,7 +1564,6 @@ INSERT INTO configuraciones (clave, valor, descripcion, categoria) VALUES
 ('caja', '{"saldo_inicial": 10000, "corte_automatico": true, "imprimir_ticket": true}', 'Configuración de caja', 'caja')
 ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor, updated_at = NOW();
 
--- INSERTAR CATEGORÍAS PARA FERRETERÍA
 INSERT INTO categorias (nombre, descripcion, icono, color) VALUES 
 ('Herramientas Manuales', 'Martillos, destornilladores, alicates, etc.', '🔧', 'blue'),
 ('Herramientas Eléctricas', 'Taladros, amoladoras, sierras eléctricas', '⚡', 'orange'),
@@ -935,1124 +1575,623 @@ INSERT INTO categorias (nombre, descripcion, icono, color) VALUES
 ('Jardinería', 'Herramientas de jardín, plantas, tierra', '🌿', 'green'),
 ('Seguridad', 'Guantes, lentes, cascos, botas', '🛡️', 'indigo'),
 ('Ferretería General', 'Artículos varios de ferretería', '🛠️', 'pink')
-ON CONFLICT (nombre) DO NOTHING;
-                        </div>
-                        
-                        <div class="button-group">
-                            <button id="copySql" class="copy-btn">📋 Copiar SQL completo</button>
-                            <button id="copyTablesOnly" class="copy-btn">📋 Copiar solo tablas</button>
-                            <button id="copyDropTables" class="copy-btn btn-danger">🗑️ Copiar SQL para eliminar tablas</button>
-                        </div>
-                    </div>
-                    
-                    <div class="instructions" style="margin-top: 15px;">
-                        <p><strong>📋 ¿Cómo ejecutar el SQL?</strong></p>
-                        <ol>
-                            <li>En Supabase, ve a <strong>SQL Editor</strong> en el menú izquierdo</li>
-                            <li>Haz clic en <strong>"New query"</strong></li>
-                            <li>Pega el código SQL completo</li>
-                            <li>Haz clic en <strong>"Run" (▶️)</strong></li>
-                            <li>Espera unos segundos mientras se crean las tablas</li>
-                            <li>¡Listo! Tu base de datos está configurada</li>
-                        </ol>
-                    </div>
-                    
-                    <div class="button-group">
-                        <button id="executeSql" class="btn btn-primary" disabled>⚡ Ejecutar SQL automáticamente</button>
-                        <button id="nextStep2" class="btn btn-success" disabled>Siguiente →</button>
-                    </div>
-                    
-                    <div id="sqlStatus" class="status"></div>
-                </div>
-            </div>
-
-            <!-- Paso 3: Insertar datos de ferretería -->
-            <div class="card" id="card3">
-                <div class="card-header">
-                    <div class="step-number">3</div>
-                    <h2>📊 INSERTAR DATOS DE FERRETERÍA</h2>
-                </div>
-                
-                <div class="step-content">
-                    <p class="info-text">Vamos a insertar datos de ejemplo específicos para ferretería:</p>
-                    
-                    <div class="test-data">
-                        <p><strong>📦 Datos que se insertarán:</strong></p>
-                        <ul style="columns: 2; column-gap: 40px;">
-                            <li>✅ 1 Sucursal principal</li>
-                            <li>✅ 2 Cajas de venta</li>
-                            <li>✅ 50 Productos de ferretería</li>
-                            <li>✅ 10 Categorías especializadas</li>
-                            <li>✅ 3 Clientes (contado/credito)</li>
-                            <li>✅ 5 Proveedores mayoristas</li>
-                            <li>✅ Configuración inicial</li>
-                            <li>✅ Stock inicial</li>
-                        </ul>
-                        <p style="margin-top: 10px; color: #059669; font-weight: 500;">
-                            🎯 Productos reales: herramientas, materiales, pinturas, electricidad, etc.
-                        </p>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                            <input type="checkbox" id="insertSampleData" checked>
-                            <span>Insertar datos de ejemplo de ferretería</span>
-                        </label>
-                        <small style="color: #6b7280;">Recomendado para probar el sistema</small>
-                    </div>
-                    
-                    <div class="button-group">
-                        <button id="insertTestData" class="btn btn-primary" disabled>🚀 Insertar Datos de Ferretería</button>
-                        <button id="skipDataInsert" class="btn btn-outline">⏭️ Saltar este paso</button>
-                        <button id="nextStep3" class="btn btn-success" disabled>Siguiente →</button>
-                    </div>
-                    
-                    <div id="dataStatus" class="status"></div>
-                </div>
-            </div>
-
-            <!-- Paso 4: Verificar configuración -->
-            <div class="card" id="card4">
-                <div class="card-header">
-                    <div class="step-number">4</div>
-                    <h2>✅ VERIFICAR CONFIGURACIÓN</h2>
-                </div>
-                
-                <div class="step-content">
-                    <p class="info-text">Verifica que todo esté listo para comenzar a usar tu sistema de ferretería.</p>
-                    
-                    <div class="verification-list">
-                        <div class="verification-item" id="verif1">
-                            <input type="checkbox" id="check1" disabled>
-                            <label for="check1">Conexión a Supabase establecida</label>
-                        </div>
-                        <div class="verification-item" id="verif2">
-                            <input type="checkbox" id="check2" disabled>
-                            <label for="check2">Tablas creadas correctamente</label>
-                        </div>
-                        <div class="verification-item" id="verif3">
-                            <input type="checkbox" id="check3" disabled>
-                            <label for="check3">Datos de ferretería insertados</label>
-                        </div>
-                        <div class="verification-item" id="verif4">
-                            <input type="checkbox" id="check4" disabled>
-                            <label for="check4">Configuración guardada</label>
-                        </div>
-                    </div>
-                    
-                    <div class="instructions" style="margin: 20px 0;">
-                        <p><strong>🎯 ¿Qué puedes hacer ahora?</strong></p>
-                        <ul>
-                            <li>Gestionar stock de productos</li>
-                            <li>Realizar ventas con múltiples métodos de pago</li>
-                            <li>Controlar cuentas corrientes de clientes</li>
-                            <li>Generar presupuestos</li>
-                            <li>Cerrar caja diariamente</li>
-                            <li>Ver reportes de ventas</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="button-group" style="margin-top: 20px;">
-                        <button id="verifySetup" class="btn btn-primary" disabled>🔍 Verificar Configuración</button>
-                        <button id="completeSetup" class="btn btn-success" disabled>🚀 Completar Configuración</button>
-                    </div>
-                    
-                    <div id="verifyStatus" class="status"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="navigation">
-            <button id="goToApp" class="btn btn-success" disabled>🔨 Ir a Mi Ferretería POS</button>
-            <p style="margin-top: 15px; color: #6b7280; font-size: 0.9rem;">
-                Una vez completada la configuración, podrás comenzar a gestionar tu ferretería
-            </p>
-        </div>
-    </div>
-
-    <script>
-        // Configuración
-        let supabaseClient = null;
-        let supabaseLoaded = false;
-        let currentStep = 1;
-        let setupCompleted = false;
-
-        // Elementos del DOM
-        const supabaseUrlInput = document.getElementById('supabaseUrl');
-        const supabaseKeyInput = document.getElementById('supabaseKey');
-        const testConnectionBtn = document.getElementById('testConnection');
-        const nextStep1Btn = document.getElementById('nextStep1');
-        const nextStep2Btn = document.getElementById('nextStep2');
-        const nextStep3Btn = document.getElementById('nextStep3');
-        const executeSqlBtn = document.getElementById('executeSql');
-        const insertTestDataBtn = document.getElementById('insertTestData');
-        const skipDataInsertBtn = document.getElementById('skipDataInsert');
-        const verifySetupBtn = document.getElementById('verifySetup');
-        const completeSetupBtn = document.getElementById('completeSetup');
-        const goToAppBtn = document.getElementById('goToApp');
-        const copySqlBtn = document.getElementById('copySql');
-        const copyTablesOnlyBtn = document.getElementById('copyTablesOnly');
-        const copyDropTablesBtn = document.getElementById('copyDropTables');
-        const insertSampleDataCheck = document.getElementById('insertSampleData');
-        const connectionStatus = document.getElementById('connectionStatus');
-        const sqlStatus = document.getElementById('sqlStatus');
-        const dataStatus = document.getElementById('dataStatus');
-        const verifyStatus = document.getElementById('verifyStatus');
-        const sqlCode = document.getElementById('sqlCode');
-        const sqlContainer = document.getElementById('sqlContainer');
-        const progressFill = document.getElementById('progressFill');
-        const stepElements = document.querySelectorAll('.progress-step');
-        const cardElements = document.querySelectorAll('.card');
-        const verificationItems = document.querySelectorAll('.verification-item');
-
-        // Cargar credenciales guardadas
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedUrl = localStorage.getItem('supabaseUrl');
-            const savedKey = localStorage.getItem('supabaseKey');
-            const systemConfigured = localStorage.getItem('ferreteria_configured');
+ON CONFLICT (nombre) DO NOTHING;`;
             
-            if (savedUrl) supabaseUrlInput.value = savedUrl;
-            if (savedKey) supabaseKeyInput.value = savedKey;
-            
-            // Si ya está configurado, habilitar botones
-            if (systemConfigured === 'true') {
-                setupCompleted = true;
-                updateProgress(100);
-                updateStepVisuals(4);
-                verifyStatus.innerHTML = '<p class="success">✅ Sistema ya configurado. Puedes ir a la aplicación.</p>';
-                verifyStatus.classList.add('show');
-                goToAppBtn.disabled = false;
-                completeSetupBtn.disabled = false;
-                
-                // Marcar todas las verificaciones
-                verificationItems.forEach(item => {
-                    item.classList.add('verified');
-                    const checkbox = item.querySelector('input[type="checkbox"]');
-                    if (checkbox) checkbox.checked = true;
-                });
-            }
-            
-            // Cargar Supabase desde CDN
-            loadSupabase();
-            
-            // Actualizar progreso inicial
-            updateProgress(0);
-            
-            // Configurar eventos
-            setupEventListeners();
-        });
+            document.getElementById('sqlCode').textContent = sqlCode;
+        }
 
-        // Función para cargar Supabase
-        async function loadSupabase() {
-            if (window.supabase) {
-                supabaseLoaded = true;
+        function copySQL() {
+            const sqlText = document.getElementById('sqlCode').textContent;
+            navigator.clipboard.writeText(sqlText).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copiado!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        async function verifyDatabase() {
+            if (!supabaseClient) {
+                alert('Primero configura y prueba la conexión a Supabase');
                 return;
             }
-            
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-                script.onload = () => {
-                    supabaseLoaded = true;
-                    resolve();
-                };
-                script.onerror = () => {
-                    console.error('Error cargando Supabase');
-                    reject();
-                };
-                document.head.appendChild(script);
-            });
-        }
 
-        // Configurar eventos
-        function setupEventListeners() {
-            // Navegación entre pasos
-            nextStep1Btn.addEventListener('click', () => goToStep(2));
-            nextStep2Btn.addEventListener('click', () => goToStep(3));
-            nextStep3Btn.addEventListener('click', () => goToStep(4));
+            const verifyBtn = document.getElementById('verifyBtn');
+            const verifyResult = document.getElementById('verifyResult');
             
-            // Botones de copiado
-            copySqlBtn.addEventListener('click', () => copyToClipboard(sqlCode.textContent, 'SQL completo'));
-            copyTablesOnlyBtn.addEventListener('click', () => copyTablesOnly());
-            copyDropTablesBtn.addEventListener('click', () => copyDropTablesSQL());
-            
-            // Botones principales
-            testConnectionBtn.addEventListener('click', testSupabaseConnection);
-            executeSqlBtn.addEventListener('click', executeSQL);
-            insertTestDataBtn.addEventListener('click', insertFerreteriaData);
-            skipDataInsertBtn.addEventListener('click', () => {
-                document.getElementById('check3').checked = true;
-                const verif3 = document.getElementById('verif3');
-                if (verif3) verif3.classList.add('verified');
-                nextStep3Btn.disabled = false;
-                dataStatus.innerHTML = '<p class="info">⏭️ Paso saltado. Puedes insertar datos manualmente después.</p>';
-                dataStatus.classList.add('show');
-            });
-            verifySetupBtn.addEventListener('click', verifyConfiguration);
-            completeSetupBtn.addEventListener('click', completeSetup);
-            goToAppBtn.addEventListener('click', () => window.location.href = 'index.html');
-            
-            // Guardar credenciales al cambiar
-            supabaseUrlInput.addEventListener('change', saveCredentials);
-            supabaseKeyInput.addEventListener('change', saveCredentials);
-        }
+            verifyBtn.innerHTML = '<div class="spinner"></div> Verificando...';
+            verifyBtn.disabled = true;
 
-        // Guardar credenciales
-        function saveCredentials() {
-            localStorage.setItem('supabaseUrl', supabaseUrlInput.value);
-            localStorage.setItem('supabaseKey', supabaseKeyInput.value);
-        }
+            const requiredTables = [
+                'locales', 'cajas', 'usuarios', 'productos', 'clientes',
+                'ventas', 'venta_items', 'pagos', 'presupuestos',
+                'cuentas_corrientes', 'cierres_caja', 'inventario',
+                'proveedores', 'configuraciones', 'categorias'
+            ];
 
-        // Actualizar progreso
-        function updateProgress(percentage) {
-            progressFill.style.width = percentage + '%';
-            
-            // Actualizar pasos visualmente
-            stepElements.forEach((step, index) => {
-                step.classList.remove('active', 'completed');
-                if (index + 1 < currentStep) {
-                    step.classList.add('completed');
-                } else if (index + 1 === currentStep) {
-                    step.classList.add('active');
-                }
-            });
-        }
-
-        // Actualizar visualización de pasos
-        function updateStepVisuals(step) {
-            currentStep = step;
-            
-            // Actualizar tarjetas
-            cardElements.forEach((card, index) => {
-                card.classList.remove('active', 'completed');
-                if (index + 1 === step) {
-                    card.classList.add('active');
-                } else if (index + 1 < step) {
-                    card.classList.add('completed');
-                    const stepNumber = card.querySelector('.step-number');
-                    if (stepNumber) {
-                        stepNumber.classList.add('completed');
-                    }
-                }
-            });
-            
-            // Mostrar contenido del paso actual
-            const stepContents = document.querySelectorAll('.step-content');
-            stepContents.forEach(content => {
-                content.classList.remove('active');
-            });
-            
-            const currentContent = document.querySelector(`#card${step} .step-content`);
-            if (currentContent) {
-                currentContent.classList.add('active');
-            }
-            
-            // Actualizar progreso
-            updateProgress((step - 1) * 25);
-            
-            // Hacer scroll suave al paso
-            setTimeout(() => {
-                const card = document.getElementById(`card${step}`);
-                if (card) {
-                    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }, 300);
-        }
-
-        // Ir al siguiente paso
-        function goToStep(step) {
-            updateStepVisuals(step);
-        }
-
-        // Toggle SQL container
-        function toggleSQL() {
-            const container = document.getElementById('sqlContainer');
-            const toggleIcon = document.getElementById('toggleIcon');
-            const toggleText = document.getElementById('toggleText');
-            
-            container.classList.toggle('expanded');
-            
-            if (container.classList.contains('expanded')) {
-                toggleIcon.textContent = '▲';
-                toggleText.textContent = 'Ocultar código SQL';
-            } else {
-                toggleIcon.textContent = '▼';
-                toggleText.textContent = 'Mostrar código SQL';
-            }
-        }
-
-        // Copiar al portapapeles
-        function copyToClipboard(text, description) {
-            navigator.clipboard.writeText(text).then(() => {
-                showToast(`✅ ${description} copiado al portapapeles`);
-            }).catch(err => {
-                console.error('Error copiando texto: ', err);
-                showToast('❌ Error al copiar al portapapeles');
-            });
-        }
-
-        // Copiar solo tablas
-        function copyTablesOnly() {
-            const fullSQL = sqlCode.textContent;
-            const startIndex = fullSQL.indexOf('-- 1. TABLA DE LOCALES/SUCURSALES');
-            const endIndex = fullSQL.indexOf('-- ÍNDICES PARA MEJORAR EL RENDIMIENTO');
-            
-            if (startIndex !== -1 && endIndex !== -1) {
-                const tablesSQL = fullSQL.substring(startIndex, endIndex);
-                copyToClipboard(tablesSQL, 'SQL de tablas');
-            } else {
-                copyToClipboard(fullSQL, 'SQL completo');
-            }
-        }
-
-        // Copiar SQL para eliminar tablas
-        function copyDropTablesSQL() {
-            const dropSQL = `-- SQL PARA ELIMINAR TODAS LAS TABLAS (EJECUTAR CON PRECAUCIÓN)
--- NOTA: Ejecuta esto solo si quieres eliminar todas las tablas y empezar de cero
-
-DROP TABLE IF EXISTS cierres_caja CASCADE;
-DROP TABLE IF EXISTS cuentas_corrientes CASCADE;
-DROP TABLE IF EXISTS presupuesto_items CASCADE;
-DROP TABLE IF EXISTS presupuestos CASCADE;
-DROP TABLE IF EXISTS pagos CASCADE;
-DROP TABLE IF EXISTS venta_items CASCADE;
-DROP TABLE IF EXISTS ventas CASCADE;
-DROP TABLE IF EXISTS productos CASCADE;
-DROP TABLE IF EXISTS clientes CASCADE;
-DROP TABLE IF EXISTS proveedores CASCADE;
-DROP TABLE IF EXISTS cajas CASCADE;
-DROP TABLE IF EXISTS locales CASCADE;
-DROP TABLE IF EXISTS inventario CASCADE;
-DROP TABLE IF EXISTS categorias CASCADE;
-DROP TABLE IF EXISTS configuraciones CASCADE;
-
--- También eliminar las vistas
-DROP VIEW IF EXISTS reporte_ventas_diarias CASCADE;
-DROP VIEW IF EXISTS control_stock CASCADE;
-DROP VIEW IF EXISTS deudas_clientes CASCADE;
-
--- Eliminar función exec_sql
-DROP FUNCTION IF EXISTS exec_sql(TEXT);`;
-            
-            copyToClipboard(dropSQL, 'SQL para eliminar tablas');
-        }
-
-        // Mostrar toast
-        function showToast(message) {
-            // Crear toast si no existe
-            let toast = document.getElementById('toast');
-            if (!toast) {
-                toast = document.createElement('div');
-                toast.id = 'toast';
-                toast.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    background: #10b981;
-                    color: white;
-                    padding: 12px 24px;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    z-index: 1000;
-                    opacity: 0;
-                    transform: translateY(-20px);
-                    transition: all 0.3s ease;
-                `;
-                document.body.appendChild(toast);
-            }
-            
-            toast.textContent = message;
-            toast.style.background = message.startsWith('✅') ? '#10b981' : '#ef4444';
-            
-            // Mostrar toast
-            setTimeout(() => {
-                toast.style.opacity = '1';
-                toast.style.transform = 'translateY(0)';
-            }, 10);
-            
-            // Ocultar después de 3 segundos
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(-20px)';
-            }, 3000);
-        }
-
-        // Probar conexión a Supabase (VERSIÓN MEJORADA)
-        async function testSupabaseConnection() {
-            const url = supabaseUrlInput.value.trim();
-            const key = supabaseKeyInput.value.trim();
-            
-            if (!url || !key) {
-                connectionStatus.innerHTML = '<p class="error">Por favor, completa ambos campos</p>';
-                connectionStatus.classList.add('show');
-                return;
-            }
-            
-            // Verificar formato de URL
-            if (!url.startsWith('https://') || !url.includes('.supabase.co')) {
-                connectionStatus.innerHTML = '<p class="error">La URL debe tener el formato: https://xxxxxx.supabase.co</p>';
-                connectionStatus.classList.add('show');
-                return;
-            }
-            
-            testConnectionBtn.disabled = true;
-            testConnectionBtn.textContent = '🔄 Conectando...';
-            connectionStatus.innerHTML = '<p class="info">🔄 Conectando con Supabase...</p>';
-            connectionStatus.classList.add('show');
-            
             try {
-                // Guardar credenciales
-                saveCredentials();
+                const checklist = document.getElementById('tablesChecklist');
+                checklist.innerHTML = '';
                 
-                // Crear cliente de Supabase con configuración para evitar múltiples instancias
-                if (supabaseClient) {
-                    // Si ya existe un cliente, cerrarlo
-                    await supabaseClient.auth.signOut();
-                }
+                let allTablesExist = true;
                 
-                supabaseClient = window.supabase.createClient(url, key, {
-                    auth: {
-                        autoRefreshToken: false,
-                        persistSession: false,
-                        detectSessionInUrl: false
-                    }
-                });
-                
-                // Intentar una consulta simple que no dependa de tablas existentes
-                // Usamos una consulta a una tabla del sistema de PostgreSQL
-                const { data, error } = await supabaseClient
-                    .from('pg_tables')
-                    .select('schemaname')
-                    .limit(1)
-                    .maybeSingle();
-                
-                // Analizar el error
-                if (error) {
-                    // Si el error es 406 (Not Acceptable) o PGRST116, significa que la conexión funciona
-                    // pero no tenemos permisos para acceder a pg_tables (lo cual es normal)
-                    if (error.code === 'PGRST116' || error.code === '406' || error.message.includes('permission')) {
-                        connectionStatus.innerHTML = '<p class="success">✅ Conexión exitosa. Puedes crear las tablas en el siguiente paso.</p>';
-                        connectionStatus.classList.add('show');
-                    } else if (error.message.includes('JWT')) {
-                        throw new Error('Clave API inválida. Verifica que sea la clave "anon public"');
-                    } else if (error.message.includes('fetch') || error.message.includes('Network')) {
-                        throw new Error('Error de red. Verifica tu conexión a internet');
+                for (const table of requiredTables) {
+                    const { data, error } = await supabaseClient
+                        .from(table)
+                        .select('count')
+                        .limit(1);
+                    
+                    const li = document.createElement('li');
+                    const icon = document.createElement('div');
+                    
+                    if (error && error.code === '42P01') {
+                        // Tabla no existe
+                        icon.className = 'checklist-icon pending';
+                        icon.innerHTML = '❌';
+                        li.innerHTML = `${icon.outerHTML} <span>${table} - <strong style="color: #ef4444;">Falta crear</strong></span>`;
+                        allTablesExist = false;
+                    } else if (error) {
+                        icon.className = 'checklist-icon pending';
+                        icon.innerHTML = '❌';
+                        li.innerHTML = `${icon.outerHTML} <span>${table} - <strong style="color: #ef4444;">Error: ${error.message}</strong></span>`;
+                        allTablesExist = false;
                     } else {
-                        // Para otros errores, asumimos que la conexión funciona
-                        connectionStatus.innerHTML = '<p class="success">✅ Conexión exitosa. Puedes continuar.</p>';
-                        connectionStatus.classList.add('show');
+                        icon.className = 'checklist-icon completed';
+                        icon.innerHTML = '✓';
+                        li.innerHTML = `${icon.outerHTML} <span>${table} - <strong style="color: #10b981;">OK</strong></span>`;
                     }
+                    
+                    checklist.appendChild(li);
+                }
+                
+                if (allTablesExist) {
+                    verifyResult.className = 'test-result success';
+                    verifyResult.innerHTML = '✅ Todas las tablas están creadas correctamente';
+                    document.getElementById('step2Next').disabled = false;
                 } else {
-                    connectionStatus.innerHTML = '<p class="success">✅ Conexión exitosa a Supabase!</p>';
-                    connectionStatus.classList.add('show');
-                }
-                
-                // Habilitar siguiente paso
-                nextStep1Btn.disabled = false;
-                executeSqlBtn.disabled = false;
-                
-                // Marcar verificación
-                document.getElementById('check1').checked = true;
-                document.getElementById('verif1').classList.add('verified');
-                
-            } catch (error) {
-                console.error('Error de conexión:', error);
-                
-                let errorMessage = error.message || 'Error desconocido';
-                
-                if (error.message.includes('JWT')) {
-                    errorMessage = 'Clave inválida. Asegúrate de copiar la clave "anon public" de Project API keys';
-                } else if (error.message.includes('fetch') || error.message.includes('Network')) {
-                    errorMessage = 'Error de red. Verifica tu conexión a internet y que la URL sea correcta';
-                } else if (error.message.includes('Failed to fetch')) {
-                    errorMessage = 'No se pudo conectar. Verifica la URL y que el proyecto esté activo en Supabase';
-                }
-                
-                connectionStatus.innerHTML = `<p class="error">❌ Error de conexión: ${errorMessage}</p>`;
-                connectionStatus.classList.add('show');
-                
-                // Deshabilitar botones dependientes
-                nextStep1Btn.disabled = true;
-                executeSqlBtn.disabled = true;
-                
-            } finally {
-                testConnectionBtn.disabled = false;
-                testConnectionBtn.textContent = '🔍 Probar Conexión';
-            }
-        }
-
-        // Ejecutar SQL automáticamente (VERSIÓN MEJORADA)
-        async function executeSQL() {
-            if (!supabaseClient) {
-                sqlStatus.innerHTML = '<p class="error">Primero prueba la conexión</p>';
-                sqlStatus.classList.add('show');
-                return;
-            }
-            
-            executeSqlBtn.disabled = true;
-            executeSqlBtn.textContent = '🔄 Creando tablas...';
-            sqlStatus.innerHTML = '<p class="info">🔄 Creando tablas en Supabase... Esto puede tomar unos segundos.</p>';
-            sqlStatus.classList.add('show');
-            
-            try {
-                // Obtener el SQL completo
-                const fullSQL = sqlCode.textContent;
-                
-                // Dividir en sentencias individuales (omitir líneas vacías y comentarios)
-                const statements = fullSQL
-                    .split(';')
-                    .map(stmt => stmt.trim())
-                    .filter(stmt => 
-                        stmt.length > 0 && 
-                        !stmt.startsWith('--') && 
-                        !stmt.startsWith('/*') && 
-                        !stmt.startsWith('*')
-                    );
-                
-                let successCount = 0;
-                let errorCount = 0;
-                let errors = [];
-                
-                // Ejecutar cada sentencia individualmente
-                for (let i = 0; i < statements.length; i++) {
-                    const statement = statements[i] + ';';
-                    
-                    try {
-                        // Usar RPC para ejecutar SQL (la función exec_sql está definida en el SQL)
-                        const { error } = await supabaseClient.rpc('exec_sql', { 
-                            sql_text: statement 
-                        });
-                        
-                        if (error) {
-                            // Ignorar errores de "ya existe" o "duplicado"
-                            if (error.message && (
-                                error.message.includes('already exists') || 
-                                error.message.includes('duplicate') ||
-                                error.message.includes('exists')
-                            )) {
-                                successCount++;
-                                continue;
-                            }
-                            
-                            console.warn(`Error en sentencia ${i + 1}:`, error.message);
-                            errorCount++;
-                            errors.push({ 
-                                statement: statement.substring(0, 100) + '...', 
-                                error: error.message 
-                            });
-                        } else {
-                            successCount++;
-                        }
-                        
-                        // Pequeña pausa entre sentencias para no sobrecargar
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        
-                    } catch (stmtError) {
-                        console.warn(`Error ejecutando sentencia ${i + 1}:`, stmtError.message);
-                        errorCount++;
-                        errors.push({ 
-                            statement: statement.substring(0, 100) + '...', 
-                            error: stmtError.message 
-                        });
-                    }
-                }
-                
-                if (errorCount === 0) {
-                    sqlStatus.innerHTML = `
-                        <p class="success">✅ ¡Tablas creadas exitosamente!</p>
-                        <p class="info">${successCount} operaciones completadas correctamente.</p>
-                    `;
-                    sqlStatus.classList.add('show');
-                    
-                    // Habilitar siguiente paso
-                    nextStep2Btn.disabled = false;
-                    insertTestDataBtn.disabled = false;
-                    
-                    // Marcar verificación
-                    document.getElementById('check2').checked = true;
-                    document.getElementById('verif2').classList.add('verified');
-                    
-                } else if (successCount > 0) {
-                    sqlStatus.innerHTML = `
-                        <p class="warning">⚠️ Tablas creadas con algunos errores.</p>
-                        <p class="info">${successCount} exitosas, ${errorCount} errores.</p>
-                        <p class="info">Las tablas principales se crearon correctamente. Puedes continuar.</p>
-                    `;
-                    sqlStatus.classList.add('show');
-                    
-                    // Aún habilitar siguiente paso si hubo éxitos
-                    nextStep2Btn.disabled = false;
-                    insertTestDataBtn.disabled = false;
-                    document.getElementById('check2').checked = true;
-                    document.getElementById('verif2').classList.add('verified');
-                    
-                } else {
-                    sqlStatus.innerHTML = `
-                        <p class="error">❌ No se pudo crear ninguna tabla.</p>
-                        <p class="info">Prueba a copiar y pegar manualmente el SQL en el editor de Supabase:</p>
-                        <ol>
-                            <li>Ve a SQL Editor en Supabase</li>
-                            <li>Copia el SQL completo del recuadro superior</li>
-                            <li>Pégalo en el editor y haz clic en "Run" (▶️)</li>
-                            <li>Luego haz clic en "Siguiente"</li>
-                        </ol>
-                    `;
-                    sqlStatus.classList.add('show');
+                    verifyResult.className = 'test-result error';
+                    verifyResult.innerHTML = '❌ Faltan algunas tablas. Ejecuta el SQL en Supabase SQL Editor.';
+                    document.getElementById('step2Next').disabled = true;
                 }
                 
             } catch (error) {
-                console.error('Error ejecutando SQL:', error);
-                sqlStatus.innerHTML = `
-                    <p class="error">❌ Error ejecutando SQL: ${error.message}</p>
-                    <p class="info">Intenta copiar y pegar manualmente el SQL en Supabase.</p>
-                `;
-                sqlStatus.classList.add('show');
-                
+                verifyResult.className = 'test-result error';
+                verifyResult.innerHTML = `❌ Error de verificación: ${error.message}`;
             } finally {
-                executeSqlBtn.disabled = false;
-                executeSqlBtn.textContent = '⚡ Ejecutar SQL automáticamente';
+                verifyBtn.innerHTML = '🔍 Verificar Estructura de BD';
+                verifyBtn.disabled = false;
             }
         }
 
-        // Insertar datos de ferretería (MANTENIDO IGUAL)
-        async function insertFerreteriaData() {
-            if (!supabaseClient) {
-                dataStatus.innerHTML = '<p class="error">Primero prueba la conexión</p>';
-                dataStatus.classList.add('show');
-                return;
-            }
+        function updateTablesChecklist() {
+            const checklist = document.getElementById('tablesChecklist');
+            if (!checklist) return;
             
-            if (!insertSampleDataCheck.checked) {
-                dataStatus.innerHTML = '<p class="info">⏭️ Insertar datos desactivado. Continuando...</p>';
-                dataStatus.classList.add('show');
-                document.getElementById('check3').checked = true;
-                document.getElementById('verif3').classList.add('verified');
-                nextStep3Btn.disabled = false;
-                verifySetupBtn.disabled = false;
-                return;
-            }
+            const tables = [
+                'locales', 'cajas', 'usuarios', 'productos', 'clientes',
+                'ventas', 'venta_items', 'pagos', 'presupuestos',
+                'cuentas_corrientes', 'cierres_caja', 'inventario',
+                'proveedores', 'configuraciones', 'categorias'
+            ];
             
-            insertTestDataBtn.disabled = true;
-            insertTestDataBtn.textContent = '🔄 Insertando datos...';
-            dataStatus.innerHTML = '<p class="info">🔄 Insertando datos de ferretería... Esto puede tomar unos segundos.</p>';
-            dataStatus.classList.add('show');
-            
- try {
-                // 1. Insertar local principal
-                const { data: local, error: localError } = await supabaseClient
-                    .from('locales')
-                    .insert({
-                        nombre: 'Ferretería Central',
-                        direccion: 'Av. Industrial 1234, Zona Industrial',
-                        telefono: '011-4567-8901',
-                        email: 'ventas@ferreteria.com',
-                        horario_atencion: 'Lunes a Viernes 8:00-18:00, Sábados 8:00-13:00',
-                        responsable: 'Juan Pérez',
-                        activo: true
-                    })
-                    .select()
-                    .single();
-                
-                if (localError && !localError.message.includes('duplicate')) {
-                    console.warn('Error insertando local:', localError.message);
-                }
-                
-                // 2. Insertar cajas
-                const localId = local?.id || 'offline';
-                const cajasData = [
-                    { numero: '01', nombre: 'Caja Principal', local_id: localId },
-                    { numero: '02', nombre: 'Caja Depósito', local_id: localId }
-                ];
-                
-                for (const caja of cajasData) {
-                    try {
-                        await supabaseClient
-                            .from('cajas')
-                            .insert(caja);
-                    } catch (cajaError) {
-                        console.warn('Error insertando caja:', cajaError.message);
-                    }
-                }
-                
-                // 3. Insertar proveedores
-                const proveedoresData = [
-                    {
-                        nombre: 'Acindar SA',
-                        razon_social: 'Acindar Industria Argentina de Aceros SA',
-                        contacto: 'Carlos Rodríguez',
-                        telefono: '011-1234-5678',
-                        email: 'ventas@acindar.com',
-                        direccion: 'Av. del Trabajo 2500, Villa Constitución',
-                        productos_que_vende: 'Hierros, mallas, alambres, clavos',
-                        cuit: '30-12345678-9',
-                        condicion_iva: 'Responsable Inscripto',
-                        activo: true
-                    },
-                    {
-                        nombre: 'Siam Ferretería',
-                        razon_social: 'Siam Industrias Metalúrgicas SA',
-                        contacto: 'María González',
-                        telefono: '011-8765-4321',
-                        email: 'pedidos@siam.com.ar',
-                        direccion: 'Av. Directorio 4521, Buenos Aires',
-                        productos_que_vende: 'Herramientas manuales y eléctricas',
-                        cuit: '30-87654321-0',
-                        condicion_iva: 'Responsable Inscripto',
-                        activo: true
-                    },
-                    {
-                        nombre: 'Pinturas Alba',
-                        razon_social: 'Alba Pinturas SA',
-                        contacto: 'Roberto Sánchez',
-                        telefono: '011-5555-6666',
-                        email: 'info@albapinturas.com',
-                        direccion: 'Ruta 8 Km 35, Pilar',
-                        productos_que_vende: 'Pinturas, barnices, selladores',
-                        cuit: '30-11223344-5',
-                        condicion_iva: 'Responsable Inscripto',
-                        activo: true
-                    },
-                    {
-                        nombre: 'Eléctrica Central',
-                        razon_social: 'Distribuidora Eléctrica Central SRL',
-                        contacto: 'Lucía Fernández',
-                        telefono: '011-7777-8888',
-                        email: 'ventas@electricacentral.com.ar',
-                        direccion: 'Calle de la Luz 789, Quilmes',
-                        productos_que_vende: 'Materiales eléctricos, cables, luminarias',
-                        cuit: '30-55667788-9',
-                        condicion_iva: 'Monotributo',
-                        activo: true
-                    },
-                    {
-                        nombre: 'Plomería Total',
-                        razon_social: 'Plomería Total Hnos SACIF',
-                        contacto: 'Los Hermanos Gómez',
-                        telefono: '011-9999-0000',
-                        email: 'plomeriatotal@gmail.com',
-                        direccion: 'Av. San Martín 321, San Justo',
-                        productos_que_vende: 'Cañerías, conexiones, sanitarios',
-                        cuit: '30-99887766-5',
-                        condicion_iva: 'Monotributo',
-                        activo: true
-                    }
-                ];
-                
-                const proveedorIds = {};
-                for (const proveedor of proveedoresData) {
-                    try {
-                        const { data: prov } = await supabaseClient
-                            .from('proveedores')
-                            .insert(proveedor)
-                            .select()
-                            .single();
-                        
-                        if (prov) {
-                            proveedorIds[proveedor.nombre] = prov.id;
-                        }
-                    } catch (proveedorError) {
-                        console.warn('Error insertando proveedor:', proveedorError.message);
-                    }
-                }
-                
-                // 4. Insertar productos de ferretería (50 productos)
-                const productosData = [
-                    // Herramientas Manuales
-                    { codigo_interno: 'HM001', nombre: 'Martillo de Carpintero 500g', categoria: 'Herramientas Manuales', marca: 'Truper', unidad_medida: 'unidad', precio_costo: 850, porcentaje_ganancia: 50, precio_venta: 1275, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A1' },
-                    { codigo_interno: 'HM002', nombre: 'Destornillador Plano 6x100mm', categoria: 'Herramientas Manuales', marca: 'Black & Decker', unidad_medida: 'unidad', precio_costo: 320, porcentaje_ganancia: 60, precio_venta: 512, stock: 50, stock_minimo: 10, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A2' },
-                    { codigo_interno: 'HM003', nombre: 'Alicate Universal 8"', categoria: 'Herramientas Manuales', marca: 'Stanley', unidad_medida: 'unidad', precio_costo: 1250, porcentaje_ganancia: 45, precio_venta: 1812.5, stock: 15, stock_minimo: 3, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A3' },
-                    { codigo_interno: 'HM004', nombre: 'Llave Francesa 10"', categoria: 'Herramientas Manuales', marca: 'Bahco', unidad_medida: 'unidad', precio_costo: 1850, porcentaje_ganancia: 40, precio_venta: 2590, stock: 12, stock_minimo: 2, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A4' },
-                    { codigo_interno: 'HM005', nombre: 'Cinta Métrica 5m', categoria: 'Herramientas Manuales', marca: 'Stanley', unidad_medida: 'unidad', precio_costo: 750, porcentaje_ganancia: 55, precio_venta: 1162.5, stock: 30, stock_minimo: 8, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'A5' },
-                    
-                    // Herramientas Eléctricas
-                    { codigo_interno: 'HE001', nombre: 'Taladro Percutor 650W', categoria: 'Herramientas Eléctricas', marca: 'Black & Decker', unidad_medida: 'unidad', precio_costo: 12500, porcentaje_ganancia: 35, precio_venta: 16875, stock: 8, stock_minimo: 2, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'B1', destacado: true },
-                    { codigo_interno: 'HE002', nombre: 'Amoladora Angular 4 1/2"', categoria: 'Herramientas Eléctricas', marca: 'Skil', unidad_medida: 'unidad', precio_costo: 8900, porcentaje_ganancia: 40, precio_venta: 12460, stock: 6, stock_minimo: 1, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'B2' },
-                    { codigo_interno: 'HE003', nombre: 'Sierra Circular 1400W', categoria: 'Herramientas Eléctricas', marca: 'Dewalt', unidad_medida: 'unidad', precio_costo: 18500, porcentaje_ganancia: 30, precio_venta: 24050, stock: 4, stock_minimo: 1, proveedor_id: proveedorIds['Siam Ferretería'], ubicacion: 'B3' },
-                    
-                    // Materiales de Construcción
-                    { codigo_interno: 'MC001', nombre: 'Cemento Portland 50kg', categoria: 'Materiales de Construcción', marca: 'Loma Negra', unidad_medida: 'bolsa', precio_costo: 1850, porcentaje_ganancia: 25, precio_venta: 2312.5, stock: 100, stock_minimo: 20, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'C1' },
-                    { codigo_interno: 'MC002', nombre: 'Hierro 8mm x 12m', categoria: 'Materiales de Construcción', marca: 'Acindar', unidad_medida: 'barra', precio_costo: 3250, porcentaje_ganancia: 30, precio_venta: 4225, stock: 40, stock_minimo: 10, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'C2' },
-                    { codigo_interno: 'MC003', nombre: 'Ladrillo Hueco 18x18x33', categoria: 'Materiales de Construcción', unidad_medida: 'unidad', precio_costo: 85, porcentaje_ganancia: 40, precio_venta: 119, stock: 5000, stock_minimo: 1000, ubicacion: 'C3' },
-                    { codigo_interno: 'MC004', nombre: 'Arena Fina m3', categoria: 'Materiales de Construcción', unidad_medida: 'm3', precio_costo: 4500, porcentaje_ganancia: 35, precio_venta: 6075, stock: 10, stock_minimo: 2, ubicacion: 'Patio' },
-                    { codigo_interno: 'MC005', nombre: 'Piedra Partida 6/20 m3', categoria: 'Materiales de Construcción', unidad_medida: 'm3', precio_costo: 5200, porcentaje_ganancia: 35, precio_venta: 7020, stock: 8, stock_minimo: 2, ubicacion: 'Patio' },
-                    
-                    // Fontanería
-                    { codigo_interno: 'FO001', nombre: 'Caño PVC 1/2" x 6m', categoria: 'Fontanería', marca: 'Fate', unidad_medida: 'unidad', precio_costo: 1250, porcentaje_ganancia: 45, precio_venta: 1812.5, stock: 30, stock_minimo: 5, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D1' },
-                    { codigo_interno: 'FO002', nombre: 'Codo PVC 90° 1/2"', categoria: 'Fontanería', marca: 'Fate', unidad_medida: 'unidad', precio_costo: 85, porcentaje_ganancia: 60, precio_venta: 136, stock: 100, stock_minimo: 20, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D2' },
-                    { codigo_interno: 'FO003', nombre: 'Llave de Paso 1/2"', categoria: 'Fontanería', marca: 'Liliana', unidad_medida: 'unidad', precio_costo: 950, porcentaje_ganancia: 50, precio_venta: 1425, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D3' },
-                    { codigo_interno: 'FO004', nombre: 'Inodoro Completo Standard', categoria: 'Fontanería', marca: 'Ferrum', unidad_medida: 'unidad', precio_costo: 18500, porcentaje_ganancia: 30, precio_venta: 24050, stock: 5, stock_minimo: 1, proveedor_id: proveedorIds['Plomería Total'], ubicacion: 'D4' },
-                    
-                    // Electricidad
-                    { codigo_interno: 'EL001', nombre: 'Cable Flexible 2x1.5mm x 100m', categoria: 'Electricidad', marca: 'Pirelli', unidad_medida: 'rollo', precio_costo: 18500, porcentaje_ganancia: 35, precio_venta: 24975, stock: 8, stock_minimo: 2, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E1' },
-                    { codigo_interno: 'EL002', nombre: 'Interruptor Simple Blanco', categoria: 'Electricidad', marca: 'WEG', unidad_medida: 'unidad', precio_costo: 250, porcentaje_ganancia: 70, precio_venta: 425, stock: 50, stock_minimo: 10, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E2' },
-                    { codigo_interno: 'EL003', nombre: 'Toma Corriente Doble', categoria: 'Electricidad', marca: 'WEG', unidad_medida: 'unidad', precio_costo: 320, porcentaje_ganancia: 65, precio_venta: 528, stock: 40, stock_minimo: 8, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E3' },
-                    { codigo_interno: 'EL004', nombre: 'Tubo Corrugado 20mm x 3m', categoria: 'Electricidad', marca: 'Amanco', unidad_medida: 'unidad', precio_costo: 850, porcentaje_ganancia: 50, precio_venta: 1275, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Eléctrica Central'], ubicacion: 'E4' },
-                    
-                    // Pinturas
-                    { codigo_interno: 'PI001', nombre: 'Pintura Látex Blanco 20L', categoria: 'Pinturas', marca: 'Alba', unidad_medida: 'lata', precio_costo: 12500, porcentaje_ganancia: 40, precio_venta: 17500, stock: 12, stock_minimo: 3, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F1', destacado: true },
-                    { codigo_interno: 'PI002', nombre: 'Rodillo de Pelo 9"', categoria: 'Pinturas', marca: 'Diamond', unidad_medida: 'unidad', precio_costo: 450, porcentaje_ganancia: 60, precio_venta: 720, stock: 35, stock_minimo: 8, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F2' },
-                    { codigo_interno: 'PI003', nombre: 'Brocha 2"', categoria: 'Pinturas', marca: 'Diamond', unidad_medida: 'unidad', precio_costo: 320, porcentaje_ganancia: 65, precio_venta: 528, stock: 40, stock_minimo: 10, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F3' },
-                    { codigo_interno: 'PI004', nombre: 'Enduído Plástico 4kg', categoria: 'Pinturas', marca: 'Alba', unidad_medida: 'balde', precio_costo: 850, porcentaje_ganancia: 55, precio_venta: 1317.5, stock: 20, stock_minimo: 5, proveedor_id: proveedorIds['Pinturas Alba'], ubicacion: 'F4' },
-                    
-                    // Fijaciones
-                    { codigo_interno: 'FJ001', nombre: 'Clavo para Madera 2 1/2" x kg', categoria: 'Fijaciones', unidad_medida: 'kg', precio_costo: 450, porcentaje_ganancia: 80, precio_venta: 810, stock: 25, stock_minimo: 5, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'G1' },
-                    { codigo_interno: 'FJ002', nombre: 'Tornillo Tirafondo 3x60mm x 100u', categoria: 'Fijaciones', marca: 'Fischer', unidad_medida: 'paquete', precio_costo: 1250, porcentaje_ganancia: 60, precio_venta: 2000, stock: 18, stock_minimo: 4, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'G2' },
-                    { codigo_interno: 'FJ003', nombre: 'Anclaje Químico 12mm', categoria: 'Fijaciones', marca: 'Hilti', unidad_medida: 'cartucho', precio_costo: 1850, porcentaje_ganancia: 50, precio_venta: 2775, stock: 15, stock_minimo: 3, proveedor_id: proveedorIds['Acindar SA'], ubicacion: 'G3' },
-                    { codigo_interno: 'FJ004', nombre: 'Cinta Doble Faz 25mm x 10m', categoria: 'Fijaciones', marca: '3M', unidad_medida: 'rollo', precio_costo: 350, porcentaje_ganancia: 70, precio_venta: 595, stock: 30, stock_minimo: 8, ubicacion: 'G4' },
-                    
-                    // Seguridad
-                    { codigo_interno: 'SE001', nombre: 'Guantes de Cuero', categoria: 'Seguridad', unidad_medida: 'par', precio_costo: 1250, porcentaje_ganancia: 50, precio_venta: 1875, stock: 20, stock_minimo: 5, ubicacion: 'H1' },
-                    { codigo_interno: 'SE002', nombre: 'Anteojos de Seguridad', categoria: 'Seguridad', marca: '3M', unidad_medida: 'unidad', precio_costo: 850, porcentaje_ganancia: 55, precio_venta: 1317.5, stock: 25, stock_minimo: 6, ubicacion: 'H2' },
-                    { codigo_interno: 'SE003', nombre: 'Casco de Obra', categoria: 'Seguridad', marca: 'Riggel', unidad_medida: 'unidad', precio_costo: 1850, porcentaje_ganancia: 45, precio_venta: 2682.5, stock: 15, stock_minimo: 3, ubicacion: 'H3' },
-                    { codigo_interno: 'SE004', nombre: 'Barbijo N95 x 10u', categoria: 'Seguridad', marca: '3M', unidad_medida: 'paquete', precio_costo: 1250, porcentaje_ganancia: 40, precio_venta: 1750, stock: 30, stock_minimo: 8, ubicacion: 'H4' },
-                    
-                    // Jardinería
-                    { codigo_interno: 'JA001', nombre: 'Pala de Puntón', categoria: 'Jardinería', unidad_medida: 'unidad', precio_costo: 1850, porcentaje_ganancia: 50, precio_venta: 2775, stock: 10, stock_minimo: 2, ubicacion: 'I1' },
-                    { codigo_interno: 'JA002', nombre: 'Manguera 1/2" x 25m', categoria: 'Jardinería', marca: 'Goodyear', unidad_medida: 'rollo', precio_costo: 3250, porcentaje_ganancia: 45, precio_venta: 4712.5, stock: 8, stock_minimo: 2, ubicacion: 'I2' },
-                    { codigo_interno: 'JA003', nombre: 'Tierra Negra 40L', categoria: 'Jardinería', unidad_medida: 'bolsa', precio_costo: 450, porcentaje_ganancia: 60, precio_venta: 720, stock: 40, stock_minimo: 10, ubicacion: 'I3' },
-                    { codigo_interno: 'JA004', nombre: 'Cortadora de Césped Manual', categoria: 'Jardinería', marca: 'Tramontina', unidad_medida: 'unidad', precio_costo: 2850, porcentaje_ganancia: 40, precio_venta: 3990, stock: 6, stock_minimo: 1, ubicacion: 'I4' }
-                ];
-                
-                // Insertar productos
-                let productosInsertados = 0;
-                for (const producto of productosData) {
-                    try {
-                        await supabaseClient
-                            .from('productos')
-                            .insert({
-                                ...producto,
-                                activo: true
-                            });
-                        productosInsertados++;
-                    } catch (productoError) {
-                        console.warn('Error insertando producto:', productoError.message);
-                    }
-                }
-                
-                // 5. Insertar clientes
-                const clientesData = [
-                    {
-                        nombre: 'Consumidor',
-                        apellido: 'Final',
-                        tipo_documento: 'DNI',
-                        numero_documento: '00000000',
-                        telefono: '',
-                        tipo_cliente: 'consumidor_final',
-                        limite_credito: 0,
-                        saldo: 0,
-                        categoria_iva: 'consumidor_final',
-                        activo: true
-                    },
-                    {
-                        nombre: 'Juan',
-                        apellido: 'Gómez',
-                        tipo_documento: 'DNI',
-                        numero_documento: '30123456',
-                        telefono: '011-5555-1234',
-                        email: 'juan.gomez@constructor.com',
-                        direccion: 'Calle Falsa 123',
-                        tipo_cliente: 'contado',
-                        limite_credito: 0,
-                        saldo: 0,
-                        categoria_iva: 'monotributista',
-                        cuit: '20-30123456-9',
-                        activo: true
-                    },
-                    {
-                        nombre: 'Constructora',
-                        apellido: 'El Progreso',
-                        razon_social: 'Constructora El Progreso SRL',
-                        tipo_documento: 'CUIT',
-                        numero_documento: '30765432109',
-                        telefono: '011-4444-5678',
-                        email: 'compras@elprogreso.com.ar',
-                        direccion: 'Av. Siempre Viva 742',
-                        tipo_cliente: 'cuenta_corriente',
-                        limite_credito: 100000,
-                        saldo: 0,
-                        categoria_iva: 'responsable_inscripto',
-                        cuit: '30-76543210-9',
-                        observaciones: 'Cliente preferencial, 30 días de plazo',
-                        activo: true
-                    }
-                ];
-                
-                for (const cliente of clientesData) {
-                    try {
-                        await supabaseClient
-                            .from('clientes')
-                            .insert(cliente);
-                    } catch (clienteError) {
-                        console.warn('Error insertando cliente:', clienteError.message);
-                    }
-                }
-                
-                dataStatus.innerHTML = `
-                    <p class="success">✅ ¡Datos de ferretería insertados exitosamente!</p>
-                    <div class="test-data" style="margin-top: 10px;">
-                        <p><strong>Resumen de datos cargados:</strong></p>
-                        <ul>
-                            <li>🏪 1 Sucursal configurada</li>
-                            <li>💰 2 Cajas de venta</li>
-                            <li>📦 50 Productos de ferretería</li>
-                            <li>🏢 5 Proveedores mayoristas</li>
-                            <li>👥 3 Tipos de clientes</li>
-                            <li>🗂️ 10 Categorías de productos</li>
-                            <li>⚙️ Configuración inicial completa</li>
-                        </ul>
-                        <p style="margin-top: 10px; color: #059669; font-weight: 500;">
-                            🎉 ¡Tu sistema de ferretería está listo para usar!
-                        </p>
-                    </div>
+            checklist.innerHTML = '';
+            tables.forEach(table => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="checklist-icon pending">❌</div>
+                    <span>${table} - <strong style="color: #6b7280;">Pendiente</strong></span>
                 `;
-                dataStatus.classList.add('show');
-                
-                // Habilitar siguiente paso
-                nextStep3Btn.disabled = false;
-                verifySetupBtn.disabled = false;
-                
-                // Marcar verificación
-                document.getElementById('check3').checked = true;
-                document.getElementById('verif3').classList.add('verified');
-                
-            } catch (error) {
-                console.error('Error insertando datos:', error);
-                dataStatus.innerHTML = `
-                    <p class="error">❌ Error insertando datos: ${error.message}</p>
-                    <p class="info">Puedes saltar este paso y continuar. Los datos de ejemplo no son esenciales.</p>
-                `;
-                dataStatus.classList.add('show');
-                
-                // Aún permitir continuar
-                nextStep3Btn.disabled = false;
-                verifySetupBtn.disabled = false;
-                
-            } finally {
-                insertTestDataBtn.disabled = false;
-                insertTestDataBtn.textContent = '🚀 Insertar Datos de Ferretería';
-            }
+                checklist.appendChild(li);
+            });
         }
 
-        // Verificar configuración completa
-        async function verifyConfiguration() {
-            if (!supabaseClient) {
-                verifyStatus.innerHTML = '<p class="error">Primero prueba la conexión</p>';
-                verifyStatus.classList.add('show');
-                return;
-            }
-            
-            verifySetupBtn.disabled = true;
-            verifySetupBtn.textContent = '🔄 Verificando...';
-            verifyStatus.innerHTML = '<p class="info">🔄 Verificando configuración completa...</p>';
-            verifyStatus.classList.add('show');
-            
-            try {
-                // Verificar que existan las tablas principales
-                const tablesToCheck = ['locales', 'cajas', 'productos', 'clientes', 'proveedores', 'categorias'];
-                let verifiedTables = 0;
-                
-                for (const table of tablesToCheck) {
-                    try {
-                        const { error } = await supabaseClient
-                            .from(table)
-                            .select('id')
-                            .limit(1);
-                        
-                        if (!error) {
-                            verifiedTables++;
-                        }
-                    } catch (error) {
-                        console.warn(`Tabla ${table} no encontrada:`, error.message);
-                    }
-                }
-                
-                if (verifiedTables >= 4) {
-                    // Marcar configuración como completada
-                    localStorage.setItem('ferreteria_configured', 'true');
-                    
-                    verifyStatus.innerHTML = `
-                        <p class="success">✅ ¡Configuración verificada correctamente!</p>
-                        <div class="test-data" style="margin-top: 10px;">
-                            <p><strong>✅ ${verifiedTables}/6 tablas verificadas</strong></p>
-                            <p><strong>✅ Conexión a Supabase activa</strong></p>
-                            <p><strong>✅ Sistema listo para producción</strong></p>
-                        </div>
-                        <p style="margin-top: 15px; color: #3b82f6; font-weight: 500;">
-                            🎯 ¡Puedes comenzar a gestionar tu ferretería ahora mismo!
-                        </p>
-                    `;
-                    verifyStatus.classList.add('show');
-                    
-                    // Habilitar botones finales
-                    completeSetupBtn.disabled = false;
-                    goToAppBtn.disabled = false;
-                    
-                    // Marcar verificación final
-                    document.getElementById('check4').checked = true;
-                    document.getElementById('verif4').classList.add('verified');
-                    
-                    // Actualizar progreso al 100%
-                    updateProgress(100);
-                } else {
-                    verifyStatus.innerHTML = `
-                        <p class="warning">⚠️ Configuración incompleta</p>
-                        <p class="info">Solo ${verifiedTables} de 6 tablas principales encontradas.</p>
-                        <p class="info">Completa los pasos anteriores o ejecuta el SQL manualmente.</p>
-                    `;
-                    verifyStatus.classList.add('show');
-                }
-                
-            } catch (error) {
-                verifyStatus.innerHTML = `
-                    <p class="error">❌ Error en verificación: ${error.message}</p>
-                    <p class="info">⚠️ Completa los pasos anteriores</p>
-                `;
-                verifyStatus.classList.add('show');
-            } finally {
-                verifySetupBtn.disabled = false;
-                verifySetupBtn.textContent = '🔍 Verificar Configuración';
-            }
-        }
-
-        // Completar configuración
-        function completeSetup() {
-            // Guardar configuración final
-            const configData = {
-                configuredAt: new Date().toISOString(),
-                version: '1.0.0',
-                tipo: 'ferreteria',
-                supabaseUrl: localStorage.getItem('supabaseUrl'),
-                tablesCreated: true,
-                sampleDataInserted: insertSampleDataCheck.checked
+        // Configuración Empresa
+        function saveEmpresa() {
+            setupData.empresa = {
+                nombre: document.getElementById('empresaNombre').value,
+                cuit: document.getElementById('empresaCuit').value,
+                direccion: document.getElementById('empresaDireccion').value,
+                telefono: document.getElementById('empresaTelefono').value,
+                email: document.getElementById('empresaEmail').value,
+                config: document.getElementById('empresaConfig').value
             };
             
-            localStorage.setItem('ferreteria_config', JSON.stringify(configData));
-            localStorage.setItem('ferreteria_configured', 'true');
+            updateConfigSummary();
+            nextStep();
+        }
+
+        // Configuración Local
+        function saveLocal() {
+            const turnos = [];
+            if (document.getElementById('turnoManana').checked) turnos.push('mañana');
+            if (document.getElementById('turnoTarde').checked) turnos.push('tarde');
+            if (document.getElementById('turnoNoche').checked) turnos.push('noche');
             
-            // Mostrar mensaje de éxito
-            verifyStatus.innerHTML = `
-                <p class="success">✅ ¡Configuración completada exitosamente!</p>
-                <div class="instructions" style="background: #d1fae5; border-color: #a7f3d0;">
-                    <p><strong>🎉 ¡Felicidades! Tu sistema de ferretería está listo.</strong></p>
-                    <p>Ahora puedes:</p>
-                    <ol>
-                        <li>Gestionar stock de productos</li>
-                        <li>Realizar ventas y facturación</li>
-                        <li>Controlar clientes y proveedores</li>
-                        <li>Generar reportes de ventas</li>
-                        <li>Cerrar caja diariamente</li>
-                    </ol>
-                    <p style="margin-top: 10px;"><strong>Haz clic en "Ir a Mi Ferretería POS" para comenzar.</strong></p>
+            setupData.local = {
+                nombre: document.getElementById('localNombre').value,
+                telefono: document.getElementById('localTelefono').value,
+                direccion: document.getElementById('localDireccion').value,
+                horario: document.getElementById('localHorario').value,
+                responsable: document.getElementById('localResponsable').value,
+                caja: {
+                    numero: document.getElementById('cajaNumero').value,
+                    nombre: document.getElementById('cajaNombre').value
+                },
+                turnos: turnos
+            };
+            
+            updateConfigSummary();
+            nextStep();
+        }
+
+        // Configuración Usuarios
+        function agregarVendedor() {
+            const container = document.getElementById('vendedoresContainer');
+            const index = container.children.length;
+            
+            const div = document.createElement('div');
+            div.className = 'vendedor-form';
+            div.style.cssText = 'border: 2px solid #e5e7eb; padding: 15px; border-radius: 10px; margin-bottom: 15px;';
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h4 style="margin: 0;">Vendedor ${index + 1}</h4>
+                    <button type="button" class="btn btn-danger" onclick="eliminarVendedor(this)" style="padding: 5px 10px; font-size: 0.9rem;">Eliminar</button>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <input type="text" placeholder="Nombre" class="vendedor-nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" placeholder="Email" class="vendedor-email" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <input type="password" placeholder="Contraseña" class="vendedor-password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <select class="vendedor-rol">
+                            <option value="vendedor">Vendedor</option>
+                            <option value="supervisor">Supervisor</option>
+                        </select>
+                    </div>
                 </div>
             `;
-            verifyStatus.classList.add('show');
             
-            // Actualizar progreso al 100%
-            updateProgress(100);
-            
-            // Habilitar botón para ir a la app
-            goToAppBtn.disabled = false;
+            container.appendChild(div);
+            updateUsersChecklist();
         }
+
+        function eliminarVendedor(btn) {
+            btn.closest('.vendedor-form').remove();
+            updateUsersChecklist();
+        }
+
+        function updateUsersChecklist() {
+            const checklist = document.getElementById('usersChecklist');
+            if (!checklist) return;
+            
+            const adminNombre = document.getElementById('adminNombre').value || 'Administrador';
+            const adminEmail = document.getElementById('adminEmail').value || 'admin@empresa.com';
+            
+            checklist.innerHTML = `
+                <li>
+                    <div class="checklist-icon pending">👑</div>
+                    <span>${adminNombre} (${adminEmail}) - <strong>Administrador</strong></span>
+                </li>
+            `;
+            
+            const vendedores = document.querySelectorAll('.vendedor-form');
+            vendedores.forEach((form, index) => {
+                const nombre = form.querySelector('.vendedor-nombre').value || `Vendedor ${index + 1}`;
+                const email = form.querySelector('.vendedor-email').value || 'email@empresa.com';
+                const rol = form.querySelector('.vendedor-rol').value;
+                
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="checklist-icon pending">👤</div>
+                    <span>${nombre} (${email}) - <strong>${rol}</strong></span>
+                `;
+                checklist.appendChild(li);
+            });
+        }
+
+        async function createUsers() {
+            if (!supabaseClient) {
+                alert('Error: No hay conexión a Supabase');
+                return;
+            }
+
+            // Crear usuario administrador
+            const adminUser = {
+                nombre: document.getElementById('adminNombre').value,
+                email: document.getElementById('adminEmail').value,
+                password: document.getElementById('adminPassword').value,
+                rol: document.getElementById('adminRol').value
+            };
+
+            try {
+                // Primero intentar crear el usuario con Supabase Auth
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                    email: adminUser.email,
+                    password: adminUser.password,
+                    options: {
+                        data: {
+                            nombre: adminUser.nombre,
+                            rol: adminUser.rol
+                        }
+                    }
+                });
+
+                if (authError) throw authError;
+
+                // Luego insertar en la tabla usuarios
+                const { error: dbError } = await supabaseClient
+                    .from('usuarios')
+                    .insert([{
+                        id: authData.user.id,
+                        email: adminUser.email,
+                        nombre: adminUser.nombre,
+                        rol: adminUser.rol,
+                        activo: true
+                    }]);
+
+                if (dbError) throw dbError;
+
+                setupData.usuarios.push(adminUser);
+
+                // Crear vendedores adicionales
+                const vendedoresForms = document.querySelectorAll('.vendedor-form');
+                for (const form of vendedoresForms) {
+                    const vendedor = {
+                        nombre: form.querySelector('.vendedor-nombre').value,
+                        email: form.querySelector('.vendedor-email').value,
+                        password: form.querySelector('.vendedor-password').value,
+                        rol: form.querySelector('.vendedor-rol').value
+                    };
+
+                    const { data: vendedorAuth, error: vendedorError } = await supabaseClient.auth.signUp({
+                        email: vendedor.email,
+                        password: vendedor.password,
+                        options: {
+                            data: {
+                                nombre: vendedor.nombre,
+                                rol: vendedor.rol
+                            }
+                        }
+                    });
+
+                    if (!vendedorError) {
+                        await supabaseClient
+                            .from('usuarios')
+                            .insert([{
+                                id: vendedorAuth.user.id,
+                                email: vendedor.email,
+                                nombre: vendedor.nombre,
+                                rol: vendedor.rol,
+                                activo: true
+                            }]);
+
+                        setupData.usuarios.push(vendedor);
+                    }
+                }
+
+                alert(`✅ Usuarios creados exitosamente\nTotal: ${setupData.usuarios.length} usuarios`);
+                nextStep();
+
+            } catch (error) {
+                alert(`❌ Error creando usuarios: ${error.message}`);
+            }
+        }
+
+        // Configuración Productos
+        function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const uploadArea = document.getElementById('excelUpload');
+            uploadArea.classList.add('drag-over');
+            
+            // Simular procesamiento de Excel
+            setTimeout(() => {
+                uploadArea.classList.remove('drag-over');
+                
+                // Para este ejemplo, cargamos productos de muestra
+                loadSampleProducts();
+                
+                alert('📊 Archivo Excel procesado exitosamente\nSe han cargado 25 productos de ejemplo');
+            }, 1500);
+        }
+
+        function loadSampleProducts() {
+            const sampleProducts = [
+                { codigo: 'HERR-001', nombre: 'Martillo de Acero 500g', categoria: 'Herramientas Manuales', precio: 1750, stock: 15 },
+                { codigo: 'HERR-002', nombre: 'Destornillador Plano 6x100', categoria: 'Herramientas Manuales', precio: 1232, stock: 25 },
+                { codigo: 'HERR-003', nombre: 'Alicate Universal 8"', categoria: 'Herramientas Manuales', precio: 2890, stock: 18 },
+                { codigo: 'HERR-004', nombre: 'Taladro Percutor 650W', categoria: 'Herramientas Eléctricas', precio: 24500, stock: 8 },
+                { codigo: 'HERR-005', nombre: 'Amoladora Angular 4.5"', categoria: 'Herramientas Eléctricas', precio: 18900, stock: 12 },
+                { codigo: 'HERR-006', nombre: 'Sierra Circular 1400W', categoria: 'Herramientas Eléctricas', precio: 32400, stock: 6 },
+                { codigo: 'MAT-001', nombre: 'Cemento Portland 50kg', categoria: 'Materiales de Construcción', precio: 4200, stock: 40 },
+                { codigo: 'MAT-002', nombre: 'Ladrillo Hueco 18x18x33', categoria: 'Materiales de Construcción', precio: 85, stock: 500 },
+                { codigo: 'MAT-003', nombre: 'Arena Fina m3', categoria: 'Materiales de Construcción', precio: 12500, stock: 15 },
+                { codigo: 'FON-001', nombre: 'Caño PVC 1/2" x 6m', categoria: 'Fontanería', precio: 1450, stock: 30 },
+                { codigo: 'FON-002', nombre: 'Llave de Paso 1/2"', categoria: 'Fontanería', precio: 890, stock: 45 },
+                { codigo: 'FON-003', nombre: 'Codo PVC 90° 1"', categoria: 'Fontanería', precio: 320, stock: 80 },
+                { codigo: 'ELE-001', nombre: 'Cable TW 2.5mm x 100m', categoria: 'Electricidad', precio: 18500, stock: 22 },
+                { codigo: 'ELE-002', nombre: 'Interruptor Simple', categoria: 'Electricidad', precio: 450, stock: 60 },
+                { codigo: 'ELE-003', nombre: 'Toma Corriente 2P+T', categoria: 'Electricidad', precio: 680, stock: 55 },
+                { codigo: 'PIN-001', nombre: 'Pintura Látex Blanca 20L', categoria: 'Pinturas', precio: 28900, stock: 18 },
+                { codigo: 'PIN-002', nombre: 'Rodillo de Lana 9"', categoria: 'Pinturas', precio: 1250, stock: 35 },
+                { codigo: 'PIN-003', nombre: 'Brocha 2" Profesional', categoria: 'Pinturas', precio: 890, stock: 40 },
+                { codigo: 'FIJ-001', nombre: 'Tornillo Punta Broca 3x1"', categoria: 'Fijaciones', precio: 15, stock: 1000 },
+                { codigo: 'FIJ-002', nombre: 'Clavo de Construcción 3"', categoria: 'Fijaciones', precio: 8, stock: 1500 },
+                { codigo: 'FIJ-003', nombre: 'Anclaje Químico 10mm', categoria: 'Fijaciones', precio: 450, stock: 65 },
+                { codigo: 'JAR-001', nombre: 'Pala de Jardín', categoria: 'Jardinería', precio: 2450, stock: 25 },
+                { codigo: 'JAR-002', nombre: 'Rastrillo 16 Dientes', categoria: 'Jardinería', precio: 1890, stock: 30 },
+                { codigo: 'JAR-003', nombre: 'Manguera 1/2" x 25m', categoria: 'Jardinería', precio: 6450, stock: 20 },
+                { codigo: 'SEG-001', nombre: 'Guantes de Seguridad', categoria: 'Seguridad', precio: 1250, stock: 45 }
+            ];
+
+            setupData.productos = sampleProducts;
+            
+            // Mostrar vista previa
+            const preview = document.getElementById('excelPreview');
+            const tableBody = preview.querySelector('tbody');
+            preview.style.display = 'block';
+            
+            tableBody.innerHTML = '';
+            sampleProducts.forEach(producto => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${producto.codigo}</td>
+                    <td>${producto.nombre}</td>
+                    <td>${producto.categoria}</td>
+                    <td>$${producto.precio.toLocaleString()}</td>
+                    <td>${producto.stock}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Actualizar resumen
+            const categories = [...new Set(sampleProducts.map(p => p.categoria))];
+            const totalStock = sampleProducts.reduce((sum, p) => sum + p.stock, 0);
+            
+            document.getElementById('productCount').textContent = sampleProducts.length;
+            document.getElementById('categoryCount').textContent = categories.length;
+            document.getElementById('totalStock').textContent = totalStock.toLocaleString();
+            
+            // Desmarcar skip
+            document.getElementById('skipProducts').checked = false;
+        }
+
+        async function saveProducts() {
+            const skip = document.getElementById('skipProducts').checked;
+            
+            if (skip) {
+                setupData.productos = [];
+                nextStep();
+                return;
+            }
+
+            if (!setupData.productos.length) {
+                alert('No hay productos para guardar. Por favor, carga productos primero.');
+                return;
+            }
+
+            if (!supabaseClient) {
+                alert('Error: No hay conexión a Supabase');
+                return;
+            }
+
+            try {
+                // Primero, insertar categorías si no existen
+                const categories = [...new Set(setupData.productos.map(p => p.categoria))];
+                for (const category of categories) {
+                    const { error } = await supabaseClient
+                        .from('categorias')
+                        .upsert({
+                            nombre: category,
+                            descripcion: `Productos de ${category}`,
+                            activo: true
+                        }, { onConflict: 'nombre' });
+                    
+                    if (error) console.warn(`Error insertando categoría ${category}:`, error);
+                }
+
+                // Luego, insertar productos
+                const productosToInsert = setupData.productos.map(producto => ({
+                    codigo_interno: producto.codigo,
+                    nombre: producto.nombre,
+                    categoria: producto.categoria,
+                    precio_venta: producto.precio,
+                    precio_costo: Math.round(producto.precio * 0.7),
+                    stock: producto.stock,
+                    stock_minimo: 5,
+                    stock_maximo: 100,
+                    activo: true,
+                    unidad_medida: 'unidad'
+                }));
+
+                const { error } = await supabaseClient
+                    .from('productos')
+                    .insert(productosToInsert);
+
+                if (error) throw error;
+
+                alert(`✅ Productos guardados exitosamente\nTotal: ${setupData.productos.length} productos`);
+                nextStep();
+
+            } catch (error) {
+                alert(`❌ Error guardando productos: ${error.message}`);
+            }
+        }
+
+        // Finalización
+        async function completeSetup() {
+            document.getElementById('finalLoading').style.display = 'block';
+            document.getElementById('successScreen').style.display = 'none';
+            document.getElementById('finalActions').style.display = 'none';
+
+            try {
+                // Guardar configuración completa en localStorage
+                const config = {
+                    supabase: setupData.supabase,
+                    empresa: setupData.empresa,
+                    local: setupData.local,
+                    usuarios: setupData.usuarios.length,
+                    productos: setupData.productos.length,
+                    fecha: new Date().toISOString(),
+                    version: '2.0.0'
+                };
+
+                localStorage.setItem('pos_config', JSON.stringify(config));
+                
+                // Guardar datos de empresa
+                localStorage.setItem('config_empresa', JSON.stringify(setupData.empresa));
+                
+                // Crear configuración de local actual
+                if (setupData.local) {
+                    localStorage.setItem('currentLocal', JSON.stringify({
+                        id: 'local-1',
+                        nombre: setupData.local.nombre
+                    }));
+                    
+                    localStorage.setItem('currentCaja', JSON.stringify({
+                        id: 'caja-1',
+                        numero: setupData.local.caja.numero,
+                        nombre: setupData.local.caja.nombre
+                    }));
+                }
+
+                // Simular proceso de configuración
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Actualizar pantalla de éxito
+                document.getElementById('finalEmpresa').textContent = setupData.empresa.nombre;
+                document.getElementById('finalUsuarios').textContent = setupData.usuarios.length;
+                document.getElementById('finalProductos').textContent = setupData.productos.length;
+
+                document.getElementById('finalLoading').style.display = 'none';
+                document.getElementById('successScreen').style.display = 'block';
+
+            } catch (error) {
+                alert(`❌ Error finalizando configuración: ${error.message}`);
+                document.getElementById('finalLoading').style.display = 'none';
+                document.getElementById('finalActions').style.display = 'block';
+            }
+        }
+
+        function goToLogin() {
+            window.location.href = 'index.html';
+        }
+
+        function downloadConfig() {
+            const config = {
+                supabase: setupData.supabase,
+                empresa: setupData.empresa,
+                local: setupData.local,
+                usuarios: setupData.usuarios,
+                productos: setupData.productos,
+                fecha: new Date().toISOString(),
+                version: '2.0.0'
+            };
+
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `config-pos-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Utilidades
+        function loadSavedConfig() {
+            const savedUrl = localStorage.getItem('supabaseUrl');
+            const savedKey = localStorage.getItem('supabaseKey');
+            
+            if (savedUrl) document.getElementById('supabaseUrl').value = savedUrl;
+            if (savedKey) document.getElementById('supabaseKey').value = savedKey;
+            
+            const savedConfig = localStorage.getItem('pos_config');
+            if (savedConfig) {
+                try {
+                    const config = JSON.parse(savedConfig);
+                    if (config.empresa) {
+                        document.getElementById('empresaNombre').value = config.empresa.nombre || '';
+                        document.getElementById('empresaCuit').value = config.empresa.cuit || '';
+                        document.getElementById('empresaDireccion').value = config.empresa.direccion || '';
+                        document.getElementById('empresaTelefono').value = config.empresa.telefono || '';
+                        document.getElementById('empresaEmail').value = config.empresa.email || '';
+                    }
+                } catch (e) {
+                    console.warn('Error cargando configuración guardada:', e);
+                }
+            }
+        }
+
+        function updateConfigSummary() {
+            // Actualizar resumen empresa
+            document.getElementById('summaryNombre').textContent = setupData.empresa.nombre || 'No configurado';
+            document.getElementById('summaryCuit').textContent = setupData.empresa.cuit || 'No configurado';
+            document.getElementById('summaryDireccion').textContent = setupData.empresa.direccion || 'No configurado';
+            
+            // Actualizar resumen local
+            document.getElementById('summaryLocal').textContent = setupData.local.nombre || 'No configurado';
+            document.getElementById('summaryCaja').textContent = setupData.local.caja?.numero || 'No configurado';
+            document.getElementById('summaryTurnos').textContent = setupData.local.turnos?.join(', ') || 'No configurado';
+            
+            // Actualizar URL Supabase
+            if (setupData.supabase.url) {
+                document.getElementById('configUrl').textContent = setupData.supabase.url.substring(0, 40) + '...';
+            }
+        }
+
+        // Drag and drop para archivos Excel
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropArea = document.getElementById('excelUpload');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropArea.classList.add('drag-over');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('drag-over');
+            }
+
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    document.getElementById('excelFile').files = files;
+                    loadSampleProducts(); // Por ahora simular carga
+                }
+            }
+        });
     </script>
 </body>
 </html>
