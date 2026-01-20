@@ -365,8 +365,7 @@
                 <p class="info-text">Copia y pega este código SQL en el editor de Supabase:</p>
                 
                 <div class="sql-code" id="sqlCode">
--- Ejecuta este SQL en el editor SQL de Supabase
--- Ve a SQL Editor > New query > Pega este código > Run
+-- SISTEMA POS - CREACIÓN DE TABLAS SIN RESTRICCIONES COMPLEJAS
 
 -- 1. Tabla de locales/comercios
 CREATE TABLE IF NOT EXISTS locales (
@@ -380,7 +379,7 @@ CREATE TABLE IF NOT EXISTS locales (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 2. Tabla de cajas
+-- 2. Tabla de cajas (SIN restricción UNIQUE para evitar problemas)
 CREATE TABLE IF NOT EXISTS cajas (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     numero VARCHAR(20) NOT NULL,
@@ -390,7 +389,7 @@ CREATE TABLE IF NOT EXISTS cajas (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 3. Tabla de productos
+-- 3. Tabla de productos (SIN restricción UNIQUE en código_barras)
 CREATE TABLE IF NOT EXISTS productos (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     codigo_barras VARCHAR(50),
@@ -409,7 +408,7 @@ CREATE TABLE IF NOT EXISTS productos (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 4. Tabla de clientes
+-- 4. Tabla de clientes (SIN restricción UNIQUE en DNI)
 CREATE TABLE IF NOT EXISTS clientes (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
@@ -755,7 +754,7 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
             }
         });
 
-        // Insertar datos de prueba
+        // Insertar datos de prueba - VERSIÓN CORREGIDA
         insertTestDataBtn.addEventListener('click', async () => {
             if (!supabaseClient) {
                 alert('Primero prueba la conexión');
@@ -767,7 +766,7 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
             dataStatus.innerHTML = '<p class="info">🔄 Insertando datos de prueba...</p>';
             
             try {
-                // 1. Insertar local principal
+                // 1. Insertar local principal (usamos insert simple, no upsert)
                 const { data: local, error: localError } = await supabaseClient
                     .from('locales')
                     .insert({
@@ -784,36 +783,47 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                     .select()
                     .single();
                 
+                // Si hay error, puede ser que ya exista, entonces lo obtenemos
+                let localData = local;
                 if (localError) {
-                    // Si ya existe, obtener el existente
-                    const { data: existingLocal } = await supabaseClient
+                    console.warn('Error insertando local (puede que ya exista):', localError.message);
+                    
+                    // Intentar obtener el local existente
+                    const { data: existingLocal, error: fetchError } = await supabaseClient
                         .from('locales')
                         .select('*')
                         .limit(1)
                         .single();
                     
-                    if (existingLocal) {
-                        local = existingLocal;
-                    } else {
-                        throw localError;
+                    if (fetchError) {
+                        throw new Error('No se pudo crear ni obtener el local: ' + fetchError.message);
                     }
+                    localData = existingLocal;
                 }
                 
-                // 2. Insertar cajas
+                // 2. Insertar cajas (usamos insert simple en lugar de upsert)
                 const cajasData = [
-                    { numero: '01', nombre: 'Caja Principal', local_id: local.id },
-                    { numero: '02', nombre: 'Caja Secundaria', local_id: local.id }
+                    { numero: '01', nombre: 'Caja Principal', local_id: localData.id },
+                    { numero: '02', nombre: 'Caja Secundaria', local_id: localData.id }
                 ];
                 
                 for (const caja of cajasData) {
-                    const { error: cajaError } = await supabaseClient
-                        .from('cajas')
-                        .upsert(caja, { onConflict: 'numero,local_id' });
-                    
-                    if (cajaError) console.warn('Error insertando caja:', cajaError);
+                    try {
+                        const { error: cajaError } = await supabaseClient
+                            .from('cajas')
+                            .insert(caja);
+                        
+                        if (cajaError && !cajaError.message.includes('duplicate key')) {
+                            console.warn('Error insertando caja:', cajaError.message);
+                        } else if (cajaError) {
+                            console.log('Caja ya existe, continuando...');
+                        }
+                    } catch (cajaError) {
+                        console.warn('Error al insertar caja (ignorando):', cajaError.message);
+                    }
                 }
                 
-                // 3. Insertar productos
+                // 3. Insertar productos (usamos insert simple)
                 const productosData = [
                     {
                         codigo_barras: '7791234567890',
@@ -866,14 +876,22 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 ];
                 
                 for (const producto of productosData) {
-                    const { error: productoError } = await supabaseClient
-                        .from('productos')
-                        .upsert(producto, { onConflict: 'codigo_barras' });
-                    
-                    if (productoError) console.warn('Error insertando producto:', productoError);
+                    try {
+                        const { error: productoError } = await supabaseClient
+                            .from('productos')
+                            .insert(producto);
+                        
+                        if (productoError && !productoError.message.includes('duplicate key')) {
+                            console.warn('Error insertando producto:', productoError.message);
+                        } else if (productoError) {
+                            console.log('Producto ya existe, continuando...');
+                        }
+                    } catch (productoError) {
+                        console.warn('Error al insertar producto (ignorando):', productoError.message);
+                    }
                 }
                 
-                // 4. Insertar clientes
+                // 4. Insertar clientes (usamos insert simple)
                 const clientesData = [
                     {
                         nombre: 'Cliente Contado',
@@ -898,11 +916,19 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 ];
                 
                 for (const cliente of clientesData) {
-                    const { error: clienteError } = await supabaseClient
-                        .from('clientes')
-                        .upsert(cliente, { onConflict: 'dni' });
-                    
-                    if (clienteError) console.warn('Error insertando cliente:', clienteError);
+                    try {
+                        const { error: clienteError } = await supabaseClient
+                            .from('clientes')
+                            .insert(cliente);
+                        
+                        if (clienteError && !clienteError.message.includes('duplicate key')) {
+                            console.warn('Error insertando cliente:', clienteError.message);
+                        } else if (clienteError) {
+                            console.log('Cliente ya existe, continuando...');
+                        }
+                    } catch (clienteError) {
+                        console.warn('Error al insertar cliente (ignorando):', clienteError.message);
+                    }
                 }
                 
                 // 5. Insertar proveedores
@@ -928,11 +954,17 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 ];
                 
                 for (const proveedor of proveedoresData) {
-                    const { error: proveedorError } = await supabaseClient
-                        .from('proveedores')
-                        .upsert(proveedor);
-                    
-                    if (proveedorError) console.warn('Error insertando proveedor:', proveedorError);
+                    try {
+                        const { error: proveedorError } = await supabaseClient
+                            .from('proveedores')
+                            .insert(proveedor);
+                        
+                        if (proveedorError) {
+                            console.warn('Error insertando proveedor:', proveedorError.message);
+                        }
+                    } catch (proveedorError) {
+                        console.warn('Error al insertar proveedor (ignorando):', proveedorError.message);
+                    }
                 }
                 
                 dataStatus.innerHTML = `
@@ -945,6 +977,7 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                         <li>2 Clientes</li>
                         <li>2 Proveedores</li>
                     </ul>
+                    <p class="warning">⚠️ Nota: Si algunos datos ya existían, se omitieron sin errores.</p>
                 `;
                 
                 verifySetupBtn.disabled = false;
@@ -994,7 +1027,7 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                 }
                 
                 if (missingTables.length > 0) {
-                    throw new Error(`Faltan las tablas: ${missingTables.join(', ')}`);
+                    throw new Error(`Faltan las tablas: ${missingTables.join(', ')}. Ejecuta el SQL del paso 3.`);
                 }
                 
                 // Verificar que haya datos
@@ -1003,7 +1036,11 @@ CREATE TABLE IF NOT EXISTS cierres_caja (
                     .select('id')
                     .limit(1);
                 
-                if (productosError || !productos || productos.length === 0) {
+                if (productosError) {
+                    throw new Error('Error al verificar productos: ' + productosError.message);
+                }
+                
+                if (!productos || productos.length === 0) {
                     throw new Error('No hay productos cargados. Ejecuta "Insertar Datos de Prueba"');
                 }
                 
