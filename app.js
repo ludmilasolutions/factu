@@ -6,7 +6,7 @@
 const CONFIG = {
     VERSION: '2.0.0',
     DB_NAME: 'pos_offline_db',
-    DB_VERSION: 10, // Incrementado para evitar conflictos
+    DB_VERSION: 10,
     SYNC_INTERVAL: 15000,
     MAX_OFFLINE_OPERATIONS: 500,
     STOCK_ALERT_THRESHOLD: 0.2
@@ -84,7 +84,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initIndexedDB() {
     return new Promise((resolve, reject) => {
-        // Intentamos abrir con una versión alta para evitar conflictos
         const request = indexedDB.open(CONFIG.DB_NAME, CONFIG.DB_VERSION);
         
         request.onerror = (event) => {
@@ -96,7 +95,6 @@ async function initIndexedDB() {
             db = event.target.result;
             console.log('✅ IndexedDB inicializada - Versión:', db.version);
             
-            // Verificar y crear object stores si no existen
             const objectStoreNames = Array.from(db.objectStoreNames);
             if (objectStoreNames.length === 0) {
                 console.log('🔄 Creando object stores...');
@@ -127,7 +125,6 @@ async function initIndexedDB() {
 }
 
 function setupObjectStores(db) {
-    // Lista de object stores necesarios
     const stores = [
         'operaciones_pendientes',
         'productos_cache',
@@ -141,7 +138,6 @@ function setupObjectStores(db) {
         'categorias_cache'
     ];
     
-    // Crear solo los stores que no existen
     stores.forEach(storeName => {
         if (!db.objectStoreNames.contains(storeName)) {
             console.log(`Creando store: ${storeName}`);
@@ -158,7 +154,6 @@ function setupObjectStores(db) {
             
             const store = db.createObjectStore(storeName, options);
             
-            // Crear índices según corresponda
             switch(storeName) {
                 case 'productos_cache':
                     store.createIndex('codigo_barras', 'codigo_barras', { unique: true });
@@ -276,7 +271,6 @@ async function initSupabase() {
             
             console.log('✅ Supabase configurado');
             
-            // Verificar autenticación existente
             const { data: { session } } = await APP_STATE.supabase.auth.getSession();
             if (session) {
                 APP_STATE.currentUser = session.user;
@@ -449,7 +443,6 @@ async function handleLogin() {
     }
     
     if (!APP_STATE.supabase) {
-        // Modo offline
         APP_STATE.currentUser = {
             id: 'offline_' + Date.now(),
             email: email,
@@ -480,7 +473,6 @@ async function handleLogin() {
         
         APP_STATE.currentUser = data.user;
         
-        // Intentar cargar datos adicionales del usuario
         try {
             const { data: usuarioData, error: userError } = await APP_STATE.supabase
                 .from('usuarios')
@@ -557,18 +549,18 @@ async function loadLocalesYCajas() {
     
     try {
         if (APP_STATE.supabase && APP_STATE.isOnline) {
-            // Cargar locales
+            // Cargar locales - CORRECTO: usa 'activo'
             const { data: locales, error: errorLocales } = await APP_STATE.supabase
                 .from('locales')
                 .select('*')
                 .eq('activo', true)
                 .order('nombre');
             
-            // Cargar cajas (corregido: 'activo' en lugar de 'activa')
+            // Cargar cajas - CORREGIDO: 'activo' en lugar de 'activa'
             const { data: cajas, error: errorCajas } = await APP_STATE.supabase
                 .from('cajas')
                 .select('*')
-                .eq('activo', true)
+                .eq('activo', true)  // ✅ CORRECCIÓN CRÍTICA AQUÍ
                 .order('numero');
             
             if (!errorLocales && locales) {
@@ -648,7 +640,6 @@ async function abrirCaja(saldoInicial) {
         fecha: new Date().toISOString().split('T')[0],
         saldo_inicial: saldoInicial,
         estado: 'abierto',
-        // Inicializar contadores para todos los métodos
         ventas_efectivo: 0,
         ventas_tarjeta: 0,
         ventas_transferencia: 0,
@@ -704,7 +695,6 @@ function setupEventListeners() {
         btn.addEventListener('click', (e) => {
             let target = e.target;
             
-            // Si se hace clic en un elemento hijo, subimos hasta encontrar el botón
             while (target && !target.classList.contains('nav-btn')) {
                 target = target.parentElement;
             }
@@ -823,27 +813,22 @@ function setupNetworkListeners() {
 function switchPage(pageName) {
     console.log('Cambiando a página:', pageName);
     
-    // Verificar que pageName esté definido
     if (!pageName) {
         console.error('Error: pageName es undefined');
         return;
     }
     
-    // Actualizar botones de navegación
     document.querySelectorAll('.nav-btn').forEach(btn => {
         const btnPage = btn.dataset.page;
         btn.classList.toggle('active', btnPage === pageName);
     });
     
-    // Ocultar todas las páginas y mostrar la activa
     document.querySelectorAll('.page').forEach(page => {
         const pageId = page.id;
-        // Convertir pageName a formato de ID (ej: 'pos' -> 'pagePos')
         const targetPageId = 'page' + pageName.charAt(0).toUpperCase() + pageName.slice(1);
         page.classList.toggle('active', pageId === targetPageId);
     });
     
-    // Actualizar título de página
     const currentPage = document.getElementById('currentPage');
     if (currentPage) {
         currentPage.textContent = pageName.charAt(0).toUpperCase() + pageName.slice(1);
@@ -851,7 +836,6 @@ function switchPage(pageName) {
     
     APP_STATE.currentPage = pageName;
     
-    // Cargar datos específicos de la página
     switch(pageName) {
         case 'pos':
             loadProductosParaVenta();
@@ -1599,14 +1583,12 @@ function finalizarVenta() {
     const paymentModal = document.getElementById('paymentModal');
     if (paymentModal) paymentModal.style.display = 'flex';
     
-    // Actualizar total en el modal
     const totalElem = document.getElementById('cartTotal');
     const paymentTotal = document.getElementById('paymentTotalAmount');
     if (totalElem && paymentTotal) {
         paymentTotal.textContent = totalElem.textContent;
     }
     
-    // Mostrar detalles para efectivo por defecto
     showPaymentDetails('efectivo');
 }
 
@@ -1681,7 +1663,6 @@ function showPaymentDetails(method) {
     
     container.innerHTML = html;
     
-    // Solo configuramos el evento para efectivo
     if (method === 'efectivo') {
         const montoInput = document.getElementById('montoRecibido');
         const vueltoInput = document.getElementById('vuelto');
@@ -1693,7 +1674,6 @@ function showPaymentDetails(method) {
                 vueltoInput.value = vuelto > 0 ? vuelto.toFixed(2) : '0.00';
             });
             
-            // Calcular vuelto inicial
             montoInput.dispatchEvent(new Event('input'));
         }
     }
@@ -1715,7 +1695,6 @@ async function confirmarPago() {
         metodo = activePaymentBtn.dataset.method || 'efectivo';
     }
     
-    // Generar referencias simples automáticas
     switch (metodo) {
         case 'efectivo':
             referencia = `EF-${Date.now().toString().slice(-6)}`;
@@ -1734,7 +1713,6 @@ async function confirmarPago() {
             break;
     }
     
-    // Para efectivo, obtener monto recibido si existe
     let montoRecibido = total;
     let vuelto = 0;
     if (metodo === 'efectivo') {
@@ -1782,7 +1760,6 @@ async function confirmarPago() {
         monto: total,
         referencia: referencia,
         estado: 'completado',
-        // Solo para efectivo guardamos monto_recibido y vuelto
         ...(metodo === 'efectivo' && {
             monto_recibido: montoRecibido,
             vuelto: vuelto
@@ -2526,7 +2503,6 @@ async function loadReportes() {
 
 async function cargarDatosReportes() {
     try {
-        // Ventas Hoy
         const hoy = new Date().toISOString().split('T')[0];
         let ventasHoy = 0;
         let totalVentasHoy = 0;
@@ -2548,7 +2524,6 @@ async function cargarDatosReportes() {
             <p>Total: $${totalVentasHoy.toFixed(2)}</p>
         `;
         
-        // Stock Bajo
         const productos = await indexedDBOperation('productos_cache', 'getAll') || [];
         const stockBajo = productos.filter(p => p.stock <= p.stock_minimo);
         
@@ -2558,7 +2533,6 @@ async function cargarDatosReportes() {
             ${stockBajo.length > 3 ? `<p>... y ${stockBajo.length - 3} más</p>` : ''}
         `;
         
-        // Clientes con Deuda
         const clientes = await indexedDBOperation('clientes_cache', 'getAll') || [];
         const clientesDeuda = clientes.filter(c => c.saldo > 0);
         
@@ -2567,7 +2541,6 @@ async function cargarDatosReportes() {
             <p>Deuda total: $${clientesDeuda.reduce((sum, c) => sum + c.saldo, 0).toFixed(2)}</p>
         `;
         
-        // Cierre de Caja
         document.getElementById('reporteCierreCaja').innerHTML = `
             <p>Turno: ${APP_STATE.currentTurno || 'No iniciado'}</p>
             <p>Caja: ${APP_STATE.currentCaja?.numero || 'No seleccionada'}</p>
@@ -2846,7 +2819,6 @@ async function setupRealtimeSubscriptions() {
     if (!APP_STATE.supabase) return;
     
     try {
-        // Productos
         const productosChannel = APP_STATE.supabase
             .channel('productos-changes')
             .on('postgres_changes', 
@@ -2867,7 +2839,6 @@ async function setupRealtimeSubscriptions() {
             )
             .subscribe();
         
-        // Ventas
         const ventasChannel = APP_STATE.supabase
             .channel('ventas-changes')
             .on('postgres_changes', 
