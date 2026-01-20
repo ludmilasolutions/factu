@@ -3,564 +3,590 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema POS - Facturación Web</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Sistema POS - Ferretería</title>
+    <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>">
 </head>
 <body>
     <!-- Pantalla de Login -->
-    <div id="loginScreen" class="login-screen">
+    <div id="loginScreen" class="screen">
         <div class="login-container">
             <div class="login-header">
-                <div class="logo">
-                    <i class="fas fa-cash-register"></i>
-                    <h1>Sistema POS</h1>
-                </div>
-                <p class="subtitle">Facturación Web • MultiLocal • Offline First</p>
+                <h1><i class="fas fa-cash-register"></i> Sistema POS</h1>
+                <p>Ferretería - Gestión de ventas y inventario</p>
+                <div class="version">Versión 2.0.0</div>
             </div>
             
-            <div class="login-form">
+            <div class="login-card">
+                <h2>Iniciar Sesión</h2>
                 <div class="form-group">
-                    <label for="loginEmail">
-                        <i class="fas fa-envelope"></i> Email:
-                    </label>
-                    <input type="email" id="loginEmail" placeholder="usuario@empresa.com" value="admin@pos.com">
+                    <label for="loginEmail"><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="loginEmail" placeholder="usuario@ejemplo.com" value="angelmascali@gmail.com">
                 </div>
                 <div class="form-group">
-                    <label for="loginPassword">
-                        <i class="fas fa-lock"></i> Contraseña:
-                    </label>
-                    <input type="password" id="loginPassword" placeholder="••••••••" value="admin123">
+                    <label for="loginPassword"><i class="fas fa-lock"></i> Contraseña</label>
+                    <input type="password" id="loginPassword" placeholder="Ingresa tu contraseña" value="cocacola">
                 </div>
-                <div class="login-actions">
-                    <button id="loginBtn" class="btn btn-primary">
-                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                    </button>
-                    <button id="loginOffline" class="btn btn-secondary">
-                        <i class="fas fa-wifi-slash"></i> Modo Offline
-                    </button>
+                
+                <div id="loginStatus"></div>
+                
+                <button id="loginBtn" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                </button>
+                
+                <button id="loginOffline" class="btn btn-outline btn-block">
+                    <i class="fas fa-wifi-slash"></i> Modo Offline
+                </button>
+                
+                <div class="login-footer">
+                    <p><i class="fas fa-info-circle"></i> Usa <strong>angelmascali@gmail.com</strong> con contraseña <strong>cocacola</strong></p>
+                    <p>o usa cualquier email para modo offline</p>
                 </div>
             </div>
             
-            <div id="loginStatus" class="login-status"></div>
-            
-            <div class="login-footer">
-                <p>Versión 2.0.0 • <span id="currentDate"></span></p>
-                <p class="setup-link">
-                    ¿Primera vez? 
-                    <a href="#" id="setupSystem">
-                        <i class="fas fa-cog"></i> Configurar sistema
-                    </a>
-                </p>
+            <div class="system-info">
+                <h3><i class="fas fa-sync"></i> Sistema Híbrido Online/Offline</h3>
+                <div class="features">
+                    <div class="feature">
+                        <i class="fas fa-database"></i>
+                        <span>Base de datos offline</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Sincronización automática</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-barcode"></i>
+                        <span>Scanner de código de barras</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Múltiples métodos de pago</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reportes en tiempo real</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-truck"></i>
+                        <span>Gestión de proveedores</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
-    <!-- Aplicación Principal -->
-    <div id="appScreen" class="app-screen" style="display: none;">
-        <!-- Header Superior -->
-        <header class="app-header">
-            <div class="header-left">
-                <div class="brand">
-                    <div class="logo-small">
-                        <i class="fas fa-cash-register"></i>
-                    </div>
-                    <div class="header-info">
-                        <h1 id="currentPage">Punto de Venta</h1>
-                        <div class="session-info">
-                            <span id="userInfo" class="session-item">
-                                <i class="fas fa-user"></i> Usuario: -
-                            </span>
-                            <span id="localInfo" class="session-item">
-                                <i class="fas fa-store"></i> Local: -
-                            </span>
-                            <span id="cajaInfo" class="session-item">
-                                <i class="fas fa-cash-register"></i> Caja: -
-                            </span>
-                            <span id="turnoInfo" class="session-item">
-                                <i class="fas fa-clock"></i> Turno: -
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="header-right">
-                <div class="status-indicators">
-                    <div class="indicator" id="syncStatus">
-                        <span class="status-dot online"></span>
-                        <span class="status-text">Online</span>
-                    </div>
-                    <div class="indicator" id="ventasIndicator">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span class="badge" id="ventasCount">0</span>
-                    </div>
-                    <div class="indicator" id="stockIndicator">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span class="badge warning" id="stockAlert">0</span>
-                    </div>
-                </div>
-                
-                <div class="header-actions">
-                    <button id="notificationsBtn" class="btn-icon" title="Notificaciones">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
-                    </button>
-                    <button id="quickMenuBtn" class="btn-icon" title="Menú rápido">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <button id="logoutBtn" class="btn btn-outline">
-                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Configuración Inicial -->
-        <div id="initialConfig" class="initial-config" style="display: none;">
-            <div class="config-card">
+    
+    <!-- Pantalla principal de la aplicación -->
+    <div id="appScreen" class="screen" style="display: none;">
+        <!-- Configuración inicial (local, caja, turno) -->
+        <div id="initialConfig" class="config-screen">
+            <div class="config-container">
                 <div class="config-header">
-                    <h2><i class="fas fa-cogs"></i> Configuración de Sesión</h2>
+                    <h1><i class="fas fa-store"></i> Configurar Sesión de Trabajo</h1>
                     <p>Selecciona tu local, caja y turno para comenzar</p>
                 </div>
                 
-                <div class="config-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="selectLocal">
-                                <i class="fas fa-store"></i> Local:
-                            </label>
-                            <select id="selectLocal" class="form-control">
-                                <option value="">Seleccionar local...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="selectCaja">
-                                <i class="fas fa-cash-register"></i> Caja:
-                            </label>
-                            <select id="selectCaja" class="form-control">
-                                <option value="">Seleccionar caja...</option>
-                            </select>
-                        </div>
+                <div class="config-card">
+                    <div class="form-group">
+                        <label for="selectLocal"><i class="fas fa-building"></i> Local</label>
+                        <select id="selectLocal" class="form-control">
+                            <option value="">Seleccionar local...</option>
+                        </select>
                     </div>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="selectTurno">
-                                <i class="fas fa-clock"></i> Turno:
-                            </label>
-                            <select id="selectTurno" class="form-control">
-                                <option value="mañana">🌅 Mañana (8:00 - 14:00)</option>
-                                <option value="tarde">☀️ Tarde (14:00 - 20:00)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="saldoInicial">
-                                <i class="fas fa-money-bill-wave"></i> Saldo Inicial:
-                            </label>
-                            <input type="number" id="saldoInicial" class="form-control" 
-                                   placeholder="0.00" min="0" step="0.01" value="0.00">
-                        </div>
+                    <div class="form-group">
+                        <label for="selectCaja"><i class="fas fa-cash-register"></i> Caja</label>
+                        <select id="selectCaja" class="form-control">
+                            <option value="">Seleccionar caja...</option>
+                        </select>
                     </div>
                     
-                    <div class="config-actions">
-                        <button id="startSession" class="btn btn-success">
-                            <i class="fas fa-play-circle"></i> Iniciar Sesión de Trabajo
-                        </button>
-                        <button id="skipConfig" class="btn btn-secondary">
-                            <i class="fas fa-forward"></i> Saltar (Modo Demo)
-                        </button>
+                    <div class="form-group">
+                        <label for="selectTurno"><i class="fas fa-clock"></i> Turno</label>
+                        <select id="selectTurno" class="form-control">
+                            <option value="">Seleccionar turno...</option>
+                            <option value="mañana">Mañana (08:00 - 14:00)</option>
+                            <option value="tarde">Tarde (14:00 - 20:00)</option>
+                        </select>
                     </div>
+                    
+                    <div class="form-group">
+                        <label for="saldoInicial"><i class="fas fa-money-bill-wave"></i> Saldo Inicial en Caja</label>
+                        <input type="number" id="saldoInicial" class="form-control" placeholder="0.00" min="0" step="0.01" value="10000">
+                    </div>
+                    
+                    <button id="startSession" class="btn btn-primary btn-block">
+                        <i class="fas fa-play-circle"></i> Iniciar Sesión de Trabajo
+                    </button>
                 </div>
             </div>
         </div>
-
-        <!-- Aplicación Principal -->
-        <div id="mainApp" class="main-app" style="display: none;">
-            <!-- Navegación Lateral -->
-            <nav class="sidebar-nav">
-                <div class="nav-header">
-                    <h3><i class="fas fa-bars"></i> Menú</h3>
-                </div>
-                
-                <div class="nav-items">
-                    <button class="nav-btn active" data-page="pos">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span>Punto de Venta</span>
+        
+        <!-- Aplicación principal -->
+        <div id="mainApp" class="app-container" style="display: none;">
+            <!-- Barra superior -->
+            <header class="app-header">
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
                     </button>
-                    
-                    <button class="nav-btn" data-page="productos">
-                        <i class="fas fa-boxes"></i>
-                        <span>Productos</span>
-                        <span class="nav-badge" id="navProductos">0</span>
-                    </button>
-                    
-                    <button class="nav-btn" data-page="clientes">
-                        <i class="fas fa-users"></i>
-                        <span>Clientes</span>
-                        <span class="nav-badge" id="navClientes">0</span>
-                    </button>
-                    
-                    <button class="nav-btn" data-page="proveedores">
-                        <i class="fas fa-truck"></i>
-                        <span>Proveedores</span>
-                    </button>
-                    
-                    <button class="nav-btn" data-page="presupuestos">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <span>Presupuestos</span>
-                        <span class="nav-badge" id="navPresupuestos">0</span>
-                    </button>
-                    
-                    <button class="nav-btn" data-page="reportes">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Reportes</span>
-                    </button>
-                    
-                    <button class="nav-btn" data-page="caja">
-                        <i class="fas fa-calculator"></i>
-                        <span>Cierre de Caja</span>
-                    </button>
-                    
-                    <button class="nav-btn" data-page="configuracion">
-                        <i class="fas fa-cog"></i>
-                        <span>Configuración</span>
-                    </button>
-                </div>
-                
-                <div class="nav-footer">
-                    <div class="quick-stats">
-                        <div class="stat">
-                            <i class="fas fa-chart-line"></i>
-                            <span>Ventas hoy: <strong id="quickVentas">0</strong></span>
-                        </div>
-                        <div class="stat">
-                            <i class="fas fa-box"></i>
-                            <span>Stock bajo: <strong id="quickStock">0</strong></span>
+                    <div class="app-title">
+                        <h1><i class="fas fa-cash-register"></i> <span id="currentPage">POS</span></h1>
+                        <div class="session-info">
+                            <span id="userInfo"><i class="fas fa-user"></i> Usuario: </span>
+                            <span id="localInfo"><i class="fas fa-store"></i> Local: </span>
+                            <span id="cajaInfo"><i class="fas fa-cash-register"></i> Caja: </span>
+                            <span id="turnoInfo"><i class="fas fa-clock"></i> Turno: </span>
                         </div>
                     </div>
                 </div>
-            </nav>
-
-            <!-- Contenido Principal -->
-            <main class="main-content">
-                <!-- Página POS -->
-                <div id="pagePos" class="page active">
-                    <div class="page-header">
-                        <div class="page-title">
-                            <h2><i class="fas fa-shopping-cart"></i> Punto de Venta</h2>
-                            <p>Gestiona ventas rápidas y eficientes</p>
-                        </div>
-                        <div class="page-actions">
-                            <div class="action-group">
-                                <button id="quickSale" class="btn btn-success">
-                                    <i class="fas fa-bolt"></i> Venta Rápida
-                                </button>
-                                <button id="openDrawer" class="btn btn-secondary">
-                                    <i class="fas fa-drawer-open"></i> Abrir Cajón
-                                </button>
+                
+                <div class="header-right">
+                    <button id="syncStatus" class="btn-status online">
+                        <i class="fas fa-wifi"></i> Online
+                    </button>
+                    <button id="logoutBtn" class="btn btn-outline">
+                        <i class="fas fa-sign-out-alt"></i> Salir
+                    </button>
+                </div>
+            </header>
+            
+            <div class="app-content">
+                <!-- Barra lateral de navegación -->
+                <nav class="sidebar" id="sidebar">
+                    <ul class="nav-menu">
+                        <li>
+                            <button class="nav-btn active" data-page="pos">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span>POS / Venta</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-btn" data-page="productos">
+                                <i class="fas fa-boxes"></i>
+                                <span>Productos</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-btn" data-page="clientes">
+                                <i class="fas fa-users"></i>
+                                <span>Clientes</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-btn" data-page="proveedores">
+                                <i class="fas fa-truck"></i>
+                                <span>Proveedores</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-btn" data-page="presupuestos">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <span>Presupuestos</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-btn" data-page="reportes">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Reportes</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="nav-btn" data-page="caja">
+                                <i class="fas fa-cash-register"></i>
+                                <span>Caja</span>
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="sidebar-footer">
+                        <div class="stats">
+                            <div class="stat">
+                                <i class="fas fa-shopping-bag"></i>
+                                <span id="ventasHoyCount">0</span>
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-file-alt"></i>
+                                <span id="presupuestosCount">0</span>
                             </div>
                         </div>
+                        <div class="app-version">
+                            v2.0.0
+                        </div>
                     </div>
-                    
-                    <div class="pos-grid">
-                        <!-- Buscador y Scanner -->
-                        <div class="search-section">
-                            <div class="search-container">
-                                <div class="search-input">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="productSearch" 
-                                           placeholder="Buscar producto por código, nombre o descripción..."
-                                           autocomplete="off">
-                                    <button id="clearSearch" class="btn-icon">
-                                        <i class="fas fa-times"></i>
-                                    </button>
+                </nav>
+                
+                <!-- Contenido principal -->
+                <main class="main-content">
+                    <!-- Página POS -->
+                    <div id="pagePos" class="page active">
+                        <div class="pos-container">
+                            <!-- Panel de búsqueda y productos -->
+                            <div class="pos-left">
+                                <div class="search-section">
+                                    <div class="search-header">
+                                        <h2><i class="fas fa-search"></i> Buscar Producto</h2>
+                                        <div class="search-actions">
+                                            <button id="scanBarcode" class="btn btn-outline">
+                                                <i class="fas fa-barcode"></i> Escanear
+                                            </button>
+                                            <button id="keyboardMode" class="btn btn-outline">
+                                                <i class="fas fa-keyboard"></i> Teclado
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="search-input-group">
+                                        <input type="text" id="productSearch" class="form-control" placeholder="Código de barras, código interno o nombre del producto..." autocomplete="off">
+                                        <button class="search-btn">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="cliente-section">
+                                        <label for="selectCliente"><i class="fas fa-user-tag"></i> Cliente</label>
+                                        <select id="selectCliente" class="form-control">
+                                            <option value="">Cliente Contado</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="search-actions">
-                                    <button id="scanBarcode" class="btn btn-primary">
-                                        <i class="fas fa-barcode"></i> Escanear
-                                    </button>
-                                    <button id="keyboardMode" class="btn btn-secondary">
-                                        <i class="fas fa-keyboard"></i> Teclado
-                                    </button>
+                                
+                                <div class="products-section">
+                                    <h3><i class="fas fa-box-open"></i> Productos Disponibles</h3>
+                                    <div class="products-grid" id="productosGrid">
+                                        <!-- Los productos se cargarán aquí dinámicamente -->
+                                        <div class="loading-products">
+                                            <i class="fas fa-spinner fa-spin"></i> Cargando productos...
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div id="scannerContainer" class="scanner-container" style="display: none;">
-                                <div class="scanner-header">
-                                    <h4><i class="fas fa-camera"></i> Escáner de Código de Barras</h4>
-                                    <button id="stopScanner" class="btn btn-danger btn-sm">
-                                        <i class="fas fa-stop"></i> Detener
-                                    </button>
-                                </div>
-                                <div class="scanner-view">
-                                    <video id="scannerVideo"></video>
-                                    <div class="scanner-overlay">
-                                        <div class="scan-line"></div>
-                                        <p>Apunta el código de barras hacia la cámara</p>
+                            <!-- Panel del carrito -->
+                            <div class="pos-right">
+                                <div class="cart-header">
+                                    <h2><i class="fas fa-shopping-cart"></i> Carrito de Venta</h2>
+                                    <div class="cart-actions">
+                                        <button id="cancelarVenta" class="btn btn-danger">
+                                            <i class="fas fa-times"></i> Cancelar
+                                        </button>
                                     </div>
                                 </div>
+                                
+                                <div class="cart-items" id="cartItems">
+                                    <div class="cart-empty">
+                                        <i class="fas fa-shopping-cart fa-2x"></i>
+                                        <p>Busca y agrega productos al carrito</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="cart-summary">
+                                    <div class="summary-row">
+                                        <span>Subtotal:</span>
+                                        <span id="cartSubtotal">$0.00</span>
+                                    </div>
+                                    <div class="summary-row">
+                                        <label for="cartDiscount">Descuento:</label>
+                                        <div class="discount-input">
+                                            <span>$</span>
+                                            <input type="number" id="cartDiscount" value="0" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                    <div class="summary-row total">
+                                        <span>TOTAL:</span>
+                                        <span id="cartTotal">$0.00</span>
+                                    </div>
+                                    
+                                    <div class="cart-buttons">
+                                        <button id="crearPresupuesto" class="btn btn-secondary">
+                                            <i class="fas fa-file-alt"></i> Presupuesto
+                                        </button>
+                                        <button id="finalizarVenta" class="btn btn-success">
+                                            <i class="fas fa-check-circle"></i> Finalizar Venta
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Productos -->
+                    <div id="pageProductos" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-boxes"></i> Gestión de Productos</h2>
+                            <div class="page-actions">
+                                <button id="nuevoProducto" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Nuevo Producto
+                                </button>
+                                <button id="importarExcel" class="btn btn-outline">
+                                    <i class="fas fa-file-import"></i> Importar Excel
+                                </button>
+                                <button id="exportarExcel" class="btn btn-outline">
+                                    <i class="fas fa-file-export"></i> Exportar Excel
+                                </button>
                             </div>
                         </div>
                         
-                        <!-- Productos Sugeridos -->
-                        <div class="suggested-products">
-                            <h4><i class="fas fa-star"></i> Productos Frecuentes</h4>
-                            <div id="suggestedProducts" class="products-grid">
-                                <!-- Productos frecuentes cargados dinámicamente -->
+                        <div class="filters-section">
+                            <div class="search-filter">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="filterProductos" placeholder="Buscar productos...">
+                            </div>
+                            <div class="filter-buttons">
+                                <button id="filterStockBajo" class="btn btn-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Stock Bajo
+                                </button>
+                                <button class="btn btn-outline">
+                                    <i class="fas fa-filter"></i> Filtrar
+                                </button>
                             </div>
                         </div>
                         
-                        <!-- Carrito de Compras -->
-                        <div class="cart-section">
-                            <div class="cart-header">
-                                <h3><i class="fas fa-shopping-cart"></i> Carrito de Venta</h3>
-                                <div class="cart-info">
-                                    <span id="cartCount">0 items</span>
-                                    <button id="clearCart" class="btn btn-danger btn-sm">
-                                        <i class="fas fa-trash"></i> Vaciar
-                                    </button>
-                                </div>
+                        <div class="products-list" id="productosList">
+                            <!-- Los productos se cargarán aquí dinámicamente -->
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando productos...
                             </div>
-                            
-                            <div class="cart-table">
-                                <div class="cart-table-header">
-                                    <div class="col-product">Producto</div>
-                                    <div class="col-quantity">Cantidad</div>
-                                    <div class="col-price">Precio Unit.</div>
-                                    <div class="col-subtotal">Subtotal</div>
-                                    <div class="col-actions">Acciones</div>
-                                </div>
-                                
-                                <div id="cartItems" class="cart-items">
-                                    <div class="cart-empty-state">
-                                        <i class="fas fa-shopping-basket"></i>
-                                        <h4>Carrito Vacío</h4>
-                                        <p>Agrega productos para comenzar una venta</p>
-                                        <p class="hint">
-                                            <i class="fas fa-lightbulb"></i> 
-                                            Usa el buscador, escanea códigos o selecciona productos frecuentes
-                                        </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Clientes -->
+                    <div id="pageClientes" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-users"></i> Gestión de Clientes</h2>
+                            <div class="page-actions">
+                                <button id="nuevoCliente" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Nuevo Cliente
+                                </button>
+                                <button id="nuevoClientePage" class="btn btn-outline">
+                                    <i class="fas fa-user-plus"></i> Agregar Cliente
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="clients-list" id="clientesList">
+                            <!-- Los clientes se cargarán aquí dinámicamente -->
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando clientes...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Proveedores -->
+                    <div id="pageProveedores" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-truck"></i> Gestión de Proveedores</h2>
+                            <div class="page-actions">
+                                <button id="nuevoProveedor" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Nuevo Proveedor
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="proveedores-list" id="proveedoresList">
+                            <!-- Los proveedores se cargarán aquí dinámicamente -->
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando proveedores...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Presupuestos -->
+                    <div id="pagePresupuestos" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-file-invoice-dollar"></i> Presupuestos</h2>
+                            <div class="page-actions">
+                                <button class="btn btn-outline">
+                                    <i class="fas fa-sync"></i> Actualizar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="presupuestos-list" id="presupuestosList">
+                            <!-- Los presupuestos se cargarán aquí dinámicamente -->
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando presupuestos...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Reportes -->
+                    <div id="pageReportes" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-chart-bar"></i> Reportes y Estadísticas</h2>
+                        </div>
+                        
+                        <div class="reportes-content" id="reportesContent">
+                            <!-- Los reportes se cargarán aquí dinámicamente -->
+                            <div class="loading">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando reportes...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Caja -->
+                    <div id="pageCaja" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-cash-register"></i> Caja</h2>
+                            <div class="page-actions">
+                                <button id="cerrarCaja" class="btn btn-danger">
+                                    <i class="fas fa-lock"></i> Cerrar Caja
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="caja-resumen">
+                            <div class="resumen-card">
+                                <h3><i class="fas fa-cash-register"></i> Resumen de Caja</h3>
+                                <div class="resumen-data">
+                                    <div class="data-row">
+                                        <span>Saldo Inicial:</span>
+                                        <span id="saldoInicialResumen">$0.00</span>
+                                    </div>
+                                    <div class="data-row">
+                                        <span>Ventas en Efectivo:</span>
+                                        <span id="ventasEfectivo">$0.00</span>
+                                    </div>
+                                    <div class="data-row">
+                                        <span>Ventas con Tarjeta:</span>
+                                        <span id="ventasTarjeta">$0.00</span>
+                                    </div>
+                                    <div class="data-row">
+                                        <span>Total Ventas:</span>
+                                        <span id="totalVentas">$0.00</span>
+                                    </div>
+                                    <div class="data-row total">
+                                        <span>Saldo Final Estimado:</span>
+                                        <span id="saldoFinal">$0.00</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="cart-summary">
-                                <div class="summary-row">
-                                    <span>Subtotal:</span>
-                                    <span id="cartSubtotal">$0.00</span>
-                                </div>
-                                <div class="summary-row">
-                                    <span>Descuento:</span>
-                                    <div class="discount-input">
-                                        <input type="number" id="cartDiscount" 
-                                               placeholder="0.00" min="0" step="0.01" value="0">
-                                        <span>%</span>
+                            <div class="caja-detalle">
+                                <h3><i class="fas fa-list-alt"></i> Detalle de Movimientos</h3>
+                                <div class="movimientos-list">
+                                    <div class="no-data">
+                                        <i class="fas fa-info-circle"></i>
+                                        <p>No hay movimientos para mostrar</p>
                                     </div>
-                                </div>
-                                <div class="summary-row">
-                                    <span>IVA (21%):</span>
-                                    <span id="cartIVA">$0.00</span>
-                                </div>
-                                <div class="summary-row total">
-                                    <span>TOTAL:</span>
-                                    <span id="cartTotal">$0.00</span>
-                                </div>
-                            </div>
-                            
-                            <div class="cart-actions">
-                                <div class="customer-select">
-                                    <label for="selectCliente">
-                                        <i class="fas fa-user"></i> Cliente:
-                                    </label>
-                                    <select id="selectCliente" class="form-control">
-                                        <option value="">Cliente Contado</option>
-                                        <option value="nuevo">+ Nuevo Cliente</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="action-buttons">
-                                    <button id="finalizarVenta" class="btn btn-success btn-lg">
-                                        <i class="fas fa-credit-card"></i> Finalizar Venta
-                                    </button>
-                                    <button id="crearPresupuesto" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-file-invoice-dollar"></i> Crear Presupuesto
-                                    </button>
-                                    <button id="cancelarVenta" class="btn btn-danger">
-                                        <i class="fas fa-times"></i> Cancelar
-                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Otras páginas (simplificadas para el ejemplo) -->
-                <div id="pageProductos" class="page">
-                    <!-- Contenido de productos -->
-                </div>
-                <div id="pageClientes" class="page">
-                    <!-- Contenido de clientes -->
-                </div>
-                <div id="pageProveedores" class="page">
-                    <!-- Contenido de proveedores -->
-                </div>
-                <div id="pagePresupuestos" class="page">
-                    <!-- Contenido de presupuestos -->
-                </div>
-                <div id="pageReportes" class="page">
-                    <!-- Contenido de reportes -->
-                </div>
-                <div id="pageCaja" class="page">
-                    <!-- Contenido de caja -->
-                </div>
-                <div id="pageConfiguracion" class="page">
-                    <!-- Contenido de configuración -->
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
     </div>
-
-    <!-- Modal de Pagos -->
-    <div id="paymentModal" class="modal">
+    
+    <!-- Modal de Pago -->
+    <div id="paymentModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-credit-card"></i> Método de Pago</h3>
-                <button class="btn-icon modal-close" onclick="closeModal('paymentModal')">
+                <h2><i class="fas fa-credit-card"></i> Método de Pago</h2>
+                <button class="close-btn" onclick="document.getElementById('paymentModal').style.display = 'none'">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             
             <div class="modal-body">
-                <div class="amount-display">
-                    <div class="amount-label">Total a Pagar:</div>
-                    <div class="amount-value" id="modalTotalAmount">$0.00</div>
-                </div>
-                
                 <div class="payment-methods">
-                    <button class="payment-btn" data-method="efectivo">
-                        <i class="fas fa-money-bill-wave"></i>
-                        <span>Efectivo</span>
-                    </button>
-                    <button class="payment-btn" data-method="tarjeta">
-                        <i class="fas fa-credit-card"></i>
-                        <span>Tarjeta</span>
-                    </button>
-                    <button class="payment-btn" data-method="transferencia">
-                        <i class="fas fa-university"></i>
-                        <span>Transferencia</span>
-                    </button>
-                    <button class="payment-btn" data-method="qr">
-                        <i class="fas fa-qrcode"></i>
-                        <span>QR / Mercado Pago</span>
-                    </button>
-                    <button class="payment-btn" data-method="cuenta">
-                        <i class="fas fa-file-invoice"></i>
-                        <span>Cuenta Corriente</span>
-                    </button>
-                    <button class="payment-btn" data-method="mixto">
-                        <i class="fas fa-random"></i>
-                        <span>Pago Mixto</span>
-                    </button>
+                    <h3>Selecciona método de pago:</h3>
+                    <div class="methods-grid">
+                        <button class="payment-btn active" data-method="efectivo">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Efectivo</span>
+                        </button>
+                        <button class="payment-btn" data-method="tarjeta">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Tarjeta</span>
+                        </button>
+                        <button class="payment-btn" data-method="transferencia">
+                            <i class="fas fa-university"></i>
+                            <span>Transferencia</span>
+                        </button>
+                        <button class="payment-btn" data-method="qr">
+                            <i class="fas fa-qrcode"></i>
+                            <span>QR/Pago Digital</span>
+                        </button>
+                        <button class="payment-btn" data-method="cuenta">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <span>Cuenta Corriente</span>
+                        </button>
+                    </div>
                 </div>
                 
-                <div id="paymentDetails" class="payment-details">
-                    <!-- Detalles específicos de cada método -->
+                <div class="payment-details" id="paymentDetails">
+                    <!-- Los detalles de pago se cargarán aquí dinámicamente -->
                 </div>
                 
-                <div class="modal-actions">
-                    <button id="confirmPayment" class="btn btn-success btn-lg">
-                        <i class="fas fa-check-circle"></i> Confirmar Pago
-                    </button>
-                    <button onclick="closeModal('paymentModal')" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
+                <div class="payment-total">
+                    <h3>Total a Pagar: <span id="paymentTotalAmount">$0.00</span></h3>
                 </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="confirmPayment" class="btn btn-success btn-lg">
+                    <i class="fas fa-check-circle"></i> Confirmar Pago
+                </button>
+                <button id="cancelPayment" class="btn btn-outline btn-lg">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
             </div>
         </div>
     </div>
-
+    
     <!-- Modal Genérico -->
-    <div id="genericModal" class="modal">
-        <div class="modal-content medium">
+    <div id="genericModal" class="modal" style="display: none;">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle">Título del Modal</h3>
-                <button class="btn-icon modal-close" onclick="closeModal('genericModal')">
+                <h2 id="modalTitle">Título del Modal</h2>
+                <button class="close-btn" onclick="document.getElementById('genericModal').style.display = 'none'">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+            
             <div class="modal-body" id="modalBody">
-                Contenido del modal
+                <!-- Contenido del modal se cargará aquí -->
             </div>
-            <div class="modal-actions">
-                <button id="modalConfirm" class="btn btn-primary">Confirmar</button>
-                <button id="modalCancel" class="btn btn-secondary">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Ticket -->
-    <div id="ticketModal" class="modal">
-        <div class="modal-content ticket-modal">
-            <div class="modal-header">
-                <h3><i class="fas fa-receipt"></i> Ticket de Venta</h3>
-                <div class="ticket-actions">
-                    <button onclick="imprimirTicket()" class="btn btn-primary btn-sm">
-                        <i class="fas fa-print"></i> Imprimir
-                    </button>
-                    <button onclick="enviarTicketWhatsapp()" class="btn btn-success btn-sm">
-                        <i class="fab fa-whatsapp"></i> WhatsApp
-                    </button>
-                </div>
-            </div>
-            <div class="modal-body">
-                <div class="ticket" id="ticketContent">
-                    <!-- Contenido del ticket generado dinámicamente -->
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button onclick="closeModal('ticketModal')" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cerrar
+            
+            <div class="modal-footer">
+                <button id="modalConfirm" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Confirmar
+                </button>
+                <button id="modalCancel" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Cancelar
                 </button>
             </div>
         </div>
     </div>
-
-    <!-- Notificaciones Toast -->
-    <div id="toastContainer" class="toast-container"></div>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="app.js"></script>
-    <script>
-        // Actualizar fecha actual en login
-        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-AR', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        
-        // Función auxiliar para cerrar modales
-        window.closeModal = function(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) modal.style.display = 'none';
-        };
-        
-        // Demo de notificación
-        setTimeout(() => {
-            const toast = document.createElement('div');
-            toast.className = 'toast success';
-            toast.innerHTML = `
-                <i class="fas fa-check-circle"></i>
-                <div>
-                    <strong>Sistema listo</strong>
-                    <p>Bienvenido al Sistema POS versión 2.0</p>
+    
+    <!-- Scanner de Código de Barras -->
+    <div id="scannerContainer" class="scanner-container" style="display: none;">
+        <div class="scanner-content">
+            <div class="scanner-header">
+                <h2><i class="fas fa-barcode"></i> Escanear Código de Barras</h2>
+                <button id="stopScanner" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
+            </div>
+            
+            <div class="scanner-video">
+                <video id="scannerVideo" width="100%" height="auto" autoplay playsinline></video>
+                <div class="scanner-overlay">
+                    <div class="scanner-frame"></div>
+                    <p>Apunta el código de barras dentro del marco</p>
                 </div>
-            `;
-            document.getElementById('toastContainer').appendChild(toast);
-            setTimeout(() => toast.remove(), 5000);
-        }, 1000);
-    </script>
+            </div>
+            
+            <div class="scanner-info">
+                <p><i class="fas fa-info-circle"></i> Simulando detección de código de barras...</p>
+                <p>En un entorno real, aquí se procesaría el video de la cámara</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
 </body>
 </html>
