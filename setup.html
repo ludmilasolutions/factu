@@ -277,6 +277,8 @@
             overflow-x: auto;
             margin: 20px 0;
             position: relative;
+            max-height: 500px;
+            overflow-y: auto;
         }
 
         .copy-btn {
@@ -1080,6 +1082,499 @@
             config: {}
         };
 
+        // SQL completo con todas las tablas
+        const completeSQL = `-- ============================================
+-- SISTEMA POS - TABLAS COMPLETAS
+-- ============================================
+
+-- 1. TABLA DE LOCALES/SUCURSALES
+CREATE TABLE IF NOT EXISTS locales (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    direccion TEXT,
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    horario_atencion VARCHAR(100),
+    responsable VARCHAR(100),
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 2. TABLA DE CAJAS
+CREATE TABLE IF NOT EXISTS cajas (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    numero VARCHAR(20) NOT NULL,
+    nombre VARCHAR(100),
+    local_id UUID REFERENCES locales(id),
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 3. TABLA DE USUARIOS
+CREATE TABLE IF NOT EXISTS usuarios (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100),
+    rol VARCHAR(50) DEFAULT 'vendedor',
+    local_id UUID REFERENCES locales(id),
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 4. TABLA DE PROVEEDORES
+CREATE TABLE IF NOT EXISTS proveedores (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    razon_social VARCHAR(200),
+    contacto VARCHAR(100),
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    direccion TEXT,
+    localidad VARCHAR(100),
+    provincia VARCHAR(100),
+    cuit VARCHAR(20) UNIQUE,
+    condicion_iva VARCHAR(20),
+    productos_que_vende TEXT,
+    plazo_entrega VARCHAR(50),
+    activo BOOLEAN DEFAULT true,
+    observaciones TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 5. TABLA DE PRODUCTOS
+CREATE TABLE IF NOT EXISTS productos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    codigo_barras VARCHAR(50) UNIQUE,
+    codigo_interno VARCHAR(50),
+    nombre VARCHAR(200) NOT NULL,
+    descripcion TEXT,
+    marca VARCHAR(100),
+    categoria VARCHAR(100) NOT NULL,
+    subcategoria VARCHAR(100),
+    unidad_medida VARCHAR(20) DEFAULT 'unidad',
+    material VARCHAR(100),
+    color VARCHAR(50),
+    medidas VARCHAR(100),
+    precio_costo DECIMAL(10,2) DEFAULT 0,
+    porcentaje_ganancia DECIMAL(5,2) DEFAULT 40,
+    precio_venta DECIMAL(10,2) NOT NULL,
+    stock DECIMAL(10,3) DEFAULT 0,
+    stock_minimo DECIMAL(10,3) DEFAULT 5,
+    stock_maximo DECIMAL(10,3) DEFAULT 100,
+    proveedor_id UUID REFERENCES proveedores(id),
+    ubicacion VARCHAR(50),
+    activo BOOLEAN DEFAULT true,
+    destacado BOOLEAN DEFAULT false,
+    imagen_url TEXT,
+    last_sync_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CHECK (precio_venta >= 0),
+    CHECK (stock >= 0)
+);
+
+-- 6. TABLA DE CLIENTES
+CREATE TABLE IF NOT EXISTS clientes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100),
+    razon_social VARCHAR(200),
+    tipo_documento VARCHAR(10) DEFAULT 'DNI',
+    numero_documento VARCHAR(20) UNIQUE,
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    direccion TEXT,
+    localidad VARCHAR(100),
+    provincia VARCHAR(100),
+    tipo_cliente VARCHAR(20) DEFAULT 'consumidor_final',
+    limite_credito DECIMAL(10,2) DEFAULT 0,
+    saldo DECIMAL(10,2) DEFAULT 0,
+    categoria_iva VARCHAR(20) DEFAULT 'consumidor_final',
+    cuit VARCHAR(20),
+    observaciones TEXT,
+    ultimo_movimiento_cc TIMESTAMP,
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 7. TABLA DE VENTAS
+CREATE TABLE IF NOT EXISTS ventas (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    numero_venta VARCHAR(50) UNIQUE,
+    local_id UUID REFERENCES locales(id),
+    caja_id UUID REFERENCES cajas(id),
+    usuario_id UUID REFERENCES usuarios(id),
+    cliente_id UUID REFERENCES clientes(id),
+    total DECIMAL(10,2) NOT NULL,
+    descuento DECIMAL(10,2) DEFAULT 0,
+    subtotal DECIMAL(10,2) NOT NULL,
+    iva DECIMAL(10,2) DEFAULT 0,
+    estado VARCHAR(20) DEFAULT 'completada',
+    tipo_venta VARCHAR(20) DEFAULT 'contado',
+    tipo_comprobante VARCHAR(20) DEFAULT 'ticket',
+    punto_venta INTEGER DEFAULT 0,
+    numero_comprobante INTEGER,
+    observaciones TEXT,
+    offline_id VARCHAR(100),
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    last_sync_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    CHECK (total >= 0)
+);
+
+-- 8. TABLA DE ITEMS DE VENTA
+CREATE TABLE IF NOT EXISTS venta_items (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    venta_id UUID REFERENCES ventas(id) ON DELETE CASCADE,
+    producto_id UUID REFERENCES productos(id),
+    cantidad DECIMAL(10,3) NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    descuento_unitario DECIMAL(10,2) DEFAULT 0,
+    subtotal DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    CHECK (cantidad > 0),
+    CHECK (precio_unitario >= 0)
+);
+
+-- 9. TABLA DE PAGOS
+CREATE TABLE IF NOT EXISTS pagos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    venta_id UUID REFERENCES ventas(id) ON DELETE CASCADE,
+    metodo VARCHAR(50) NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    referencia VARCHAR(100),
+    estado VARCHAR(20) DEFAULT 'completado',
+    tarjeta_tipo VARCHAR(50),
+    tarjeta_numero VARCHAR(4),
+    tarjeta_cuotas INTEGER DEFAULT 1,
+    offline_id VARCHAR(100),
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    created_at TIMESTAMP DEFAULT NOW(),
+    CHECK (monto > 0)
+);
+
+-- 10. TABLA DE PRESUPUESTOS
+CREATE TABLE IF NOT EXISTS presupuestos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    numero_presupuesto VARCHAR(50) UNIQUE,
+    local_id UUID REFERENCES locales(id),
+    cliente_id UUID REFERENCES clientes(id),
+    usuario_id UUID REFERENCES usuarios(id),
+    total DECIMAL(10,2) NOT NULL,
+    descuento DECIMAL(10,2) DEFAULT 0,
+    subtotal DECIMAL(10,2) NOT NULL,
+    valido_hasta DATE,
+    estado VARCHAR(20) DEFAULT 'pendiente',
+    observaciones TEXT,
+    offline_id VARCHAR(100),
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 11. TABLA DE ITEMS DE PRESUPUESTO
+CREATE TABLE IF NOT EXISTS presupuesto_items (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    presupuesto_id UUID REFERENCES presupuestos(id) ON DELETE CASCADE,
+    producto_id UUID REFERENCES productos(id),
+    cantidad DECIMAL(10,3) NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 12. TABLA DE CUENTAS CORRIENTES
+CREATE TABLE IF NOT EXISTS cuentas_corrientes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    cliente_id UUID REFERENCES clientes(id),
+    tipo_movimiento VARCHAR(20) NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    saldo_anterior DECIMAL(10,2) NOT NULL,
+    saldo_nuevo DECIMAL(10,2) NOT NULL,
+    venta_id UUID REFERENCES ventas(id),
+    pago_id UUID REFERENCES pagos(id),
+    observaciones TEXT,
+    fecha_vencimiento DATE,
+    offline_id VARCHAR(100),
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 13. TABLA DE CIERRES DE CAJA
+CREATE TABLE IF NOT EXISTS cierres_caja (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    local_id UUID REFERENCES locales(id),
+    caja_id UUID REFERENCES cajas(id),
+    usuario_id UUID REFERENCES usuarios(id),
+    turno VARCHAR(10) NOT NULL,
+    fecha DATE NOT NULL,
+    saldo_inicial DECIMAL(10,2) NOT NULL,
+    saldo_final DECIMAL(10,2),
+    ventas_efectivo DECIMAL(10,2) DEFAULT 0,
+    ventas_tarjeta DECIMAL(10,2) DEFAULT 0,
+    ventas_transferencia DECIMAL(10,2) DEFAULT 0,
+    ventas_otros DECIMAL(10,2) DEFAULT 0,
+    total_ventas DECIMAL(10,2) DEFAULT 0,
+    total_egresos DECIMAL(10,2) DEFAULT 0,
+    diferencia DECIMAL(10,2) DEFAULT 0,
+    observaciones TEXT,
+    estado VARCHAR(20) DEFAULT 'abierto',
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    last_sync_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 14. TABLA DE MOVIMIENTOS DE INVENTARIO
+CREATE TABLE IF NOT EXISTS inventario (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    producto_id UUID REFERENCES productos(id),
+    tipo_movimiento VARCHAR(20) NOT NULL,
+    cantidad DECIMAL(10,3) NOT NULL,
+    stock_anterior DECIMAL(10,3) NOT NULL,
+    stock_nuevo DECIMAL(10,3) NOT NULL,
+    motivo VARCHAR(100),
+    usuario_id UUID REFERENCES usuarios(id),
+    venta_id UUID REFERENCES ventas(id),
+    compra_id UUID,
+    proveedor_id UUID REFERENCES proveedores(id),
+    observaciones TEXT,
+    offline_id VARCHAR(100),
+    sync_status VARCHAR(20) DEFAULT 'synced',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 15. TABLA DE CATEGORÍAS DE PRODUCTOS
+CREATE TABLE IF NOT EXISTS categorias (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    descripcion TEXT,
+    icono VARCHAR(50),
+    color VARCHAR(20),
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 16. TABLA DE CONFIGURACIONES
+CREATE TABLE IF NOT EXISTS configuraciones (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    clave VARCHAR(100) NOT NULL UNIQUE,
+    valor JSONB NOT NULL,
+    descripcion TEXT,
+    categoria VARCHAR(50) DEFAULT 'general',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 17. TABLA DE PROMOCIONES
+CREATE TABLE IF NOT EXISTS promociones (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre VARCHAR(200) NOT NULL,
+    descripcion TEXT,
+    tipo VARCHAR(50) NOT NULL,
+    valor DECIMAL(10,2),
+    producto_id UUID REFERENCES productos(id),
+    categoria_producto VARCHAR(100),
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE NOT NULL,
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 18. TABLA DE DESCUENTOS
+CREATE TABLE IF NOT EXISTS descuentos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    codigo VARCHAR(50) UNIQUE NOT NULL,
+    descripcion TEXT,
+    tipo VARCHAR(20) NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    minimo_compra DECIMAL(10,2) DEFAULT 0,
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE NOT NULL,
+    usos_maximos INTEGER DEFAULT 1,
+    usos_actuales INTEGER DEFAULT 0,
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 19. TABLA DE COMPRAS/PEDIDOS A PROVEEDORES
+CREATE TABLE IF NOT EXISTS compras (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    numero_pedido VARCHAR(50) UNIQUE,
+    proveedor_id UUID REFERENCES proveedores(id),
+    usuario_id UUID REFERENCES usuarios(id),
+    total DECIMAL(10,2) NOT NULL,
+    estado VARCHAR(20) DEFAULT 'pendiente',
+    fecha_pedido DATE NOT NULL,
+    fecha_entrega_estimada DATE,
+    fecha_entrega_real DATE,
+    observaciones TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 20. TABLA DE ITEMS DE COMPRA
+CREATE TABLE IF NOT EXISTS compra_items (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    compra_id UUID REFERENCES compras(id) ON DELETE CASCADE,
+    producto_id UUID REFERENCES productos(id),
+    cantidad DECIMAL(10,3) NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 21. TABLA DE AUDITORÍA
+CREATE TABLE IF NOT EXISTS auditoria (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    usuario_id UUID REFERENCES usuarios(id),
+    accion VARCHAR(100) NOT NULL,
+    tabla VARCHAR(50) NOT NULL,
+    registro_id VARCHAR(100) NOT NULL,
+    datos_anteriores JSONB,
+    datos_nuevos JSONB,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 22. TABLA DE SINCRONIZACIÓN OFFLINE
+CREATE TABLE IF NOT EXISTS sincronizacion_log (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    dispositivo_id VARCHAR(100),
+    usuario_id UUID REFERENCES usuarios(id),
+    tipo_operacion VARCHAR(50),
+    operaciones_sincronizadas INTEGER DEFAULT 0,
+    errores TEXT,
+    duracion_ms INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- ÍNDICES PARA MEJORAR EL RENDIMIENTO
+-- ============================================
+
+-- Índices para productos
+CREATE INDEX IF NOT EXISTS idx_productos_codigo_barras ON productos(codigo_barras);
+CREATE INDEX IF NOT EXISTS idx_productos_nombre ON productos(nombre);
+CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(categoria);
+CREATE INDEX IF NOT EXISTS idx_productos_stock ON productos(stock);
+CREATE INDEX IF NOT EXISTS idx_productos_proveedor ON productos(proveedor_id);
+CREATE INDEX IF NOT EXISTS idx_productos_activo ON productos(activo);
+CREATE INDEX IF NOT EXISTS idx_productos_last_sync ON productos(last_sync_at);
+
+-- Índices para ventas
+CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(created_at);
+CREATE INDEX IF NOT EXISTS idx_ventas_cliente ON ventas(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_ventas_local ON ventas(local_id);
+CREATE INDEX IF NOT EXISTS idx_ventas_caja ON ventas(caja_id);
+CREATE INDEX IF NOT EXISTS idx_ventas_usuario ON ventas(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_ventas_estado ON ventas(estado);
+CREATE INDEX IF NOT EXISTS idx_ventas_sync ON ventas(sync_status);
+CREATE INDEX IF NOT EXISTS idx_ventas_fecha_local ON ventas(created_at, local_id);
+CREATE INDEX IF NOT EXISTS idx_ventas_sync_status ON ventas(sync_status);
+
+-- Índices para clientes
+CREATE INDEX IF NOT EXISTS idx_clientes_documento ON clientes(numero_documento);
+CREATE INDEX IF NOT EXISTS idx_clientes_nombre ON clientes(nombre);
+CREATE INDEX IF NOT EXISTS idx_clientes_saldo ON clientes(saldo);
+CREATE INDEX IF NOT EXISTS idx_clientes_tipo ON clientes(tipo_cliente);
+CREATE INDEX IF NOT EXISTS idx_clientes_telefono ON clientes(telefono);
+
+-- Índices para proveedores
+CREATE INDEX IF NOT EXISTS idx_proveedores_nombre ON proveedores(nombre);
+CREATE INDEX IF NOT EXISTS idx_proveedores_cuit ON proveedores(cuit);
+CREATE INDEX IF NOT EXISTS idx_proveedores_activo ON proveedores(activo);
+
+-- Índices para inventario
+CREATE INDEX IF NOT EXISTS idx_inventario_producto ON inventario(producto_id);
+CREATE INDEX IF NOT EXISTS idx_inventario_fecha ON inventario(created_at);
+CREATE INDEX IF NOT EXISTS idx_inventario_tipo ON inventario(tipo_movimiento);
+CREATE INDEX IF NOT EXISTS idx_inventario_producto_fecha ON inventario(producto_id, created_at DESC);
+
+-- Índices para pagos
+CREATE INDEX IF NOT EXISTS idx_pagos_venta ON pagos(venta_id);
+CREATE INDEX IF NOT EXISTS idx_pagos_metodo ON pagos(metodo, created_at);
+CREATE INDEX IF NOT EXISTS idx_pagos_sync ON pagos(sync_status);
+
+-- Índices para cuentas corrientes
+CREATE INDEX IF NOT EXISTS idx_cuentas_corrientes_cliente ON cuentas_corrientes(cliente_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cuentas_corrientes_venta ON cuentas_corrientes(venta_id);
+CREATE INDEX IF NOT EXISTS idx_cuentas_corrientes_tipo ON cuentas_corrientes(tipo_movimiento);
+
+-- Índices para cierres de caja
+CREATE INDEX IF NOT EXISTS idx_cierres_fecha ON cierres_caja(fecha);
+CREATE INDEX IF NOT EXISTS idx_cierres_local ON cierres_caja(local_id);
+CREATE INDEX IF NOT EXISTS idx_cierres_estado ON cierres_caja(estado);
+CREATE INDEX IF NOT EXISTS idx_cierres_fecha_local ON cierres_caja(fecha, local_id, caja_id);
+CREATE INDEX IF NOT EXISTS idx_cierres_sync ON cierres_caja(sync_status);
+
+-- Índices para presupuestos
+CREATE INDEX IF NOT EXISTS idx_presupuestos_cliente ON presupuestos(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_presupuestos_estado ON presupuestos(estado);
+CREATE INDEX IF NOT EXISTS idx_presupuestos_valido ON presupuestos(valido_hasta);
+CREATE INDEX IF NOT EXISTS idx_presupuestos_sync ON presupuestos(sync_status);
+
+-- Índices para promociones y descuentos
+CREATE INDEX IF NOT EXISTS idx_promociones_fechas ON promociones(fecha_inicio, fecha_fin, activo);
+CREATE INDEX IF NOT EXISTS idx_descuentos_codigo ON descuentos(codigo, activo);
+
+-- Índices para compras
+CREATE INDEX IF NOT EXISTS idx_compras_proveedor ON compras(proveedor_id);
+CREATE INDEX IF NOT EXISTS idx_compras_estado ON compras(estado);
+CREATE INDEX IF NOT EXISTS idx_compras_fecha_pedido ON compras(fecha_pedido);
+
+-- ============================================
+-- INSERTAR DATOS INICIALES
+-- ============================================
+
+-- Insertar configuraciones
+INSERT INTO configuraciones (clave, valor, descripcion, categoria) VALUES 
+('empresa', '{"nombre": "Mi Ferretería", "direccion": "Av. Principal 1234", "telefono": "011-1234-5678", "email": "info@miferreteria.com", "cuit": "30-12345678-9"}', 'Datos de la empresa', 'empresa'),
+('iva', '{"porcentaje": 21, "incluido": true}', 'Configuración de IVA', 'impuestos'),
+('moneda', '{"simbolo": "$", "nombre": "Peso Argentino", "decimales": 2}', 'Configuración de moneda', 'general'),
+('facturacion', '{"punto_venta": 1, "ultimo_numero": 0, "tipo_comprobante": "ticket"}', 'Configuración de facturación', 'facturacion'),
+('stock', '{"alertar_minimo": true, "mostrar_stock_cero": false, "control_lotes": false}', 'Configuración de stock', 'stock'),
+('caja', '{"saldo_inicial": 10000, "corte_automatico": true, "imprimir_ticket": true}', 'Configuración de caja', 'caja'),
+('metodos_pago', '["efectivo", "tarjeta", "transferencia", "qr", "cuenta_corriente"]', 'Métodos de pago activos', 'pagos'),
+('turnos', '["mañana", "tarde", "noche"]', 'Turnos disponibles', 'caja'),
+('unidades_medida', '["unidad", "metro", "litro", "kilogramo", "par", "juego"]', 'Unidades de medida', 'productos'),
+('categorias_iva', '["consumidor_final", "responsable_inscripto", "monotributista", "exento"]', 'Categorías de IVA', 'clientes')
+ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor, updated_at = NOW();
+
+-- Insertar categorías para ferretería
+INSERT INTO categorias (nombre, descripcion, icono, color) VALUES 
+('Herramientas Manuales', 'Martillos, destornilladores, alicates, etc.', '🔧', 'blue'),
+('Herramientas Eléctricas', 'Taladros, amoladoras, sierras eléctricas', '⚡', 'orange'),
+('Materiales de Construcción', 'Cemento, arena, ladrillos, hierros', '🏗️', 'gray'),
+('Fontanería', 'Caños, conexiones, llaves, sanitarios', '🚰', 'teal'),
+('Electricidad', 'Cables, interruptores, tomas, luminarias', '💡', 'yellow'),
+('Pinturas', 'Pinturas, barnices, selladores, herramientas', '🎨', 'purple'),
+('Fijaciones', 'Clavos, tornillos, anclajes, adhesivos', '📌', 'red'),
+('Jardinería', 'Herramientas de jardín, plantas, tierra', '🌿', 'green'),
+('Seguridad', 'Guantes, lentes, cascos, botas', '🛡️', 'indigo'),
+('Ferretería General', 'Artículos varios de ferretería', '🛠️', 'pink')
+ON CONFLICT (nombre) DO NOTHING;`;
+
+        // Lista completa de tablas requeridas
+        const requiredTables = [
+            'locales', 'cajas', 'usuarios', 'proveedores', 'productos', 
+            'clientes', 'ventas', 'venta_items', 'pagos', 'presupuestos',
+            'presupuesto_items', 'cuentas_corrientes', 'cierres_caja', 
+            'inventario', 'categorias', 'configuraciones', 'promociones',
+            'descuentos', 'compras', 'compra_items', 'auditoria', 
+            'sincronizacion_log'
+        ];
+
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
             loadSavedConfig();
@@ -1275,309 +1770,7 @@
 
         // Generar SQL
         function generateSQL() {
-            const sqlCode = `-- ============================================
--- SISTEMA POS - TABLAS COMPLETAS
--- ============================================
-
--- 1. TABLA DE LOCALES/SUCURSALES
-CREATE TABLE IF NOT EXISTS locales (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    direccion TEXT,
-    telefono VARCHAR(20),
-    email VARCHAR(100),
-    horario_atencion VARCHAR(100),
-    responsable VARCHAR(100),
-    activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- 2. TABLA DE CAJAS
-CREATE TABLE IF NOT EXISTS cajas (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    numero VARCHAR(20) NOT NULL,
-    nombre VARCHAR(100),
-    local_id UUID REFERENCES locales(id),
-    activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- 3. TABLA DE USUARIOS
-CREATE TABLE IF NOT EXISTS usuarios (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100),
-    rol VARCHAR(50) DEFAULT 'vendedor',
-    local_id UUID REFERENCES locales(id),
-    activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- 4. TABLA DE PRODUCTOS
-CREATE TABLE IF NOT EXISTS productos (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    codigo_barras VARCHAR(50) UNIQUE,
-    codigo_interno VARCHAR(50),
-    nombre VARCHAR(200) NOT NULL,
-    descripcion TEXT,
-    marca VARCHAR(100),
-    categoria VARCHAR(100) NOT NULL,
-    subcategoria VARCHAR(100),
-    unidad_medida VARCHAR(20) DEFAULT 'unidad',
-    material VARCHAR(100),
-    color VARCHAR(50),
-    medidas VARCHAR(100),
-    precio_costo DECIMAL(10,2) DEFAULT 0,
-    porcentaje_ganancia DECIMAL(5,2) DEFAULT 40,
-    precio_venta DECIMAL(10,2) NOT NULL,
-    stock DECIMAL(10,3) DEFAULT 0,
-    stock_minimo DECIMAL(10,3) DEFAULT 5,
-    stock_maximo DECIMAL(10,3) DEFAULT 100,
-    proveedor_id UUID,
-    ubicacion VARCHAR(50),
-    activo BOOLEAN DEFAULT true,
-    destacado BOOLEAN DEFAULT false,
-    imagen_url TEXT,
-    last_sync_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    CHECK (precio_venta >= 0),
-    CHECK (stock >= 0)
-);
-
--- 5. TABLA DE CLIENTES
-CREATE TABLE IF NOT EXISTS clientes (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100),
-    razon_social VARCHAR(200),
-    tipo_documento VARCHAR(10) DEFAULT 'DNI',
-    numero_documento VARCHAR(20) UNIQUE,
-    telefono VARCHAR(20),
-    email VARCHAR(100),
-    direccion TEXT,
-    localidad VARCHAR(100),
-    provincia VARCHAR(100),
-    tipo_cliente VARCHAR(20) DEFAULT 'consumidor_final',
-    limite_credito DECIMAL(10,2) DEFAULT 0,
-    saldo DECIMAL(10,2) DEFAULT 0,
-    categoria_iva VARCHAR(20) DEFAULT 'consumidor_final',
-    cuit VARCHAR(20),
-    observaciones TEXT,
-    ultimo_movimiento_cc TIMESTAMP,
-    activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- 6. TABLA DE VENTAS
-CREATE TABLE IF NOT EXISTS ventas (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    numero_venta VARCHAR(50) UNIQUE,
-    local_id UUID REFERENCES locales(id),
-    caja_id UUID REFERENCES cajas(id),
-    usuario_id UUID REFERENCES usuarios(id),
-    cliente_id UUID REFERENCES clientes(id),
-    total DECIMAL(10,2) NOT NULL,
-    descuento DECIMAL(10,2) DEFAULT 0,
-    subtotal DECIMAL(10,2) NOT NULL,
-    iva DECIMAL(10,2) DEFAULT 0,
-    estado VARCHAR(20) DEFAULT 'completada',
-    tipo_venta VARCHAR(20) DEFAULT 'contado',
-    tipo_comprobante VARCHAR(20) DEFAULT 'ticket',
-    punto_venta INTEGER DEFAULT 0,
-    numero_comprobante INTEGER,
-    observaciones TEXT,
-    offline_id VARCHAR(100),
-    sync_status VARCHAR(20) DEFAULT 'synced',
-    last_sync_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    CHECK (total >= 0)
-);
-
--- 7. TABLA DE ITEMS DE VENTA
-CREATE TABLE IF NOT EXISTS venta_items (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    venta_id UUID REFERENCES ventas(id) ON DELETE CASCADE,
-    producto_id UUID REFERENCES productos(id),
-    cantidad DECIMAL(10,3) NOT NULL,
-    precio_unitario DECIMAL(10,2) NOT NULL,
-    descuento_unitario DECIMAL(10,2) DEFAULT 0,
-    subtotal DECIMAL(10,2) NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
-    CHECK (cantidad > 0),
-    CHECK (precio_unitario >= 0)
-);
-
--- 8. TABLA DE PAGOS
-CREATE TABLE IF NOT EXISTS pagos (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    venta_id UUID REFERENCES ventas(id) ON DELETE CASCADE,
-    metodo VARCHAR(50) NOT NULL,
-    monto DECIMAL(10,2) NOT NULL,
-    referencia VARCHAR(100),
-    estado VARCHAR(20) DEFAULT 'completado',
-    tarjeta_tipo VARCHAR(50),
-    tarjeta_numero VARCHAR(4),
-    tarjeta_cuotas INTEGER DEFAULT 1,
-    offline_id VARCHAR(100),
-    sync_status VARCHAR(20) DEFAULT 'synced',
-    created_at TIMESTAMP DEFAULT NOW(),
-    CHECK (monto > 0)
-);
-
--- 9. TABLA DE PRESUPUESTOS
-CREATE TABLE IF NOT EXISTS presupuestos (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    numero_presupuesto VARCHAR(50) UNIQUE,
-    local_id UUID REFERENCES locales(id),
-    cliente_id UUID REFERENCES clientes(id),
-    usuario_id UUID REFERENCES usuarios(id),
-    total DECIMAL(10,2) NOT NULL,
-    descuento DECIMAL(10,2) DEFAULT 0,
-    subtotal DECIMAL(10,2) NOT NULL,
-    valido_hasta DATE,
-    estado VARCHAR(20) DEFAULT 'pendiente',
-    observaciones TEXT,
-    offline_id VARCHAR(100),
-    sync_status VARCHAR(20) DEFAULT 'synced',
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- 10. TABLA DE CUENTAS CORRIENTES
-CREATE TABLE IF NOT EXISTS cuentas_corrientes (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    cliente_id UUID REFERENCES clientes(id),
-    tipo_movimiento VARCHAR(20) NOT NULL,
-    monto DECIMAL(10,2) NOT NULL,
-    saldo_anterior DECIMAL(10,2) NOT NULL,
-    saldo_nuevo DECIMAL(10,2) NOT NULL,
-    venta_id UUID REFERENCES ventas(id),
-    pago_id UUID REFERENCES pagos(id),
-    observaciones TEXT,
-    fecha_vencimiento DATE,
-    offline_id VARCHAR(100),
-    sync_status VARCHAR(20) DEFAULT 'synced',
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- 11. TABLA DE CIERRES DE CAJA
-CREATE TABLE IF NOT EXISTS cierres_caja (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    local_id UUID REFERENCES locales(id),
-    caja_id UUID REFERENCES cajas(id),
-    usuario_id UUID REFERENCES usuarios(id),
-    turno VARCHAR(10) NOT NULL,
-    fecha DATE NOT NULL,
-    saldo_inicial DECIMAL(10,2) NOT NULL,
-    saldo_final DECIMAL(10,2),
-    ventas_efectivo DECIMAL(10,2) DEFAULT 0,
-    ventas_tarjeta DECIMAL(10,2) DEFAULT 0,
-    ventas_transferencia DECIMAL(10,2) DEFAULT 0,
-    ventas_otros DECIMAL(10,2) DEFAULT 0,
-    total_ventas DECIMAL(10,2) DEFAULT 0,
-    total_egresos DECIMAL(10,2) DEFAULT 0,
-    diferencia DECIMAL(10,2) DEFAULT 0,
-    observaciones TEXT,
-    estado VARCHAR(20) DEFAULT 'abierto',
-    sync_status VARCHAR(20) DEFAULT 'synced',
-    last_sync_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- 12. TABLA DE INVENTARIO
-CREATE TABLE IF NOT EXISTS inventario (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    producto_id UUID REFERENCES productos(id),
-    tipo_movimiento VARCHAR(20) NOT NULL,
-    cantidad DECIMAL(10,3) NOT NULL,
-    stock_anterior DECIMAL(10,3) NOT NULL,
-    stock_nuevo DECIMAL(10,3) NOT NULL,
-    motivo VARCHAR(100),
-    usuario_id UUID REFERENCES usuarios(id),
-    venta_id UUID REFERENCES ventas(id),
-    compra_id UUID,
-    proveedor_id UUID REFERENCES proveedores(id),
-    observaciones TEXT,
-    offline_id VARCHAR(100),
-    sync_status VARCHAR(20) DEFAULT 'synced',
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- 13. TABLA DE PROVEEDORES
-CREATE TABLE IF NOT EXISTS proveedores (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    razon_social VARCHAR(200),
-    contacto VARCHAR(100),
-    telefono VARCHAR(20),
-    email VARCHAR(100),
-    direccion TEXT,
-    localidad VARCHAR(100),
-    provincia VARCHAR(100),
-    cuit VARCHAR(20) UNIQUE,
-    condicion_iva VARCHAR(20),
-    productos_que_vende TEXT,
-    plazo_entrega VARCHAR(50),
-    activo BOOLEAN DEFAULT true,
-    observaciones TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- 14. TABLA DE CONFIGURACIONES
-CREATE TABLE IF NOT EXISTS configuraciones (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    clave VARCHAR(100) NOT NULL UNIQUE,
-    valor JSONB NOT NULL,
-    descripcion TEXT,
-    categoria VARCHAR(50) DEFAULT 'general',
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- 15. TABLA DE CATEGORÍAS
-CREATE TABLE IF NOT EXISTS categorias (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    descripcion TEXT,
-    icono VARCHAR(50),
-    color VARCHAR(20),
-    activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- INSERTAR DATOS INICIALES
-INSERT INTO configuraciones (clave, valor, descripcion, categoria) VALUES 
-('empresa', '{"nombre": "Mi Ferretería", "direccion": "Av. Principal 1234", "telefono": "011-1234-5678", "email": "info@miferreteria.com", "cuit": "30-12345678-9"}', 'Datos de la empresa', 'empresa'),
-('iva', '{"porcentaje": 21, "incluido": true}', 'Configuración de IVA', 'impuestos'),
-('moneda', '{"simbolo": "$", "nombre": "Peso Argentino", "decimales": 2}', 'Configuración de moneda', 'general'),
-('facturacion', '{"punto_venta": 1, "ultimo_numero": 0, "tipo_comprobante": "ticket"}', 'Configuración de facturación', 'facturacion'),
-('stock', '{"alertar_minimo": true, "mostrar_stock_cero": false, "control_lotes": false}', 'Configuración de stock', 'stock'),
-('caja', '{"saldo_inicial": 10000, "corte_automatico": true, "imprimir_ticket": true}', 'Configuración de caja', 'caja')
-ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor, updated_at = NOW();
-
-INSERT INTO categorias (nombre, descripcion, icono, color) VALUES 
-('Herramientas Manuales', 'Martillos, destornilladores, alicates, etc.', '🔧', 'blue'),
-('Herramientas Eléctricas', 'Taladros, amoladoras, sierras eléctricas', '⚡', 'orange'),
-('Materiales de Construcción', 'Cemento, arena, ladrillos, hierros', '🏗️', 'gray'),
-('Fontanería', 'Caños, conexiones, llaves, sanitarios', '🚰', 'teal'),
-('Electricidad', 'Cables, interruptores, tomas, luminarias', '💡', 'yellow'),
-('Pinturas', 'Pinturas, barnices, selladores, herramientas', '🎨', 'purple'),
-('Fijaciones', 'Clavos, tornillos, anclajes, adhesivos', '📌', 'red'),
-('Jardinería', 'Herramientas de jardín, plantas, tierra', '🌿', 'green'),
-('Seguridad', 'Guantes, lentes, cascos, botas', '🛡️', 'indigo'),
-('Ferretería General', 'Artículos varios de ferretería', '🛠️', 'pink')
-ON CONFLICT (nombre) DO NOTHING;`;
-            
-            document.getElementById('sqlCode').textContent = sqlCode;
+            document.getElementById('sqlCode').textContent = completeSQL;
         }
 
         function copySQL() {
@@ -1604,18 +1797,12 @@ ON CONFLICT (nombre) DO NOTHING;`;
             verifyBtn.innerHTML = '<div class="spinner"></div> Verificando...';
             verifyBtn.disabled = true;
 
-            const requiredTables = [
-                'locales', 'cajas', 'usuarios', 'productos', 'clientes',
-                'ventas', 'venta_items', 'pagos', 'presupuestos',
-                'cuentas_corrientes', 'cierres_caja', 'inventario',
-                'proveedores', 'configuraciones', 'categorias'
-            ];
-
             try {
                 const checklist = document.getElementById('tablesChecklist');
                 checklist.innerHTML = '';
                 
                 let allTablesExist = true;
+                let missingTables = [];
                 
                 for (const table of requiredTables) {
                     const { data, error } = await supabaseClient
@@ -1632,11 +1819,13 @@ ON CONFLICT (nombre) DO NOTHING;`;
                         icon.innerHTML = '❌';
                         li.innerHTML = `${icon.outerHTML} <span>${table} - <strong style="color: #ef4444;">Falta crear</strong></span>`;
                         allTablesExist = false;
+                        missingTables.push(table);
                     } else if (error) {
                         icon.className = 'checklist-icon pending';
                         icon.innerHTML = '❌';
                         li.innerHTML = `${icon.outerHTML} <span>${table} - <strong style="color: #ef4444;">Error: ${error.message}</strong></span>`;
                         allTablesExist = false;
+                        missingTables.push(table);
                     } else {
                         icon.className = 'checklist-icon completed';
                         icon.innerHTML = '✓';
@@ -1652,7 +1841,7 @@ ON CONFLICT (nombre) DO NOTHING;`;
                     document.getElementById('step2Next').disabled = false;
                 } else {
                     verifyResult.className = 'test-result error';
-                    verifyResult.innerHTML = '❌ Faltan algunas tablas. Ejecuta el SQL en Supabase SQL Editor.';
+                    verifyResult.innerHTML = `❌ Faltan ${missingTables.length} tablas. Ejecuta el SQL completo en Supabase SQL Editor.`;
                     document.getElementById('step2Next').disabled = true;
                 }
                 
@@ -1669,15 +1858,8 @@ ON CONFLICT (nombre) DO NOTHING;`;
             const checklist = document.getElementById('tablesChecklist');
             if (!checklist) return;
             
-            const tables = [
-                'locales', 'cajas', 'usuarios', 'productos', 'clientes',
-                'ventas', 'venta_items', 'pagos', 'presupuestos',
-                'cuentas_corrientes', 'cierres_caja', 'inventario',
-                'proveedores', 'configuraciones', 'categorias'
-            ];
-            
             checklist.innerHTML = '';
-            tables.forEach(table => {
+            requiredTables.forEach(table => {
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <div class="checklist-icon pending">❌</div>
@@ -1688,7 +1870,7 @@ ON CONFLICT (nombre) DO NOTHING;`;
         }
 
         // Configuración Empresa
-        function saveEmpresa() {
+        async function saveEmpresa() {
             setupData.empresa = {
                 nombre: document.getElementById('empresaNombre').value,
                 cuit: document.getElementById('empresaCuit').value,
@@ -1698,12 +1880,37 @@ ON CONFLICT (nombre) DO NOTHING;`;
                 config: document.getElementById('empresaConfig').value
             };
             
+            // Guardar en Supabase si está conectado
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('configuraciones')
+                        .upsert({
+                            clave: 'empresa',
+                            valor: {
+                                nombre: setupData.empresa.nombre,
+                                cuit: setupData.empresa.cuit,
+                                direccion: setupData.empresa.direccion,
+                                telefono: setupData.empresa.telefono,
+                                email: setupData.empresa.email
+                            },
+                            descripcion: 'Datos de la empresa',
+                            categoria: 'empresa'
+                        }, { onConflict: 'clave' });
+                    
+                    if (error) throw error;
+                    
+                } catch (error) {
+                    console.warn('Error guardando empresa en Supabase:', error);
+                }
+            }
+            
             updateConfigSummary();
             nextStep();
         }
 
         // Configuración Local
-        function saveLocal() {
+        async function saveLocal() {
             const turnos = [];
             if (document.getElementById('turnoManana').checked) turnos.push('mañana');
             if (document.getElementById('turnoTarde').checked) turnos.push('tarde');
@@ -1721,6 +1928,48 @@ ON CONFLICT (nombre) DO NOTHING;`;
                 },
                 turnos: turnos
             };
+            
+            // Guardar en Supabase si está conectado
+            if (supabaseClient) {
+                try {
+                    // Guardar local
+                    const { data: localData, error: localError } = await supabaseClient
+                        .from('locales')
+                        .insert({
+                            nombre: setupData.local.nombre,
+                            telefono: setupData.local.telefono,
+                            direccion: setupData.local.direccion,
+                            horario_atencion: setupData.local.horario,
+                            responsable: setupData.local.responsable,
+                            activo: true
+                        })
+                        .select()
+                        .single();
+                    
+                    if (localError) throw localError;
+                    
+                    // Guardar caja
+                    if (localData) {
+                        const { error: cajaError } = await supabaseClient
+                            .from('cajas')
+                            .insert({
+                                numero: setupData.local.caja.numero,
+                                nombre: setupData.local.caja.nombre,
+                                local_id: localData.id,
+                                activo: true
+                            });
+                        
+                        if (cajaError) throw cajaError;
+                        
+                        // Actualizar datos con IDs generados
+                        setupData.local.id = localData.id;
+                        setupData.local.caja.local_id = localData.id;
+                    }
+                    
+                } catch (error) {
+                    console.warn('Error guardando local en Supabase:', error);
+                }
+            }
             
             updateConfigSummary();
             nextStep();
@@ -1835,7 +2084,8 @@ ON CONFLICT (nombre) DO NOTHING;`;
                         email: adminUser.email,
                         nombre: adminUser.nombre,
                         rol: adminUser.rol,
-                        activo: true
+                        activo: true,
+                        local_id: setupData.local.id || null
                     }]);
 
                 if (dbError) throw dbError;
@@ -1871,7 +2121,8 @@ ON CONFLICT (nombre) DO NOTHING;`;
                                 email: vendedor.email,
                                 nombre: vendedor.nombre,
                                 rol: vendedor.rol,
-                                activo: true
+                                activo: true,
+                                local_id: setupData.local.id || null
                             }]);
 
                         setupData.usuarios.push(vendedor);
@@ -1986,21 +2237,42 @@ ON CONFLICT (nombre) DO NOTHING;`;
             }
 
             try {
-                // Primero, insertar categorías si no existen
+                // Primero, insertar proveedor de ejemplo
+                const { data: proveedorData, error: proveedorError } = await supabaseClient
+                    .from('proveedores')
+                    .upsert({
+                        nombre: 'Proveedor Ejemplo S.A.',
+                        razon_social: 'Proveedor Ejemplo Sociedad Anónima',
+                        contacto: 'Juan Pérez',
+                        telefono: '011-4321-8765',
+                        email: 'contacto@proveedorejemplo.com',
+                        direccion: 'Calle Falsa 123',
+                        localidad: 'CABA',
+                        provincia: 'Buenos Aires',
+                        cuit: '30-11222333-4',
+                        condicion_iva: 'responsable_inscripto',
+                        productos_que_vende: 'Herramientas manuales y eléctricas',
+                        plazo_entrega: '48 a 72 horas',
+                        activo: true
+                    }, { onConflict: 'cuit' })
+                    .select()
+                    .single();
+
+                // Luego, insertar categorías si no existen
                 const categories = [...new Set(setupData.productos.map(p => p.categoria))];
                 for (const category of categories) {
-                    const { error } = await supabaseClient
+                    await supabaseClient
                         .from('categorias')
                         .upsert({
                             nombre: category,
                             descripcion: `Productos de ${category}`,
+                            icono: '🛠️',
+                            color: 'blue',
                             activo: true
                         }, { onConflict: 'nombre' });
-                    
-                    if (error) console.warn(`Error insertando categoría ${category}:`, error);
                 }
 
-                // Luego, insertar productos
+                // Insertar productos
                 const productosToInsert = setupData.productos.map(producto => ({
                     codigo_interno: producto.codigo,
                     nombre: producto.nombre,
@@ -2011,7 +2283,9 @@ ON CONFLICT (nombre) DO NOTHING;`;
                     stock_minimo: 5,
                     stock_maximo: 100,
                     activo: true,
-                    unidad_medida: 'unidad'
+                    unidad_medida: 'unidad',
+                    proveedor_id: proveedorData?.id || null,
+                    porcentaje_ganancia: 40
                 }));
 
                 const { error } = await supabaseClient
@@ -2035,7 +2309,7 @@ ON CONFLICT (nombre) DO NOTHING;`;
             document.getElementById('finalActions').style.display = 'none';
 
             try {
-                // Guardar configuración completa en localStorage
+                // Guardar configuración completa
                 const config = {
                     supabase: setupData.supabase,
                     empresa: setupData.empresa,
@@ -2047,25 +2321,16 @@ ON CONFLICT (nombre) DO NOTHING;`;
                 };
 
                 localStorage.setItem('pos_config', JSON.stringify(config));
-                
-                // Guardar datos de empresa
                 localStorage.setItem('config_empresa', JSON.stringify(setupData.empresa));
                 
-                // Crear configuración de local actual
                 if (setupData.local) {
                     localStorage.setItem('currentLocal', JSON.stringify({
-                        id: 'local-1',
+                        id: setupData.local.id || 'local-1',
                         nombre: setupData.local.nombre
-                    }));
-                    
-                    localStorage.setItem('currentCaja', JSON.stringify({
-                        id: 'caja-1',
-                        numero: setupData.local.caja.numero,
-                        nombre: setupData.local.caja.nombre
                     }));
                 }
 
-                // Simular proceso de configuración
+                // Simular proceso
                 await new Promise(resolve => setTimeout(resolve, 2000));
 
                 // Actualizar pantalla de éxito
@@ -2084,7 +2349,7 @@ ON CONFLICT (nombre) DO NOTHING;`;
         }
 
         function goToLogin() {
-            window.location.href = 'index.html';
+            window.location.href = 'login.html';
         }
 
         function downloadConfig() {
@@ -2188,7 +2453,7 @@ ON CONFLICT (nombre) DO NOTHING;`;
                 
                 if (files.length) {
                     document.getElementById('excelFile').files = files;
-                    loadSampleProducts(); // Por ahora simular carga
+                    loadSampleProducts();
                 }
             }
         });
