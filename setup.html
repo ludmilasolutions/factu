@@ -570,17 +570,15 @@
     <div class="setup-container">
         <div class="setup-header">
             <h1>⚙️ Configuración Sistema POS</h1>
-            <p>Asistente de configuración completa para el sistema de punto de venta</p>
+            <p>Asistente de configuración de base de datos para el sistema de punto de venta</p>
         </div>
 
         <div class="setup-progress">
             <div class="progress-step active" data-step="1">1. Supabase</div>
             <div class="progress-step" data-step="2">2. Base de Datos</div>
             <div class="progress-step" data-step="3">3. Empresa</div>
-            <div class="progress-step" data-step="4">4. Locales</div>
-            <div class="progress-step" data-step="5">5. Usuarios</div>
-            <div class="progress-step" data-step="6">6. Productos</div>
-            <div class="progress-step" data-step="7">7. Finalizar</div>
+            <div class="progress-step" data-step="4">4. Productos</div>
+            <div class="progress-step" data-step="5">5. Finalizar</div>
         </div>
 
         <div class="setup-content">
@@ -753,179 +751,8 @@
                 </div>
             </div>
 
-            <!-- Paso 4: Locales y Cajas -->
+            <!-- Paso 4: Productos Iniciales -->
             <div class="step" id="step4">
-                <div class="step-header">
-                    <h2>🏪 Configuración de Locales</h2>
-                    <p>Define tus sucursales y cajas registradoras</p>
-                </div>
-
-                <div class="alert alert-info">
-                    <span>🏪</span>
-                    <div>
-                        <p>Agrega al menos un local y una caja para comenzar a operar.</p>
-                        <p>Puedes agregar más locales y cajas después desde la aplicación.</p>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <h3>Local Principal</h3>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="localNombre">Nombre del Local:</label>
-                            <input type="text" id="localNombre" placeholder="Sucursal Central" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="localTelefono">Teléfono:</label>
-                            <input type="tel" id="localTelefono" placeholder="011-9876-5432">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="localDireccion">Dirección del Local:</label>
-                        <input type="text" id="localDireccion" placeholder="Dirección del local">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="localHorario">Horario de Atención:</label>
-                            <input type="text" id="localHorario" placeholder="Lun-Vie 9:00-18:00, Sáb 9:00-13:00">
-                        </div>
-                        <div class="form-group">
-                            <label for="localResponsable">Responsable:</label>
-                            <input type="text" id="localResponsable" placeholder="Nombre del responsable">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <h3>Caja Registradora</h3>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="cajaNumero">Número de Caja:</label>
-                            <input type="text" id="cajaNumero" placeholder="Caja 01" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="cajaNombre">Nombre de Caja:</label>
-                            <input type="text" id="cajaNombre" placeholder="Caja Principal">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <h3>Turnos de Trabajo</h3>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="turnoManana" checked> Mañana (8:00 - 13:00)
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="turnoTarde" checked> Tarde (14:00 - 19:00)
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="turnoNoche"> Noche (20:00 - 02:00)
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="config-summary">
-                    <h3>✅ Configuración Local</h3>
-                    <div class="summary-item">
-                        <span class="label">Local:</span>
-                        <span class="value" id="summaryLocal">No configurado</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="label">Caja:</span>
-                        <span class="value" id="summaryCaja">No configurado</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="label">Turnos:</span>
-                        <span class="value" id="summaryTurnos">No configurado</span>
-                    </div>
-                </div>
-
-                <div class="setup-actions">
-                    <button class="btn btn-secondary" onclick="prevStep()">← Anterior</button>
-                    <button class="btn btn-primary" onclick="saveLocal()">Guardar y Continuar →</button>
-                </div>
-            </div>
-
-            <!-- Paso 5: Usuarios -->
-            <div class="step" id="step5">
-                <div class="step-header">
-                    <h2>👥 Configuración de Usuarios</h2>
-                    <p>Crea los usuarios del sistema con sus permisos correspondientes</p>
-                </div>
-
-                <div class="alert alert-warning">
-                    <span>🔐</span>
-                    <div>
-                        <strong>Usuario Administrador</strong>
-                        <p>Debes crear al menos un usuario administrador para gestionar el sistema.</p>
-                        <p>Este usuario tendrá acceso completo a todas las funcionalidades.</p>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="adminNombre">Nombre:</label>
-                        <input type="text" id="adminNombre" placeholder="Juan Pérez" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="adminEmail">Email:</label>
-                        <input type="email" id="adminEmail" placeholder="admin@empresa.com" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="adminPassword">Contraseña:</label>
-                        <input type="password" id="adminPassword" placeholder="••••••••" required minlength="8">
-                    </div>
-                    <div class="form-group">
-                        <label for="adminPasswordConfirm">Confirmar Contraseña:</label>
-                        <input type="password" id="adminPasswordConfirm" placeholder="••••••••" required minlength="8">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="adminRol">Rol:</label>
-                    <select id="adminRol">
-                        <option value="administrador">Administrador (Acceso completo)</option>
-                        <option value="gerente">Gerente (Gestión operativa)</option>
-                        <option value="supervisor">Supervisor (Supervisión)</option>
-                        <option value="vendedor">Vendedor (Ventas básicas)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <h3>Vendedores Adicionales (Opcional)</h3>
-                    <div id="vendedoresContainer">
-                        <!-- Se agregan dinámicamente -->
-                    </div>
-                    <button type="button" class="btn btn-secondary" onclick="agregarVendedor()" style="margin-top: 10px;">
-                        + Agregar Vendedor
-                    </button>
-                </div>
-
-                <div class="config-summary">
-                    <h3>👥 Usuarios a Crear</h3>
-                    <div class="checklist" id="usersChecklist">
-                        <!-- Se llena dinámicamente -->
-                    </div>
-                </div>
-
-                <div class="setup-actions">
-                    <button class="btn btn-secondary" onclick="prevStep()">← Anterior</button>
-                    <button class="btn btn-primary" onclick="createUsers()">Crear Usuarios y Continuar →</button>
-                </div>
-            </div>
-
-            <!-- Paso 6: Productos Iniciales -->
-            <div class="step" id="step6">
                 <div class="step-header">
                     <h2>📦 Productos Iniciales</h2>
                     <p>Configura tus productos, categorías y stock inicial</p>
@@ -1003,8 +830,8 @@
                 </div>
             </div>
 
-            <!-- Paso 7: Finalización -->
-            <div class="step" id="step7">
+            <!-- Paso 5: Finalización -->
+            <div class="step" id="step5">
                 <div class="loading" id="finalLoading">
                     <div class="spinner" style="width: 40px; height: 40px;"></div>
                     <h2>Configurando Sistema...</h2>
@@ -1031,33 +858,29 @@
                             <span class="value" id="finalEmpresa">-</span>
                         </div>
                         <div class="summary-item">
-                            <span class="label">Usuarios creados:</span>
-                            <span class="value" id="finalUsuarios">0</span>
-                        </div>
-                        <div class="summary-item">
                             <span class="label">Productos cargados:</span>
                             <span class="value" id="finalProductos">0</span>
                         </div>
                     </div>
 
+                    <div class="alert alert-info" style="margin-top: 30px; text-align: left;">
+                        <strong>📋 Próximos pasos necesarios:</strong>
+                        <ol style="margin-top: 10px; padding-left: 20px;">
+                            <li><strong>Crear un usuario administrador</strong> desde la aplicación web de Supabase Auth</li>
+                            <li><strong>Configurar locales y cajas</strong> directamente desde la aplicación POS</li>
+                            <li><strong>Crear usuarios y permisos</strong> desde la aplicación POS</li>
+                            <li><strong>Ajustar configuraciones</strong> según las necesidades de tu negocio</li>
+                            <li><strong>Configurar métodos de pago</strong> en la sección Configuración > Pagos</li>
+                        </ol>
+                    </div>
+
                     <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
                         <button class="btn btn-success" onclick="goToLogin()">
-                            🚀 Iniciar Sistema
+                            🚀 Ir al Login
                         </button>
                         <button class="btn btn-secondary" onclick="downloadConfig()">
                             📄 Descargar Configuración
                         </button>
-                    </div>
-
-                    <div class="alert alert-info" style="margin-top: 30px; text-align: left;">
-                        <strong>📋 Próximos pasos recomendados:</strong>
-                        <ol style="margin-top: 10px; padding-left: 20px;">
-                            <li>Accede al sistema con el usuario administrador creado</li>
-                            <li>Configura métodos de pago en Configuración > Pagos</li>
-                            <li>Revisa y ajusta los precios de los productos</li>
-                            <li>Abre tu primera caja del día en POS > Caja</li>
-                            <li>Realiza una venta de prueba</li>
-                        </ol>
                     </div>
                 </div>
 
@@ -1076,8 +899,6 @@
         let setupData = {
             supabase: {},
             empresa: {},
-            local: {},
-            usuarios: [],
             productos: [],
             config: {}
         };
@@ -1581,7 +1402,6 @@ ON CONFLICT (nombre) DO NOTHING;`;
             generateSQL();
             updateProgress();
             updateConfigSummary();
-            updateUsersChecklist();
             updateTablesChecklist();
         });
 
@@ -1599,7 +1419,7 @@ ON CONFLICT (nombre) DO NOTHING;`;
             
             if (currentStep === 2) {
                 loadSupabaseClient();
-            } else if (currentStep === 7) {
+            } else if (currentStep === 5) {
                 document.getElementById('finalActions').style.display = 'block';
             }
             
@@ -1615,7 +1435,7 @@ ON CONFLICT (nombre) DO NOTHING;`;
             document.getElementById(`step${currentStep}`).classList.add('active');
             document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
             
-            if (currentStep === 7) {
+            if (currentStep === 5) {
                 document.getElementById('finalActions').style.display = 'none';
             }
             
@@ -1675,28 +1495,7 @@ ON CONFLICT (nombre) DO NOTHING;`;
                     return true;
                     
                 case 4:
-                    const localNombre = document.getElementById('localNombre').value;
-                    const cajaNumero = document.getElementById('cajaNumero').value;
-                    
-                    if (!localNombre || !cajaNumero) {
-                        alert('Por favor, completa los datos del local y caja');
-                        return false;
-                    }
-                    return true;
-                    
-                case 5:
-                    const password = document.getElementById('adminPassword').value;
-                    const confirm = document.getElementById('adminPasswordConfirm').value;
-                    
-                    if (password !== confirm) {
-                        alert('Las contraseñas no coinciden');
-                        return false;
-                    }
-                    
-                    if (password.length < 8) {
-                        alert('La contraseña debe tener al menos 8 caracteres');
-                        return false;
-                    }
+                    // No hay validación obligatoria para productos
                     return true;
                     
                 default:
@@ -1909,234 +1708,6 @@ ON CONFLICT (nombre) DO NOTHING;`;
             nextStep();
         }
 
-        // Configuración Local
-        async function saveLocal() {
-            const turnos = [];
-            if (document.getElementById('turnoManana').checked) turnos.push('mañana');
-            if (document.getElementById('turnoTarde').checked) turnos.push('tarde');
-            if (document.getElementById('turnoNoche').checked) turnos.push('noche');
-            
-            setupData.local = {
-                nombre: document.getElementById('localNombre').value,
-                telefono: document.getElementById('localTelefono').value,
-                direccion: document.getElementById('localDireccion').value,
-                horario: document.getElementById('localHorario').value,
-                responsable: document.getElementById('localResponsable').value,
-                caja: {
-                    numero: document.getElementById('cajaNumero').value,
-                    nombre: document.getElementById('cajaNombre').value
-                },
-                turnos: turnos
-            };
-            
-            // Guardar en Supabase si está conectado
-            if (supabaseClient) {
-                try {
-                    // Guardar local
-                    const { data: localData, error: localError } = await supabaseClient
-                        .from('locales')
-                        .insert({
-                            nombre: setupData.local.nombre,
-                            telefono: setupData.local.telefono,
-                            direccion: setupData.local.direccion,
-                            horario_atencion: setupData.local.horario,
-                            responsable: setupData.local.responsable,
-                            activo: true
-                        })
-                        .select()
-                        .single();
-                    
-                    if (localError) throw localError;
-                    
-                    // Guardar caja
-                    if (localData) {
-                        const { error: cajaError } = await supabaseClient
-                            .from('cajas')
-                            .insert({
-                                numero: setupData.local.caja.numero,
-                                nombre: setupData.local.caja.nombre,
-                                local_id: localData.id,
-                                activo: true
-                            });
-                        
-                        if (cajaError) throw cajaError;
-                        
-                        // Actualizar datos con IDs generados
-                        setupData.local.id = localData.id;
-                        setupData.local.caja.local_id = localData.id;
-                    }
-                    
-                } catch (error) {
-                    console.warn('Error guardando local en Supabase:', error);
-                }
-            }
-            
-            updateConfigSummary();
-            nextStep();
-        }
-
-        // Configuración Usuarios
-        function agregarVendedor() {
-            const container = document.getElementById('vendedoresContainer');
-            const index = container.children.length;
-            
-            const div = document.createElement('div');
-            div.className = 'vendedor-form';
-            div.style.cssText = 'border: 2px solid #e5e7eb; padding: 15px; border-radius: 10px; margin-bottom: 15px;';
-            div.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h4 style="margin: 0;">Vendedor ${index + 1}</h4>
-                    <button type="button" class="btn btn-danger" onclick="eliminarVendedor(this)" style="padding: 5px 10px; font-size: 0.9rem;">Eliminar</button>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <input type="text" placeholder="Nombre" class="vendedor-nombre" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="email" placeholder="Email" class="vendedor-email" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <input type="password" placeholder="Contraseña" class="vendedor-password" required minlength="6">
-                    </div>
-                    <div class="form-group">
-                        <select class="vendedor-rol">
-                            <option value="vendedor">Vendedor</option>
-                            <option value="supervisor">Supervisor</option>
-                        </select>
-                    </div>
-                </div>
-            `;
-            
-            container.appendChild(div);
-            updateUsersChecklist();
-        }
-
-        function eliminarVendedor(btn) {
-            btn.closest('.vendedor-form').remove();
-            updateUsersChecklist();
-        }
-
-        function updateUsersChecklist() {
-            const checklist = document.getElementById('usersChecklist');
-            if (!checklist) return;
-            
-            const adminNombre = document.getElementById('adminNombre').value || 'Administrador';
-            const adminEmail = document.getElementById('adminEmail').value || 'admin@empresa.com';
-            
-            checklist.innerHTML = `
-                <li>
-                    <div class="checklist-icon pending">👑</div>
-                    <span>${adminNombre} (${adminEmail}) - <strong>Administrador</strong></span>
-                </li>
-            `;
-            
-            const vendedores = document.querySelectorAll('.vendedor-form');
-            vendedores.forEach((form, index) => {
-                const nombre = form.querySelector('.vendedor-nombre').value || `Vendedor ${index + 1}`;
-                const email = form.querySelector('.vendedor-email').value || 'email@empresa.com';
-                const rol = form.querySelector('.vendedor-rol').value;
-                
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <div class="checklist-icon pending">👤</div>
-                    <span>${nombre} (${email}) - <strong>${rol}</strong></span>
-                `;
-                checklist.appendChild(li);
-            });
-        }
-
-        async function createUsers() {
-            if (!supabaseClient) {
-                alert('Error: No hay conexión a Supabase');
-                return;
-            }
-
-            // Crear usuario administrador
-            const adminUser = {
-                nombre: document.getElementById('adminNombre').value,
-                email: document.getElementById('adminEmail').value,
-                password: document.getElementById('adminPassword').value,
-                rol: document.getElementById('adminRol').value
-            };
-
-            try {
-                // Primero intentar crear el usuario con Supabase Auth
-                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-                    email: adminUser.email,
-                    password: adminUser.password,
-                    options: {
-                        data: {
-                            nombre: adminUser.nombre,
-                            rol: adminUser.rol
-                        }
-                    }
-                });
-
-                if (authError) throw authError;
-
-                // Luego insertar en la tabla usuarios
-                const { error: dbError } = await supabaseClient
-                    .from('usuarios')
-                    .insert([{
-                        id: authData.user.id,
-                        email: adminUser.email,
-                        nombre: adminUser.nombre,
-                        rol: adminUser.rol,
-                        activo: true,
-                        local_id: setupData.local.id || null
-                    }]);
-
-                if (dbError) throw dbError;
-
-                setupData.usuarios.push(adminUser);
-
-                // Crear vendedores adicionales
-                const vendedoresForms = document.querySelectorAll('.vendedor-form');
-                for (const form of vendedoresForms) {
-                    const vendedor = {
-                        nombre: form.querySelector('.vendedor-nombre').value,
-                        email: form.querySelector('.vendedor-email').value,
-                        password: form.querySelector('.vendedor-password').value,
-                        rol: form.querySelector('.vendedor-rol').value
-                    };
-
-                    const { data: vendedorAuth, error: vendedorError } = await supabaseClient.auth.signUp({
-                        email: vendedor.email,
-                        password: vendedor.password,
-                        options: {
-                            data: {
-                                nombre: vendedor.nombre,
-                                rol: vendedor.rol
-                            }
-                        }
-                    });
-
-                    if (!vendedorError) {
-                        await supabaseClient
-                            .from('usuarios')
-                            .insert([{
-                                id: vendedorAuth.user.id,
-                                email: vendedor.email,
-                                nombre: vendedor.nombre,
-                                rol: vendedor.rol,
-                                activo: true,
-                                local_id: setupData.local.id || null
-                            }]);
-
-                        setupData.usuarios.push(vendedor);
-                    }
-                }
-
-                alert(`✅ Usuarios creados exitosamente\nTotal: ${setupData.usuarios.length} usuarios`);
-                nextStep();
-
-            } catch (error) {
-                alert(`❌ Error creando usuarios: ${error.message}`);
-            }
-        }
-
         // Configuración Productos
         function handleExcelUpload(event) {
             const file = event.target.files[0];
@@ -2313,8 +1884,6 @@ ON CONFLICT (nombre) DO NOTHING;`;
                 const config = {
                     supabase: setupData.supabase,
                     empresa: setupData.empresa,
-                    local: setupData.local,
-                    usuarios: setupData.usuarios.length,
                     productos: setupData.productos.length,
                     fecha: new Date().toISOString(),
                     version: '2.0.0'
@@ -2323,19 +1892,11 @@ ON CONFLICT (nombre) DO NOTHING;`;
                 localStorage.setItem('pos_config', JSON.stringify(config));
                 localStorage.setItem('config_empresa', JSON.stringify(setupData.empresa));
                 
-                if (setupData.local) {
-                    localStorage.setItem('currentLocal', JSON.stringify({
-                        id: setupData.local.id || 'local-1',
-                        nombre: setupData.local.nombre
-                    }));
-                }
-
                 // Simular proceso
                 await new Promise(resolve => setTimeout(resolve, 2000));
 
                 // Actualizar pantalla de éxito
                 document.getElementById('finalEmpresa').textContent = setupData.empresa.nombre;
-                document.getElementById('finalUsuarios').textContent = setupData.usuarios.length;
                 document.getElementById('finalProductos').textContent = setupData.productos.length;
 
                 document.getElementById('finalLoading').style.display = 'none';
@@ -2356,8 +1917,6 @@ ON CONFLICT (nombre) DO NOTHING;`;
             const config = {
                 supabase: setupData.supabase,
                 empresa: setupData.empresa,
-                local: setupData.local,
-                usuarios: setupData.usuarios,
                 productos: setupData.productos,
                 fecha: new Date().toISOString(),
                 version: '2.0.0'
@@ -2404,11 +1963,6 @@ ON CONFLICT (nombre) DO NOTHING;`;
             document.getElementById('summaryNombre').textContent = setupData.empresa.nombre || 'No configurado';
             document.getElementById('summaryCuit').textContent = setupData.empresa.cuit || 'No configurado';
             document.getElementById('summaryDireccion').textContent = setupData.empresa.direccion || 'No configurado';
-            
-            // Actualizar resumen local
-            document.getElementById('summaryLocal').textContent = setupData.local.nombre || 'No configurado';
-            document.getElementById('summaryCaja').textContent = setupData.local.caja?.numero || 'No configurado';
-            document.getElementById('summaryTurnos').textContent = setupData.local.turnos?.join(', ') || 'No configurado';
             
             // Actualizar URL Supabase
             if (setupData.supabase.url) {
