@@ -6,7 +6,7 @@
 const CONFIG = {
     VERSION: '2.0.0',
     DB_NAME: 'pos_offline_db',
-    DB_VERSION: 7,
+    DB_VERSION: 10, // Incrementado para evitar conflictos
     SYNC_INTERVAL: 15000,
     MAX_OFFLINE_OPERATIONS: 500,
     STOCK_ALERT_THRESHOLD: 0.2
@@ -33,6 +33,21 @@ const APP_STATE = {
 
 // Base de datos IndexedDB
 let db;
+
+// Depuración - verificar que los botones existen
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        const navButtons = document.querySelectorAll('.nav-btn');
+        console.log('Botones de navegación encontrados:', navButtons.length);
+        navButtons.forEach((btn, i) => {
+            console.log(`Botón ${i}:`, {
+                text: btn.textContent,
+                dataPage: btn.dataset.page,
+                className: btn.className
+            });
+        });
+    }, 1000);
+});
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', async () => {
@@ -64,46 +79,43 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ============================================
-// BASE DE DATOS OFFLINE (IndexedDB)
+// BASE DE DATOS OFFLINE (IndexedDB) - CORREGIDA
 // ============================================
 
 async function initIndexedDB() {
     return new Promise((resolve, reject) => {
+        // Intentamos abrir con una versión alta para evitar conflictos
         const request = indexedDB.open(CONFIG.DB_NAME, CONFIG.DB_VERSION);
         
         request.onerror = (event) => {
             console.error('❌ Error abriendo IndexedDB:', event.target.error);
-            if (event.target.error.name === 'VersionError') {
-                console.log('⚠️ Error de versión. Intentando eliminar...');
-                const deleteRequest = indexedDB.deleteDatabase(CONFIG.DB_NAME);
-                
-                deleteRequest.onsuccess = () => {
-                    const newRequest = indexedDB.open(CONFIG.DB_NAME, CONFIG.DB_VERSION);
-                    newRequest.onerror = (e) => reject(e.target.error);
-                    newRequest.onsuccess = (e) => {
-                        db = e.target.result;
-                        console.log('✅ IndexedDB reinicializada');
-                        resolve(db);
-                    };
-                    newRequest.onupgradeneeded = (e) => {
-                        db = e.target.result;
-                        setupObjectStores(db);
-                    };
-                };
-                
-                deleteRequest.onerror = (e) => {
-                    console.error('❌ Error eliminando base de datos:', e.target.error);
-                    reject(e.target.error);
-                };
-            } else {
-                reject(event.target.error);
-            }
+            reject(event.target.error);
         };
         
         request.onsuccess = (event) => {
             db = event.target.result;
             console.log('✅ IndexedDB inicializada - Versión:', db.version);
-            resolve(db);
+            
+            // Verificar y crear object stores si no existen
+            const objectStoreNames = Array.from(db.objectStoreNames);
+            if (objectStoreNames.length === 0) {
+                console.log('🔄 Creando object stores...');
+                const newVersionRequest = indexedDB.open(CONFIG.DB_NAME, db.version + 1);
+                newVersionRequest.onupgradeneeded = (e) => {
+                    db = e.target.result;
+                    setupObjectStores(db);
+                };
+                newVersionRequest.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+                newVersionRequest.onerror = (e) => {
+                    console.error('Error actualizando versión:', e.target.error);
+                    reject(e.target.error);
+                };
+            } else {
+                resolve(db);
+            }
         };
         
         request.onupgradeneeded = (event) => {
@@ -115,115 +127,57 @@ async function initIndexedDB() {
 }
 
 function setupObjectStores(db) {
-    const objectStores = [
-        {
-            name: 'operaciones_pendientes',
-            keyPath: 'id',
-            autoIncrement: true,
-            indexes: [
-                { name: 'type', keyPath: 'type', unique: false },
-                { name: 'status', keyPath: 'status', unique: false },
-                { name: 'timestamp', keyPath: 'timestamp', unique: false },
-                { name: 'priority', keyPath: 'priority', unique: false }
-            ]
-        },
-        {
-            name: 'productos_cache',
-            keyPath: 'id',
-            indexes: [
-                { name: 'codigo_barras', keyPath: 'codigo_barras', unique: true },
-                { name: 'codigo_interno', keyPath: 'codigo_interno', unique: false },
-                { name: 'categoria', keyPath: 'categoria', unique: false },
-                { name: 'stock', keyPath: 'stock', unique: false },
-                { name: 'updated_at', keyPath: 'updated_at', unique: false }
-            ]
-        },
-        {
-            name: 'clientes_cache',
-            keyPath: 'id',
-            indexes: [
-                { name: 'dni', keyPath: 'numero_documento', unique: true },
-                { name: 'nombre', keyPath: 'nombre', unique: false },
-                { name: 'saldo', keyPath: 'saldo', unique: false }
-            ]
-        },
-        {
-            name: 'ventas_offline',
-            keyPath: 'offline_id',
-            autoIncrement: false,
-            indexes: [
-                { name: 'sync_status', keyPath: 'sync_status', unique: false },
-                { name: 'created_at', keyPath: 'created_at', unique: false },
-                { name: 'estado', keyPath: 'estado', unique: false }
-            ]
-        },
-        {
-            name: 'presupuestos_offline',
-            keyPath: 'offline_id',
-            autoIncrement: false,
-            indexes: [
-                { name: 'sync_status', keyPath: 'sync_status', unique: false },
-                { name: 'estado', keyPath: 'estado', unique: false },
-                { name: 'valido_hasta', keyPath: 'valido_hasta', unique: false }
-            ]
-        },
-        {
-            name: 'configuracion',
-            keyPath: 'key'
-        },
-        {
-            name: 'cierres_offline',
-            keyPath: 'offline_id',
-            autoIncrement: false,
-            indexes: [
-                { name: 'sync_status', keyPath: 'sync_status', unique: false },
-                { name: 'estado', keyPath: 'estado', unique: false },
-                { name: 'fecha', keyPath: 'fecha', unique: false }
-            ]
-        },
-        {
-            name: 'movimientos_inventario',
-            keyPath: 'id',
-            autoIncrement: true,
-            indexes: [
-                { name: 'producto_id', keyPath: 'producto_id', unique: false },
-                { name: 'tipo_movimiento', keyPath: 'tipo_movimiento', unique: false },
-                { name: 'sync_status', keyPath: 'sync_status', unique: false }
-            ]
-        },
-        {
-            name: 'proveedores_cache',
-            keyPath: 'id',
-            indexes: [
-                { name: 'nombre', keyPath: 'nombre', unique: false },
-                { name: 'cuit', keyPath: 'cuit', unique: true }
-            ]
-        },
-        {
-            name: 'categorias_cache',
-            keyPath: 'id',
-            indexes: [
-                { name: 'nombre', keyPath: 'nombre', unique: true }
-            ]
-        }
+    // Lista de object stores necesarios
+    const stores = [
+        'operaciones_pendientes',
+        'productos_cache',
+        'clientes_cache',
+        'ventas_offline',
+        'presupuestos_offline',
+        'configuracion',
+        'cierres_offline',
+        'movimientos_inventario',
+        'proveedores_cache',
+        'categorias_cache'
     ];
     
-    for (const storeConfig of objectStores) {
-        if (!db.objectStoreNames.contains(storeConfig.name)) {
-            const store = db.createObjectStore(storeConfig.name, {
-                keyPath: storeConfig.keyPath,
-                autoIncrement: storeConfig.autoIncrement || false
-            });
+    // Crear solo los stores que no existen
+    stores.forEach(storeName => {
+        if (!db.objectStoreNames.contains(storeName)) {
+            console.log(`Creando store: ${storeName}`);
             
-            if (storeConfig.indexes) {
-                for (const indexConfig of storeConfig.indexes) {
-                    store.createIndex(indexConfig.name, indexConfig.keyPath, {
-                        unique: indexConfig.unique || false
-                    });
-                }
+            let options = { keyPath: 'id' };
+            if (storeName === 'operaciones_pendientes') {
+                options.autoIncrement = true;
+            } else if (storeName === 'ventas_offline' || 
+                      storeName === 'presupuestos_offline' || 
+                      storeName === 'cierres_offline') {
+                options.keyPath = 'offline_id';
+                options.autoIncrement = false;
+            }
+            
+            const store = db.createObjectStore(storeName, options);
+            
+            // Crear índices según corresponda
+            switch(storeName) {
+                case 'productos_cache':
+                    store.createIndex('codigo_barras', 'codigo_barras', { unique: true });
+                    store.createIndex('nombre', 'nombre', { unique: false });
+                    break;
+                case 'clientes_cache':
+                    store.createIndex('dni', 'numero_documento', { unique: true });
+                    store.createIndex('nombre', 'nombre', { unique: false });
+                    break;
+                case 'operaciones_pendientes':
+                    store.createIndex('type', 'type', { unique: false });
+                    store.createIndex('status', 'status', { unique: false });
+                    break;
+                case 'ventas_offline':
+                    store.createIndex('sync_status', 'sync_status', { unique: false });
+                    break;
             }
         }
-    }
+    });
 }
 
 function indexedDBOperation(storeName, operation, data = null) {
@@ -694,6 +648,13 @@ async function abrirCaja(saldoInicial) {
         fecha: new Date().toISOString().split('T')[0],
         saldo_inicial: saldoInicial,
         estado: 'abierto',
+        // Inicializar contadores para todos los métodos
+        ventas_efectivo: 0,
+        ventas_tarjeta: 0,
+        ventas_transferencia: 0,
+        ventas_qr: 0,
+        ventas_cuenta_corriente: 0,
+        total_ventas: 0,
         created_at: new Date().toISOString()
     };
     
@@ -721,7 +682,7 @@ async function abrirCaja(saldoInicial) {
 }
 
 // ============================================
-// CONFIGURACIÓN DE EVENTOS
+// CONFIGURACIÓN DE EVENTOS - CORREGIDA
 // ============================================
 
 function setupEventListeners() {
@@ -738,11 +699,21 @@ function setupEventListeners() {
     const startSession = document.getElementById('startSession');
     if (startSession) startSession.addEventListener('click', startWorkSession);
     
-    // Navegación
+    // Navegación - versión mejorada
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const page = e.target.dataset.page;
-            switchPage(page);
+            let target = e.target;
+            
+            // Si se hace clic en un elemento hijo, subimos hasta encontrar el botón
+            while (target && !target.classList.contains('nav-btn')) {
+                target = target.parentElement;
+            }
+            
+            if (target && target.dataset.page) {
+                const page = target.dataset.page;
+                console.log('Navegando a:', page);
+                switchPage(page);
+            }
         });
     });
     
@@ -846,19 +817,33 @@ function setupNetworkListeners() {
 }
 
 // ============================================
-// NAVEGACIÓN Y PÁGINAS
+// NAVEGACIÓN Y PÁGINAS - VERSIÓN CORREGIDA
 // ============================================
 
 function switchPage(pageName) {
+    console.log('Cambiando a página:', pageName);
+    
+    // Verificar que pageName esté definido
+    if (!pageName) {
+        console.error('Error: pageName es undefined');
+        return;
+    }
+    
+    // Actualizar botones de navegación
     document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.page === pageName);
+        const btnPage = btn.dataset.page;
+        btn.classList.toggle('active', btnPage === pageName);
     });
     
+    // Ocultar todas las páginas y mostrar la activa
     document.querySelectorAll('.page').forEach(page => {
-        const pageId = `page${pageName.charAt(0).toUpperCase() + pageName.slice(1)}`;
-        page.classList.toggle('active', page.id === pageId);
+        const pageId = page.id;
+        // Convertir pageName a formato de ID (ej: 'pos' -> 'pagePos')
+        const targetPageId = 'page' + pageName.charAt(0).toUpperCase() + pageName.slice(1);
+        page.classList.toggle('active', pageId === targetPageId);
     });
     
+    // Actualizar título de página
     const currentPage = document.getElementById('currentPage');
     if (currentPage) {
         currentPage.textContent = pageName.charAt(0).toUpperCase() + pageName.slice(1);
@@ -866,6 +851,7 @@ function switchPage(pageName) {
     
     APP_STATE.currentPage = pageName;
     
+    // Cargar datos específicos de la página
     switch(pageName) {
         case 'pos':
             loadProductosParaVenta();
@@ -1601,7 +1587,7 @@ function cancelarVenta() {
 }
 
 // ============================================
-// VENTAS Y PAGOS COMPLETOS
+// VENTAS Y PAGOS COMPLETOS - SIMPLIFICADOS
 // ============================================
 
 function finalizarVenta() {
@@ -1613,10 +1599,15 @@ function finalizarVenta() {
     const paymentModal = document.getElementById('paymentModal');
     if (paymentModal) paymentModal.style.display = 'flex';
     
-    const clienteSelect = document.getElementById('selectCliente');
-    if (clienteSelect) {
-        showPaymentDetails(clienteSelect.value === 'cuenta' ? 'cuenta' : 'efectivo');
+    // Actualizar total en el modal
+    const totalElem = document.getElementById('cartTotal');
+    const paymentTotal = document.getElementById('paymentTotalAmount');
+    if (totalElem && paymentTotal) {
+        paymentTotal.textContent = totalElem.textContent;
     }
+    
+    // Mostrar detalles para efectivo por defecto
+    showPaymentDetails('efectivo');
 }
 
 function showPaymentDetails(method) {
@@ -1644,64 +1635,45 @@ function showPaymentDetails(method) {
             break;
         case 'tarjeta':
             html = `
-                <div class="form-group">
-                    <label>Tipo de tarjeta:</label>
-                    <select id="tarjetaTipo">
-                        <option value="credito">Crédito</option>
-                        <option value="debito">Débito</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Número de tarjeta (últimos 4 dígitos):</label>
-                    <input type="text" id="tarjetaNumero" placeholder="1234" maxlength="4" pattern="\\d{4}">
-                </div>
-                <div class="form-group">
-                    <label>Cuotas:</label>
-                    <select id="tarjetaCuotas">
-                        <option value="1">1 cuota</option>
-                        <option value="3">3 cuotas</option>
-                        <option value="6">6 cuotas</option>
-                        <option value="12">12 cuotas</option>
-                    </select>
+                <div class="payment-simple">
+                    <div class="payment-icon">
+                        <i class="fas fa-credit-card fa-3x"></i>
+                    </div>
+                    <p>Se registrará como pago con tarjeta</p>
+                    <p><strong>Referencia automática generada</strong></p>
                 </div>
             `;
             break;
         case 'transferencia':
             html = `
-                <div class="form-group">
-                    <label>Número de transferencia:</label>
-                    <input type="text" id="transferenciaNumero" placeholder="TRF-001" value="TRF-${Date.now().toString().slice(-6)}">
-                </div>
-                <div class="form-group">
-                    <label>Banco:</label>
-                    <input type="text" id="transferenciaBanco" placeholder="Nombre del banco">
+                <div class="payment-simple">
+                    <div class="payment-icon">
+                        <i class="fas fa-university fa-3x"></i>
+                    </div>
+                    <p>Se registrará como transferencia bancaria</p>
+                    <p><strong>Referencia automática generada</strong></p>
                 </div>
             `;
             break;
         case 'qr':
             html = `
-                <div class="form-group">
-                    <label>Escanea el código QR para pagar</label>
-                    <div class="qr-simulator">
-                        <p>💰 QR de pago</p>
-                        <p>Monto: $${total.toFixed(2)}</p>
-                        <p>Código: QR${Date.now().toString().slice(-8)}</p>
-                        <button class="btn btn-primary" onclick="simularPagoQR()">Simular Pago</button>
+                <div class="payment-simple">
+                    <div class="payment-icon">
+                        <i class="fas fa-qrcode fa-3x"></i>
                     </div>
+                    <p>Se registrará como pago digital (QR)</p>
+                    <p><strong>Referencia automática generada</strong></p>
                 </div>
             `;
             break;
         case 'cuenta':
             html = `
-                <div class="form-group">
-                    <label>Cliente con cuenta corriente:</label>
-                    <select id="clienteCuenta">
-                        <option value="">Seleccionar cliente...</option>
-                        <option value="cliente_cc">Cliente Cuenta Corriente</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Límite de crédito disponible: $0.00</label>
+                <div class="payment-simple">
+                    <div class="payment-icon">
+                        <i class="fas fa-file-invoice-dollar fa-3x"></i>
+                    </div>
+                    <p>Se registrará en cuenta corriente del cliente</p>
+                    <p><strong>Referencia automática generada</strong></p>
                 </div>
             `;
             break;
@@ -1709,6 +1681,7 @@ function showPaymentDetails(method) {
     
     container.innerHTML = html;
     
+    // Solo configuramos el evento para efectivo
     if (method === 'efectivo') {
         const montoInput = document.getElementById('montoRecibido');
         const vueltoInput = document.getElementById('vuelto');
@@ -1719,13 +1692,11 @@ function showPaymentDetails(method) {
                 const vuelto = monto - total;
                 vueltoInput.value = vuelto > 0 ? vuelto.toFixed(2) : '0.00';
             });
+            
+            // Calcular vuelto inicial
+            montoInput.dispatchEvent(new Event('input'));
         }
     }
-}
-
-function simularPagoQR() {
-    alert('✅ Pago con QR simulado correctamente');
-    confirmarPago();
 }
 
 async function confirmarPago() {
@@ -1738,32 +1709,22 @@ async function confirmarPago() {
     
     let metodo = 'efectivo';
     let referencia = '';
-    let tarjetaTipo = '';
-    let tarjetaNumero = '';
-    let tarjetaCuotas = 1;
     
     const activePaymentBtn = document.querySelector('.payment-btn.active');
     if (activePaymentBtn) {
         metodo = activePaymentBtn.dataset.method || 'efectivo';
     }
     
+    // Generar referencias simples automáticas
     switch (metodo) {
         case 'efectivo':
-            const montoRecibido = document.getElementById('montoRecibido');
             referencia = `EF-${Date.now().toString().slice(-6)}`;
             break;
         case 'tarjeta':
-            const tarjetaTipoSelect = document.getElementById('tarjetaTipo');
-            const tarjetaNumeroInput = document.getElementById('tarjetaNumero');
-            const tarjetaCuotasSelect = document.getElementById('tarjetaCuotas');
-            tarjetaTipo = tarjetaTipoSelect ? tarjetaTipoSelect.value : 'credito';
-            tarjetaNumero = tarjetaNumeroInput ? tarjetaNumeroInput.value : '';
-            tarjetaCuotas = tarjetaCuotasSelect ? parseInt(tarjetaCuotasSelect.value) : 1;
             referencia = `TJ-${Date.now().toString().slice(-6)}`;
             break;
         case 'transferencia':
-            const transferenciaNumero = document.getElementById('transferenciaNumero');
-            referencia = transferenciaNumero ? transferenciaNumero.value : `TRF-${Date.now().toString().slice(-6)}`;
+            referencia = `TRF-${Date.now().toString().slice(-6)}`;
             break;
         case 'qr':
             referencia = `QR-${Date.now().toString().slice(-6)}`;
@@ -1771,6 +1732,18 @@ async function confirmarPago() {
         case 'cuenta':
             referencia = `CC-${Date.now().toString().slice(-6)}`;
             break;
+    }
+    
+    // Para efectivo, obtener monto recibido si existe
+    let montoRecibido = total;
+    let vuelto = 0;
+    if (metodo === 'efectivo') {
+        const montoInput = document.getElementById('montoRecibido');
+        if (montoInput) {
+            montoRecibido = parseFloat(montoInput.value) || total;
+            vuelto = montoRecibido - total;
+            if (vuelto < 0) vuelto = 0;
+        }
     }
     
     const clienteSelect = document.getElementById('selectCliente');
@@ -1809,9 +1782,11 @@ async function confirmarPago() {
         monto: total,
         referencia: referencia,
         estado: 'completado',
-        tarjeta_tipo: tarjetaTipo,
-        tarjeta_numero: tarjetaNumero,
-        tarjeta_cuotas: tarjetaCuotas,
+        // Solo para efectivo guardamos monto_recibido y vuelto
+        ...(metodo === 'efectivo' && {
+            monto_recibido: montoRecibido,
+            vuelto: vuelto
+        }),
         offline_id: 'pago_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         sync_status: APP_STATE.isOnline ? 'synced' : 'pending',
         created_at: new Date().toISOString()
@@ -1915,7 +1890,7 @@ async function confirmarPago() {
         }
         
         APP_STATE.ventasHoy++;
-        mostrarTicket(venta, items, pago);
+        mostrarTicket(venta, items, pago, metodo);
         
         APP_STATE.carrito = [];
         updateCartDisplay();
@@ -1945,7 +1920,7 @@ async function actualizarStockLocal(productoId, cantidad) {
     }
 }
 
-function mostrarTicket(venta, items, pago) {
+function mostrarTicket(venta, items, pago, metodo) {
     const modal = document.getElementById('genericModal');
     const modalBody = document.getElementById('modalBody');
     const modalTitle = document.getElementById('modalTitle');
@@ -1975,6 +1950,10 @@ function mostrarTicket(venta, items, pago) {
             <hr>
             <p>MÉTODO: ${pago.metodo.toUpperCase()}</p>
             <p>REF: ${pago.referencia}</p>
+            ${metodo === 'efectivo' && pago.vuelto > 0 ? `
+                <p>Recibido: $${pago.monto_recibido.toFixed(2)}</p>
+                <p>Vuelto: $${pago.vuelto.toFixed(2)}</p>
+            ` : ''}
             <hr>
             <p>¡Gracias por su compra!</p>
         </div>
@@ -2840,7 +2819,6 @@ window.finalizarVenta = finalizarVenta;
 window.crearPresupuesto = crearPresupuesto;
 window.cancelarVenta = cancelarVenta;
 window.updateCartTotal = updateCartTotal;
-window.simularPagoQR = simularPagoQR;
 window.confirmarPago = confirmarPago;
 window.imprimirTicket = imprimirTicket;
 window.enviarTicketWhatsapp = enviarTicketWhatsapp;
