@@ -4,11 +4,12 @@
 
 // Configuración global
 const CONFIG = {
-    VERSION: '1.0.0',
+    VERSION: '2.0.0',
     DB_NAME: 'pos_offline_db',
-    DB_VERSION: 5,
-    SYNC_INTERVAL: 30000,
-    MAX_OFFLINE_OPERATIONS: 100
+    DB_VERSION: 7,
+    SYNC_INTERVAL: 15000,
+    MAX_OFFLINE_OPERATIONS: 500,
+    STOCK_ALERT_THRESHOLD: 0.2
 };
 
 // Estado global de la aplicación
@@ -24,7 +25,10 @@ const APP_STATE = {
     carrito: [],
     currentPage: 'pos',
     scannerActive: false,
-    scannerCode: null
+    scannerCode: null,
+    currentCliente: null,
+    ventasHoy: 0,
+    presupuestosPendientes: 0
 };
 
 // Base de datos IndexedDB
@@ -40,51 +44,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Inicializar IndexedDB
     await initIndexedDB();
     
-    // Verificar conexión a Supabase
-    const supabaseUrl = localStorage.getItem('supabaseUrl');
-    const supabaseKey = localStorage.getItem('supabaseKey');
-    
-    if (supabaseUrl && supabaseKey) {
-        try {
-            // Cargar Supabase si no está disponible
-            if (!window.supabase) {
-                await loadSupabase();
-            }
-            
-            APP_STATE.supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-            console.log('✅ Supabase configurado');
-        } catch (error) {
-            console.warn('⚠️ Error configurando Supabase:', error);
-        }
-    }
+    // Configurar Supabase
+    await initSupabase();
     
     // Configurar eventos
     setupEventListeners();
     setupNetworkListeners();
     
-    // Verificar si hay sesión activa
-    const session = localStorage.getItem('pos_session');
-    if (session) {
-        try {
-            const sessionData = JSON.parse(session);
-            if (sessionData.expires > Date.now()) {
-                APP_STATE.currentUser = sessionData.user;
-                showAppScreen();
-                loadUserSession();
-            } else {
-                localStorage.removeItem('pos_session');
-                showLoginScreen();
-            }
-        } catch (e) {
-            console.warn('Error cargando sesión:', e);
-            showLoginScreen();
-        }
-    } else {
-        showLoginScreen();
-    }
+    // Verificar sesión
+    checkSession();
     
     // Iniciar sincronización periódica
     setInterval(syncOfflineOperations, CONFIG.SYNC_INTERVAL);
+    
+    // Iniciar Realtime subscriptions
+    setTimeout(setupRealtimeSubscriptions, 2000);
     
     console.log('✅ Sistema inicializado');
 });
@@ -99,7 +73,31 @@ async function initIndexedDB() {
         
         request.onerror = (event) => {
             console.error('❌ Error abriendo IndexedDB:', event.target.error);
-            reject(event.target.error);
+            if (event.target.error.name === 'VersionError') {
+                console.log('⚠️ Error de versión. Intentando eliminar...');
+                const deleteRequest = indexedDB.deleteDatabase(CONFIG.DB_NAME);
+                
+                deleteRequest.onsuccess = () => {
+                    const newRequest = indexedDB.open(CONFIG.DB_NAME, CONFIG.DB_VERSION);
+                    newRequest.onerror = (e) => reject(e.target.error);
+                    newRequest.onsuccess = (e) => {
+                        db = e.target.result;
+                        console.log('✅ IndexedDB reinicializada');
+                        resolve(db);
+                    };
+                    newRequest.onupgradeneeded = (e) => {
+                        db = e.target.result;
+                        setupObjectStores(db);
+                    };
+                };
+                
+                deleteRequest.onerror = (e) => {
+                    console.error('❌ Error eliminando base de datos:', e.target.error);
+                    reject(e.target.error);
+                };
+            } else {
+                reject(event.target.error);
+            }
         };
         
         request.onsuccess = (event) => {
@@ -117,45 +115,117 @@ async function initIndexedDB() {
 }
 
 function setupObjectStores(db) {
-    // Lista de almacenes de objetos necesarios
     const objectStores = [
-        { name: 'operaciones_pendientes', keyPath: 'id', autoIncrement: true },
-        { name: 'productos_cache', keyPath: 'id' },
-        { name: 'clientes_cache', keyPath: 'id' },
-        { name: 'ventas_offline', keyPath: 'offline_id' },
-        { name: 'configuracion', keyPath: 'key' },
-        { name: 'locales_cache', keyPath: 'id' },
-        { name: 'cajas_cache', keyPath: 'id' },
-        { name: 'proveedores_cache', keyPath: 'id' }
+        {
+            name: 'operaciones_pendientes',
+            keyPath: 'id',
+            autoIncrement: true,
+            indexes: [
+                { name: 'type', keyPath: 'type', unique: false },
+                { name: 'status', keyPath: 'status', unique: false },
+                { name: 'timestamp', keyPath: 'timestamp', unique: false },
+                { name: 'priority', keyPath: 'priority', unique: false }
+            ]
+        },
+        {
+            name: 'productos_cache',
+            keyPath: 'id',
+            indexes: [
+                { name: 'codigo_barras', keyPath: 'codigo_barras', unique: true },
+                { name: 'codigo_interno', keyPath: 'codigo_interno', unique: false },
+                { name: 'categoria', keyPath: 'categoria', unique: false },
+                { name: 'stock', keyPath: 'stock', unique: false },
+                { name: 'updated_at', keyPath: 'updated_at', unique: false }
+            ]
+        },
+        {
+            name: 'clientes_cache',
+            keyPath: 'id',
+            indexes: [
+                { name: 'dni', keyPath: 'numero_documento', unique: true },
+                { name: 'nombre', keyPath: 'nombre', unique: false },
+                { name: 'saldo', keyPath: 'saldo', unique: false }
+            ]
+        },
+        {
+            name: 'ventas_offline',
+            keyPath: 'offline_id',
+            autoIncrement: false,
+            indexes: [
+                { name: 'sync_status', keyPath: 'sync_status', unique: false },
+                { name: 'created_at', keyPath: 'created_at', unique: false },
+                { name: 'estado', keyPath: 'estado', unique: false }
+            ]
+        },
+        {
+            name: 'presupuestos_offline',
+            keyPath: 'offline_id',
+            autoIncrement: false,
+            indexes: [
+                { name: 'sync_status', keyPath: 'sync_status', unique: false },
+                { name: 'estado', keyPath: 'estado', unique: false },
+                { name: 'valido_hasta', keyPath: 'valido_hasta', unique: false }
+            ]
+        },
+        {
+            name: 'configuracion',
+            keyPath: 'key'
+        },
+        {
+            name: 'cierres_offline',
+            keyPath: 'offline_id',
+            autoIncrement: false,
+            indexes: [
+                { name: 'sync_status', keyPath: 'sync_status', unique: false },
+                { name: 'estado', keyPath: 'estado', unique: false },
+                { name: 'fecha', keyPath: 'fecha', unique: false }
+            ]
+        },
+        {
+            name: 'movimientos_inventario',
+            keyPath: 'id',
+            autoIncrement: true,
+            indexes: [
+                { name: 'producto_id', keyPath: 'producto_id', unique: false },
+                { name: 'tipo_movimiento', keyPath: 'tipo_movimiento', unique: false },
+                { name: 'sync_status', keyPath: 'sync_status', unique: false }
+            ]
+        },
+        {
+            name: 'proveedores_cache',
+            keyPath: 'id',
+            indexes: [
+                { name: 'nombre', keyPath: 'nombre', unique: false },
+                { name: 'cuit', keyPath: 'cuit', unique: true }
+            ]
+        },
+        {
+            name: 'categorias_cache',
+            keyPath: 'id',
+            indexes: [
+                { name: 'nombre', keyPath: 'nombre', unique: true }
+            ]
+        }
     ];
     
-    // Crear almacenes de objetos si no existen
-    for (const store of objectStores) {
-        if (!db.objectStoreNames.contains(store.name)) {
-            const newStore = db.createObjectStore(store.name, { 
-                keyPath: store.keyPath, 
-                autoIncrement: store.autoIncrement 
+    for (const storeConfig of objectStores) {
+        if (!db.objectStoreNames.contains(storeConfig.name)) {
+            const store = db.createObjectStore(storeConfig.name, {
+                keyPath: storeConfig.keyPath,
+                autoIncrement: storeConfig.autoIncrement || false
             });
             
-            // Crear índices para búsquedas
-            switch (store.name) {
-                case 'operaciones_pendientes':
-                    newStore.createIndex('type', 'type', { unique: false });
-                    newStore.createIndex('status', 'status', { unique: false });
-                    break;
-                case 'productos_cache':
-                    newStore.createIndex('codigo_barras', 'codigo_barras', { unique: true });
-                    newStore.createIndex('categoria', 'categoria', { unique: false });
-                    break;
-                case 'ventas_offline':
-                    newStore.createIndex('sync_status', 'sync_status', { unique: false });
-                    break;
+            if (storeConfig.indexes) {
+                for (const indexConfig of storeConfig.indexes) {
+                    store.createIndex(indexConfig.name, indexConfig.keyPath, {
+                        unique: indexConfig.unique || false
+                    });
+                }
             }
         }
     }
 }
 
-// Operaciones IndexedDB
 function indexedDBOperation(storeName, operation, data = null) {
     return new Promise((resolve, reject) => {
         if (!db) {
@@ -163,7 +233,7 @@ function indexedDBOperation(storeName, operation, data = null) {
             return;
         }
         
-        const transaction = db.transaction([storeName], 'readwrite');
+        const transaction = db.transaction([storeName], operation === 'get' || operation === 'getAll' ? 'readonly' : 'readwrite');
         const store = transaction.objectStore(storeName);
         
         let request;
@@ -186,6 +256,15 @@ function indexedDBOperation(storeName, operation, data = null) {
             case 'clear':
                 request = store.clear();
                 break;
+            case 'count':
+                request = store.count();
+                break;
+            case 'getByIndex':
+                const indexName = data.index;
+                const indexValue = data.value;
+                const index = store.index(indexName);
+                request = index.getAll(indexValue);
+                break;
             default:
                 reject(new Error(`Operación no soportada: ${operation}`));
                 return;
@@ -193,22 +272,17 @@ function indexedDBOperation(storeName, operation, data = null) {
         
         request.onsuccess = (event) => resolve(event.target.result);
         request.onerror = (event) => reject(event.target.error);
-        
-        transaction.oncomplete = () => {};
-        transaction.onerror = (event) => {
-            console.error('Error en transacción:', event.target.error);
-        };
     });
 }
 
-// Guardar operación pendiente
 async function savePendingOperation(operation) {
     const op = {
         ...operation,
         id: Date.now() + Math.random(),
         status: 'pending',
         timestamp: new Date().toISOString(),
-        attempts: 0
+        attempts: 0,
+        priority: operation.priority || 5
     };
     
     try {
@@ -221,8 +295,44 @@ async function savePendingOperation(operation) {
 }
 
 // ============================================
-// FUNCIONES AUXILIARES
+// INICIALIZACIÓN SUPABASE
 // ============================================
+
+async function initSupabase() {
+    const supabaseUrl = localStorage.getItem('supabaseUrl');
+    const supabaseKey = localStorage.getItem('supabaseKey');
+    
+    if (supabaseUrl && supabaseKey) {
+        try {
+            if (!window.supabase) {
+                await loadSupabase();
+            }
+            
+            APP_STATE.supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true
+                },
+                realtime: {
+                    params: {
+                        eventsPerSecond: 10
+                    }
+                }
+            });
+            
+            console.log('✅ Supabase configurado');
+            
+            // Verificar autenticación existente
+            const { data: { session } } = await APP_STATE.supabase.auth.getSession();
+            if (session) {
+                APP_STATE.currentUser = session.user;
+                await loadUserData(session.user.email);
+            }
+        } catch (error) {
+            console.warn('⚠️ Error configurando Supabase:', error);
+        }
+    }
+}
 
 async function loadSupabase() {
     return new Promise((resolve, reject) => {
@@ -239,6 +349,29 @@ async function loadSupabase() {
     });
 }
 
+// ============================================
+// GESTIÓN DE SESIÓN Y USUARIO
+// ============================================
+
+async function checkSession() {
+    const session = localStorage.getItem('pos_session');
+    if (session) {
+        try {
+            const sessionData = JSON.parse(session);
+            if (sessionData.expires > Date.now()) {
+                APP_STATE.currentUser = sessionData.user;
+                showAppScreen();
+                await loadUserSession();
+                return;
+            }
+            localStorage.removeItem('pos_session');
+        } catch (e) {
+            console.warn('Error cargando sesión:', e);
+        }
+    }
+    showLoginScreen();
+}
+
 function loadAppState() {
     try {
         const savedState = localStorage.getItem('app_state');
@@ -253,9 +386,42 @@ function loadAppState() {
 
 function saveAppState() {
     try {
-        localStorage.setItem('app_state', JSON.stringify(APP_STATE));
+        const stateToSave = {
+            currentUser: APP_STATE.currentUser,
+            currentLocal: APP_STATE.currentLocal,
+            currentCaja: APP_STATE.currentCaja,
+            currentTurno: APP_STATE.currentTurno,
+            currentPage: APP_STATE.currentPage,
+            carrito: APP_STATE.carrito,
+            ventasHoy: APP_STATE.ventasHoy
+        };
+        localStorage.setItem('app_state', JSON.stringify(stateToSave));
     } catch (e) {
         console.warn('Error guardando estado de la app:', e);
+    }
+}
+
+async function loadUserData(email) {
+    if (!APP_STATE.supabase) return;
+    
+    try {
+        const { data: usuarioData, error } = await APP_STATE.supabase
+            .from('usuarios')
+            .select('*')
+            .eq('email', email)
+            .single();
+        
+        if (!error && usuarioData) {
+            APP_STATE.currentUser = { ...APP_STATE.currentUser, ...usuarioData };
+            
+            const session = {
+                user: APP_STATE.currentUser,
+                expires: Date.now() + (8 * 60 * 60 * 1000)
+            };
+            localStorage.setItem('pos_session', JSON.stringify(session));
+        }
+    } catch (error) {
+        console.warn('Error cargando datos de usuario:', error);
     }
 }
 
@@ -276,47 +442,247 @@ function showAppScreen() {
     if (loginScreen) loginScreen.style.display = 'none';
     if (appScreen) appScreen.style.display = 'block';
     
-    // Verificar si ya se configuró local y caja
     if (!APP_STATE.currentLocal || !APP_STATE.currentCaja) {
         if (initialConfig) initialConfig.style.display = 'block';
-        if (mainApp) mainApp.style.display = 'none';
+        if (mainApp) mainApp.display = 'none';
         loadLocalesYCajas();
     } else {
         if (initialConfig) initialConfig.style.display = 'none';
         if (mainApp) mainApp.style.display = 'block';
+        updateSessionInfo();
     }
 }
 
-function loadUserSession() {
+function updateSessionInfo() {
+    const userInfo = document.getElementById('userInfo');
+    const localInfo = document.getElementById('localInfo');
+    const cajaInfo = document.getElementById('cajaInfo');
+    const turnoInfo = document.getElementById('turnoInfo');
+    
+    if (userInfo) userInfo.textContent = `Usuario: ${APP_STATE.currentUser?.nombre || 'Sin nombre'}`;
+    if (localInfo) localInfo.textContent = `Local: ${APP_STATE.currentLocal?.nombre || 'Sin local'}`;
+    if (cajaInfo) cajaInfo.textContent = `Caja: ${APP_STATE.currentCaja?.numero || 'Sin caja'}`;
+    if (turnoInfo) turnoInfo.textContent = `Turno: ${APP_STATE.currentTurno || 'Sin turno'}`;
+}
+
+// ============================================
+// AUTENTICACIÓN Y SESIÓN DE TRABAJO
+// ============================================
+
+async function handleLogin() {
+    const emailInput = document.getElementById('loginEmail');
+    const passwordInput = document.getElementById('loginPassword');
+    const status = document.getElementById('loginStatus');
+    
+    if (!emailInput || !passwordInput) return;
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    
+    if (!email || !password) {
+        if (status) status.innerHTML = '<p class="error">❌ Completa todos los campos</p>';
+        return;
+    }
+    
+    if (!APP_STATE.supabase) {
+        // Modo offline
+        APP_STATE.currentUser = {
+            id: 'offline_' + Date.now(),
+            email: email,
+            nombre: email.split('@')[0],
+            rol: 'vendedor',
+            local_id: null
+        };
+        
+        const session = {
+            user: APP_STATE.currentUser,
+            expires: Date.now() + (8 * 60 * 60 * 1000)
+        };
+        
+        localStorage.setItem('pos_session', JSON.stringify(session));
+        showAppScreen();
+        return;
+    }
+    
     try {
-        const session = JSON.parse(localStorage.getItem('pos_session'));
-        if (session && session.user) {
-            APP_STATE.currentUser = session.user;
-            const userInfo = document.getElementById('userInfo');
-            if (userInfo) userInfo.textContent = `Usuario: ${APP_STATE.currentUser.nombre || APP_STATE.currentUser.email || 'Sin nombre'}`;
-        }
+        if (status) status.innerHTML = '<p class="info">🔄 Iniciando sesión...</p>';
         
-        const local = localStorage.getItem('currentLocal');
-        const caja = localStorage.getItem('currentCaja');
-        const turno = localStorage.getItem('currentTurno');
+        const { data, error } = await APP_STATE.supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
         
-        if (local && caja && turno) {
-            APP_STATE.currentLocal = JSON.parse(local);
-            APP_STATE.currentCaja = JSON.parse(caja);
-            APP_STATE.currentTurno = turno;
+        if (error) throw error;
+        
+        await loadUserData(email);
+        
+        showAppScreen();
+        
+        await loadInitialData();
+        
+    } catch (error) {
+        console.error('Error en login:', error);
+        if (status) status.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+    }
+}
+
+function handleOfflineLogin() {
+    APP_STATE.currentUser = {
+        id: 'offline_' + Date.now(),
+        email: 'offline@modo.com',
+        nombre: 'Modo Offline',
+        rol: 'vendedor',
+        local_id: null
+    };
+    
+    const session = {
+        user: APP_STATE.currentUser,
+        expires: Date.now() + (8 * 60 * 60 * 1000)
+    };
+    
+    localStorage.setItem('pos_session', JSON.stringify(session));
+    showAppScreen();
+}
+
+function handleLogout() {
+    if (APP_STATE.supabase) {
+        APP_STATE.supabase.auth.signOut();
+    }
+    
+    localStorage.removeItem('pos_session');
+    localStorage.removeItem('currentLocal');
+    localStorage.removeItem('currentCaja');
+    localStorage.removeItem('currentTurno');
+    
+    APP_STATE.currentUser = null;
+    APP_STATE.currentLocal = null;
+    APP_STATE.currentCaja = null;
+    APP_STATE.currentTurno = null;
+    APP_STATE.carrito = [];
+    
+    showLoginScreen();
+}
+
+async function loadLocalesYCajas() {
+    const localSelect = document.getElementById('selectLocal');
+    const cajaSelect = document.getElementById('selectCaja');
+    
+    if (!localSelect || !cajaSelect) return;
+    
+    try {
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data: locales, error: errorLocales } = await APP_STATE.supabase
+                .from('locales')
+                .select('*')
+                .eq('activo', true)
+                .order('nombre');
             
-            const localInfo = document.getElementById('localInfo');
-            const cajaInfo = document.getElementById('cajaInfo');
-            const turnoInfo = document.getElementById('turnoInfo');
+            const { data: cajas, error: errorCajas } = await APP_STATE.supabase
+                .from('cajas')
+                .select('*')
+                .eq('activa', true)
+                .order('numero');
             
-            if (localInfo) localInfo.textContent = `Local: ${APP_STATE.currentLocal.nombre || 'Sin nombre'}`;
-            if (cajaInfo) cajaInfo.textContent = `Caja: ${APP_STATE.currentCaja.numero || 'Sin número'}`;
-            if (turnoInfo) turnoInfo.textContent = `Turno: ${APP_STATE.currentTurno || 'Sin turno'}`;
+            if (!errorLocales && locales) {
+                localSelect.innerHTML = '<option value="">Seleccionar local...</option>';
+                locales.forEach(local => {
+                    const option = document.createElement('option');
+                    option.value = local.id;
+                    option.textContent = local.nombre;
+                    localSelect.appendChild(option);
+                });
+            }
             
-            showAppScreen();
+            if (!errorCajas && cajas) {
+                cajaSelect.innerHTML = '<option value="">Seleccionar caja...</option>';
+                cajas.forEach(caja => {
+                    const option = document.createElement('option');
+                    option.value = caja.id;
+                    option.textContent = `${caja.numero} - ${caja.nombre || ''}`;
+                    cajaSelect.appendChild(option);
+                });
+            }
         }
-    } catch (e) {
-        console.warn('Error cargando sesión de usuario:', e);
+    } catch (error) {
+        console.warn('Error cargando locales y cajas:', error);
+    }
+}
+
+async function startWorkSession() {
+    const localSelect = document.getElementById('selectLocal');
+    const cajaSelect = document.getElementById('selectCaja');
+    const turnoSelect = document.getElementById('selectTurno');
+    const saldoInicial = document.getElementById('saldoInicial');
+    
+    if (!localSelect || !cajaSelect || !turnoSelect || !saldoInicial) return;
+    
+    if (!localSelect.value || !cajaSelect.value || !turnoSelect.value) {
+        alert('Completa todos los campos requeridos');
+        return;
+    }
+    
+    const localId = localSelect.value;
+    const localNombre = localSelect.options[localSelect.selectedIndex].text;
+    const cajaId = cajaSelect.value;
+    const cajaNumero = cajaSelect.options[cajaSelect.selectedIndex].text;
+    const turno = turnoSelect.value;
+    const saldo = parseFloat(saldoInicial.value) || 0;
+    
+    APP_STATE.currentLocal = { id: localId, nombre: localNombre };
+    APP_STATE.currentCaja = { id: cajaId, numero: cajaNumero };
+    APP_STATE.currentTurno = turno;
+    
+    localStorage.setItem('currentLocal', JSON.stringify(APP_STATE.currentLocal));
+    localStorage.setItem('currentCaja', JSON.stringify(APP_STATE.currentCaja));
+    localStorage.setItem('currentTurno', APP_STATE.currentTurno);
+    
+    updateSessionInfo();
+    
+    const initialConfig = document.getElementById('initialConfig');
+    const mainApp = document.getElementById('mainApp');
+    
+    if (initialConfig) initialConfig.style.display = 'none';
+    if (mainApp) mainApp.style.display = 'block';
+    
+    await abrirCaja(saldo);
+    
+    await loadInitialData();
+}
+
+async function abrirCaja(saldoInicial) {
+    if (!APP_STATE.currentLocal || !APP_STATE.currentCaja || !APP_STATE.currentTurno) return;
+    
+    const cierreData = {
+        local_id: APP_STATE.currentLocal.id,
+        caja_id: APP_STATE.currentCaja.id,
+        usuario_id: APP_STATE.currentUser?.id || 'offline',
+        turno: APP_STATE.currentTurno,
+        fecha: new Date().toISOString().split('T')[0],
+        saldo_inicial: saldoInicial,
+        estado: 'abierto',
+        created_at: new Date().toISOString()
+    };
+    
+    try {
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { error } = await APP_STATE.supabase
+                .from('cierres_caja')
+                .insert([cierreData]);
+            
+            if (error) throw error;
+        } else {
+            cierreData.offline_id = 'cierre_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            cierreData.sync_status = 'pending';
+            await indexedDBOperation('cierres_offline', 'add', cierreData);
+            
+            await savePendingOperation({
+                type: 'cierre_caja',
+                data: cierreData,
+                priority: 10
+            });
+        }
+    } catch (error) {
+        console.error('Error abriendo caja:', error);
     }
 }
 
@@ -349,23 +715,28 @@ function setupEventListeners() {
     // POS
     const productSearch = document.getElementById('productSearch');
     const scanBarcode = document.getElementById('scanBarcode');
-    const stopScanner = document.getElementById('stopScanner');
     const keyboardMode = document.getElementById('keyboardMode');
     const finalizarVenta = document.getElementById('finalizarVenta');
     const crearPresupuesto = document.getElementById('crearPresupuesto');
     const cancelarVenta = document.getElementById('cancelarVenta');
     const cartDiscount = document.getElementById('cartDiscount');
-    const nuevoCliente = document.getElementById('nuevoCliente');
     
-    if (productSearch) productSearch.addEventListener('keyup', handleProductSearch);
+    if (productSearch) {
+        productSearch.addEventListener('keyup', handleProductSearch);
+        productSearch.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleProductSearch(e);
+            }
+        });
+    }
+    
     if (scanBarcode) scanBarcode.addEventListener('click', toggleScanner);
-    if (stopScanner) stopScanner.addEventListener('click', stopScanner);
     if (keyboardMode) keyboardMode.addEventListener('click', activateKeyboardMode);
     if (finalizarVenta) finalizarVenta.addEventListener('click', finalizarVenta);
     if (crearPresupuesto) crearPresupuesto.addEventListener('click', crearPresupuesto);
     if (cancelarVenta) cancelarVenta.addEventListener('click', cancelarVenta);
     if (cartDiscount) cartDiscount.addEventListener('input', updateCartTotal);
-    if (nuevoCliente) nuevoCliente.addEventListener('click', showNuevoClienteModal);
     
     // Modal de pagos
     document.querySelectorAll('.payment-btn').forEach(btn => {
@@ -386,36 +757,44 @@ function setupEventListeners() {
         if (paymentModal) paymentModal.style.display = 'none';
     });
     
+    // Productos
+    const nuevoProducto = document.getElementById('nuevoProducto');
+    const filterProductos = document.getElementById('filterProductos');
+    const importarExcel = document.getElementById('importarExcel');
+    const exportarExcel = document.getElementById('exportarExcel');
+    const filterStockBajo = document.getElementById('filterStockBajo');
+    
+    if (nuevoProducto) nuevoProducto.addEventListener('click', showNuevoProductoModal);
+    if (filterProductos) filterProductos.addEventListener('input', filterProductos);
+    if (importarExcel) importarExcel.addEventListener('click', importarExcelProductos);
+    if (exportarExcel) exportarExcel.addEventListener('click', exportarExcelProductos);
+    if (filterStockBajo) filterStockBajo.addEventListener('click', () => filterProductosPorStock('bajo'));
+    
+    // Clientes
+    const nuevoCliente = document.getElementById('nuevoCliente');
+    const nuevoClientePage = document.getElementById('nuevoClientePage');
+    
+    if (nuevoCliente) nuevoCliente.addEventListener('click', showNuevoClienteModal);
+    if (nuevoClientePage) nuevoClientePage.addEventListener('click', showNuevoClienteModal);
+    
+    // Caja
+    const cerrarCajaBtn = document.getElementById('cerrarCaja');
+    if (cerrarCajaBtn) cerrarCajaBtn.addEventListener('click', cerrarCaja);
+    
+    // Proveedores
+    const nuevoProveedor = document.getElementById('nuevoProveedor');
+    if (nuevoProveedor) nuevoProveedor.addEventListener('click', showNuevoProveedorModal);
+    
     // Modal genérico
     const modalConfirm = document.getElementById('modalConfirm');
     const modalCancel = document.getElementById('modalCancel');
     
-    if (modalConfirm) modalConfirm.addEventListener('click', () => {
-        const modal = document.getElementById('genericModal');
-        if (modal) modal.style.display = 'none';
-    });
+    if (modalConfirm) modalConfirm.addEventListener('click', handleModalConfirm);
+    if (modalCancel) modalCancel.addEventListener('click', handleModalCancel);
     
-    if (modalCancel) modalCancel.addEventListener('click', () => {
-        const modal = document.getElementById('genericModal');
-        if (modal) modal.style.display = 'none';
-    });
-    
-    // Productos
-    const nuevoProducto = document.getElementById('nuevoProducto');
-    const filterProductos = document.getElementById('filterProductos');
-    const filterStockBajo = document.getElementById('filterStockBajo');
-    
-    if (nuevoProducto) nuevoProducto.addEventListener('click', showNuevoProductoModal);
-    if (filterProductos) filterProductos.addEventListener('input', filterProductosList);
-    if (filterStockBajo) filterStockBajo.addEventListener('click', filterStockBajo);
-    
-    // Clientes
-    const nuevoClientePage = document.getElementById('nuevoClientePage');
-    if (nuevoClientePage) nuevoClientePage.addEventListener('click', showNuevoClienteModal);
-    
-    // Caja
-    const cerrarCaja = document.getElementById('cerrarCaja');
-    if (cerrarCaja) cerrarCaja.addEventListener('click', cerrarCajaFunc);
+    // Scanner
+    const stopScanner = document.getElementById('stopScanner');
+    if (stopScanner) stopScanner.addEventListener('click', stopScanner);
 }
 
 function setupNetworkListeners() {
@@ -423,6 +802,7 @@ function setupNetworkListeners() {
         APP_STATE.isOnline = true;
         updateSyncStatus();
         syncOfflineOperations();
+        loadInitialData();
     });
     
     window.addEventListener('offline', () => {
@@ -432,330 +812,53 @@ function setupNetworkListeners() {
 }
 
 // ============================================
-// AUTENTICACIÓN Y SESIÓN
-// ============================================
-
-async function handleLogin() {
-    const emailInput = document.getElementById('loginEmail');
-    const passwordInput = document.getElementById('loginPassword');
-    const status = document.getElementById('loginStatus');
-    
-    if (!emailInput || !passwordInput) return;
-    
-    const email = emailInput.value;
-    const password = passwordInput.value;
-    
-    if (!email || !password) {
-        if (status) {
-            status.innerHTML = '<p class="error">❌ Completa todos los campos</p>';
-            status.classList.add('show');
-        }
-        return;
-    }
-    
-    // Modo offline: login simple
-    if (!APP_STATE.supabase) {
-        APP_STATE.currentUser = {
-            email: email,
-            nombre: email.split('@')[0],
-            rol: 'vendedor'
-        };
-        
-        const session = {
-            user: APP_STATE.currentUser,
-            expires: Date.now() + (8 * 60 * 60 * 1000)
-        };
-        
-        localStorage.setItem('pos_session', JSON.stringify(session));
-        showAppScreen();
-        return;
-    }
-    
-    // Login con Supabase
-    try {
-        if (status) {
-            status.innerHTML = '<p class="info">🔄 Iniciando sesión...</p>';
-            status.classList.add('show');
-        }
-        
-        const { data, error } = await APP_STATE.supabase.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-        
-        if (error) throw error;
-        
-        APP_STATE.currentUser = data.user;
-        
-        // Guardar sesión
-        const session = {
-            user: APP_STATE.currentUser,
-            expires: Date.now() + (8 * 60 * 60 * 1000)
-        };
-        
-        localStorage.setItem('pos_session', JSON.stringify(session));
-        showAppScreen();
-        
-        // Cargar datos iniciales
-        try {
-            await loadInitialData();
-        } catch (loadError) {
-            console.warn('Error cargando datos iniciales:', loadError);
-        }
-        
-    } catch (error) {
-        console.error('Error en login:', error);
-        if (status) {
-            status.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
-            status.classList.add('show');
-        }
-    }
-}
-
-function handleOfflineLogin() {
-    APP_STATE.currentUser = {
-        email: 'offline@modo.com',
-        nombre: 'Modo Offline',
-        rol: 'vendedor'
-    };
-    
-    const session = {
-        user: APP_STATE.currentUser,
-        expires: Date.now() + (8 * 60 * 60 * 1000)
-    };
-    
-    localStorage.setItem('pos_session', JSON.stringify(session));
-    showAppScreen();
-}
-
-function handleLogout() {
-    localStorage.removeItem('pos_session');
-    localStorage.removeItem('currentLocal');
-    localStorage.removeItem('currentCaja');
-    localStorage.removeItem('currentTurno');
-    APP_STATE.currentUser = null;
-    APP_STATE.currentLocal = null;
-    APP_STATE.currentCaja = null;
-    APP_STATE.currentTurno = null;
-    showLoginScreen();
-}
-
-async function loadLocalesYCajas() {
-    const localSelect = document.getElementById('selectLocal');
-    const cajaSelect = document.getElementById('selectCaja');
-    
-    if (!localSelect || !cajaSelect) return;
-    
-    // Limpiar selects
-    localSelect.innerHTML = '<option value="">Seleccionar local...</option>';
-    cajaSelect.innerHTML = '<option value="">Seleccionar caja...</option>';
-    
-    // Cargar desde caché primero
-    try {
-        const localesCache = await indexedDBOperation('locales_cache', 'getAll') || [];
-        const cajasCache = await indexedDBOperation('cajas_cache', 'getAll') || [];
-        
-        localesCache.forEach(local => {
-            const option = document.createElement('option');
-            option.value = local.id;
-            option.textContent = local.nombre;
-            localSelect.appendChild(option);
-        });
-        
-        cajasCache.forEach(caja => {
-            const option = document.createElement('option');
-            option.value = caja.id;
-            option.textContent = `${caja.numero} - ${caja.nombre || 'Caja'}`;
-            cajaSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.warn('Error cargando locales y cajas desde caché:', error);
-    }
-    
-    // Si hay conexión, actualizar desde Supabase
-    if (APP_STATE.supabase && APP_STATE.isOnline) {
-        try {
-            // Cargar locales activos
-            const { data: locales, error: localesError } = await APP_STATE.supabase
-                .from('locales')
-                .select('*')
-                .eq('activo', true);
-            
-            if (!localesError && locales) {
-                localSelect.innerHTML = '<option value="">Seleccionar local...</option>';
-                locales.forEach(local => {
-                    const option = document.createElement('option');
-                    option.value = local.id;
-                    option.textContent = local.nombre;
-                    localSelect.appendChild(option);
-                    
-                    // Guardar en caché
-                    indexedDBOperation('locales_cache', 'put', local);
-                });
-            }
-            
-            // Cargar cajas activas
-            const { data: cajas, error: cajasError } = await APP_STATE.supabase
-                .from('cajas')
-                .select('*')
-                .eq('activa', true);
-            
-            if (!cajasError && cajas) {
-                cajaSelect.innerHTML = '<option value="">Seleccionar caja...</option>';
-                cajas.forEach(caja => {
-                    const option = document.createElement('option');
-                    option.value = caja.id;
-                    option.textContent = `${caja.numero} - ${caja.nombre || 'Caja'}`;
-                    cajaSelect.appendChild(option);
-                    
-                    // Guardar en caché
-                    indexedDBOperation('cajas_cache', 'put', caja);
-                });
-            }
-        } catch (error) {
-            console.error('Error cargando locales y cajas:', error);
-        }
-    }
-}
-
-async function startWorkSession() {
-    const localSelect = document.getElementById('selectLocal');
-    const cajaSelect = document.getElementById('selectCaja');
-    const turnoSelect = document.getElementById('selectTurno');
-    const saldoInicial = document.getElementById('saldoInicial');
-    
-    if (!localSelect || !cajaSelect || !turnoSelect || !saldoInicial) return;
-    
-    if (!localSelect.value || !cajaSelect.value || !turnoSelect.value) {
-        alert('Completa todos los campos requeridos');
-        return;
-    }
-    
-    // Buscar datos completos de local y caja
-    let localData, cajaData;
-    
-    try {
-        const locales = await indexedDBOperation('locales_cache', 'getAll') || [];
-        const cajas = await indexedDBOperation('cajas_cache', 'getAll') || [];
-        
-        localData = locales.find(l => l.id === localSelect.value);
-        cajaData = cajas.find(c => c.id === cajaSelect.value);
-    } catch (error) {
-        console.warn('Error buscando datos en caché:', error);
-    }
-    
-    APP_STATE.currentLocal = localData || { 
-        id: localSelect.value, 
-        nombre: localSelect.options[localSelect.selectedIndex].text 
-    };
-    APP_STATE.currentCaja = cajaData || { 
-        id: cajaSelect.value, 
-        numero: cajaSelect.options[cajaSelect.selectedIndex].text.split(' - ')[0] 
-    };
-    APP_STATE.currentTurno = turnoSelect.value;
-    
-    // Guardar en localStorage
-    localStorage.setItem('currentLocal', JSON.stringify(APP_STATE.currentLocal));
-    localStorage.setItem('currentCaja', JSON.stringify(APP_STATE.currentCaja));
-    localStorage.setItem('currentTurno', APP_STATE.currentTurno);
-    
-    // Actualizar UI
-    const localInfo = document.getElementById('localInfo');
-    const cajaInfo = document.getElementById('cajaInfo');
-    const turnoInfo = document.getElementById('turnoInfo');
-    
-    if (localInfo) localInfo.textContent = `Local: ${APP_STATE.currentLocal.nombre}`;
-    if (cajaInfo) cajaInfo.textContent = `Caja: ${APP_STATE.currentCaja.numero}`;
-    if (turnoInfo) turnoInfo.textContent = `Turno: ${APP_STATE.currentTurno}`;
-    
-    // Crear cierre de caja inicial
-    if (APP_STATE.supabase && saldoInicial.value) {
-        try {
-            const { error } = await APP_STATE.supabase
-                .from('cierres_caja')
-                .insert([{
-                    local_id: APP_STATE.currentLocal.id,
-                    caja_id: APP_STATE.currentCaja.id,
-                    usuario_id: APP_STATE.currentUser ? APP_STATE.currentUser.id : 'offline',
-                    turno: APP_STATE.currentTurno,
-                    fecha: new Date().toISOString().split('T')[0],
-                    saldo_inicial: parseFloat(saldoInicial.value) || 0,
-                    estado: 'abierto'
-                }]);
-            
-            if (error) throw error;
-        } catch (error) {
-            console.error('Error creando cierre de caja:', error);
-            // Guardar en modo offline
-            await savePendingOperation({
-                type: 'cierre_caja',
-                data: {
-                    local_id: APP_STATE.currentLocal.id,
-                    caja_id: APP_STATE.currentCaja.id,
-                    usuario_id: APP_STATE.currentUser ? APP_STATE.currentUser.id : 'offline',
-                    turno: APP_STATE.currentTurno,
-                    fecha: new Date().toISOString().split('T')[0],
-                    saldo_inicial: parseFloat(saldoInicial.value) || 0,
-                    estado: 'abierto'
-                }
-            });
-        }
-    }
-    
-    // Mostrar aplicación principal
-    const initialConfig = document.getElementById('initialConfig');
-    const mainApp = document.getElementById('mainApp');
-    
-    if (initialConfig) initialConfig.style.display = 'none';
-    if (mainApp) mainApp.style.display = 'block';
-    
-    // Cargar datos necesarios
-    await loadProductos();
-}
-
-// ============================================
-// NAVEGACIÓN
+// NAVEGACIÓN Y PÁGINAS
 // ============================================
 
 function switchPage(pageName) {
-    // Actualizar navegación
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.page === pageName);
     });
     
-    // Actualizar páginas
     document.querySelectorAll('.page').forEach(page => {
         const pageId = `page${pageName.charAt(0).toUpperCase() + pageName.slice(1)}`;
         page.classList.toggle('active', page.id === pageId);
     });
     
-    // Actualizar título
     const currentPage = document.getElementById('currentPage');
     if (currentPage) {
         currentPage.textContent = pageName.charAt(0).toUpperCase() + pageName.slice(1);
     }
     
-    // Cargar datos de la página si es necesario
     APP_STATE.currentPage = pageName;
     
     switch(pageName) {
+        case 'pos':
+            loadProductosParaVenta();
+            break;
         case 'productos':
             loadProductos();
             break;
         case 'clientes':
             loadClientes();
             break;
-        case 'caja':
-            loadCajaResumen();
-            break;
         case 'proveedores':
             loadProveedores();
+            break;
+        case 'presupuestos':
+            loadPresupuestos();
+            break;
+        case 'reportes':
+            loadReportes();
+            break;
+        case 'caja':
+            loadCajaResumen();
             break;
     }
 }
 
 // ============================================
-// SISTEMA DE SINCRONIZACIÓN
+// SINCRONIZACIÓN OFFLINE/SYNC
 // ============================================
 
 async function syncOfflineOperations() {
@@ -766,17 +869,17 @@ async function syncOfflineOperations() {
     
     try {
         const operations = await indexedDBOperation('operaciones_pendientes', 'getAll');
+        const sortedOps = operations.sort((a, b) => (b.priority || 5) - (a.priority || 5));
         
-        for (const op of operations) {
+        for (const op of sortedOps) {
             if (op.attempts > 5) {
-                // Marcar como fallida después de 5 intentos
                 op.status = 'failed';
+                op.last_error = 'Máximo de intentos alcanzado';
                 await indexedDBOperation('operaciones_pendientes', 'put', op);
                 continue;
             }
             
             try {
-                // Intentar sincronizar
                 let success = false;
                 
                 switch (op.type) {
@@ -792,8 +895,17 @@ async function syncOfflineOperations() {
                     case 'producto':
                         success = await syncProducto(op.data);
                         break;
+                    case 'presupuesto':
+                        success = await syncPresupuesto(op.data);
+                        break;
                     case 'cierre_caja':
                         success = await syncCierreCaja(op.data);
+                        break;
+                    case 'movimiento_inventario':
+                        success = await syncMovimientoInventario(op.data);
+                        break;
+                    case 'proveedor':
+                        success = await syncProveedor(op.data);
                         break;
                 }
                 
@@ -801,6 +913,10 @@ async function syncOfflineOperations() {
                     op.status = 'synced';
                     op.synced_at = new Date().toISOString();
                     await indexedDBOperation('operaciones_pendientes', 'put', op);
+                    
+                    if (op.type === 'venta') {
+                        await indexedDBOperation('ventas_offline', 'delete', op.data.offline_id);
+                    }
                 } else {
                     op.attempts += 1;
                     op.last_error = 'Error desconocido';
@@ -815,8 +931,10 @@ async function syncOfflineOperations() {
             }
         }
         
-        // Sincronizar caché de productos
         await syncProductosCache();
+        await syncClientesCache();
+        await syncProveedoresCache();
+        await syncCategoriasCache();
         
     } catch (error) {
         console.error('❌ Error en sincronización:', error);
@@ -830,36 +948,51 @@ async function syncVenta(ventaData) {
     if (!APP_STATE.supabase) return false;
     
     try {
-        const { data, error } = await APP_STATE.supabase
+        const { data: venta, error: errorVenta } = await APP_STATE.supabase
             .from('ventas')
             .insert([ventaData.venta])
             .select()
             .single();
         
-        if (error) throw error;
+        if (errorVenta) throw errorVenta;
         
-        // Sincronizar items de venta
         for (const item of ventaData.items) {
-            item.venta_id = data.id;
-            const { error: itemError } = await APP_STATE.supabase
+            item.venta_id = venta.id;
+            const { error: errorItem } = await APP_STATE.supabase
                 .from('venta_items')
                 .insert([item]);
             
-            if (itemError) throw itemError;
+            if (errorItem) throw errorItem;
         }
         
-        // Sincronizar pago
         if (ventaData.pago) {
-            ventaData.pago.venta_id = data.id;
-            const { error: pagoError } = await APP_STATE.supabase
+            ventaData.pago.venta_id = venta.id;
+            const { error: errorPago } = await APP_STATE.supabase
                 .from('pagos')
                 .insert([ventaData.pago]);
             
-            if (pagoError) throw pagoError;
+            if (errorPago) throw errorPago;
         }
         
-        // Marcar venta offline como sincronizada
-        await indexedDBOperation('ventas_offline', 'delete', ventaData.offline_id);
+        if (ventaData.movimientos_inventario) {
+            for (const movimiento of ventaData.movimientos_inventario) {
+                movimiento.venta_id = venta.id;
+                const { error: errorMov } = await APP_STATE.supabase
+                    .from('inventario')
+                    .insert([movimiento]);
+                
+                if (errorMov) throw errorMov;
+            }
+        }
+        
+        if (ventaData.cuenta_corriente) {
+            ventaData.cuenta_corriente.venta_id = venta.id;
+            const { error: errorCC } = await APP_STATE.supabase
+                .from('cuentas_corrientes')
+                .insert([ventaData.cuenta_corriente]);
+            
+            if (errorCC) throw errorCC;
+        }
         
         return true;
     } catch (error) {
@@ -875,12 +1008,12 @@ async function syncProductosCache() {
         const { data: productos, error } = await APP_STATE.supabase
             .from('productos')
             .select('*')
+            .eq('activo', true)
             .order('updated_at', { ascending: false })
-            .limit(100);
+            .limit(200);
         
         if (error) throw error;
         
-        // Actualizar caché local
         for (const producto of productos) {
             await indexedDBOperation('productos_cache', 'put', producto);
         }
@@ -891,110 +1024,98 @@ async function syncProductosCache() {
     }
 }
 
+function updateSyncStatus() {
+    const statusBtn = document.getElementById('syncStatus');
+    if (!statusBtn) return;
+    
+    if (!APP_STATE.isOnline) {
+        statusBtn.textContent = '🔴 Offline';
+        statusBtn.className = 'btn-status offline';
+        statusBtn.title = 'Modo offline activado';
+    } else if (APP_STATE.isSyncing) {
+        statusBtn.textContent = '🟡 Sincronizando...';
+        statusBtn.className = 'btn-status syncing';
+        statusBtn.title = 'Sincronizando datos...';
+    } else {
+        statusBtn.textContent = '🟢 Online';
+        statusBtn.className = 'btn-status online';
+        statusBtn.title = 'Conectado a Supabase';
+    }
+}
+
 // ============================================
-// GESTIÓN DE PRODUCTOS
+// GESTIÓN DE PRODUCTOS COMPLETA
 // ============================================
 
-async function loadProductos() {
+async function loadInitialData() {
+    await loadProductosParaVenta();
+    await loadClientesParaVenta();
+    await loadConfiguraciones();
+}
+
+async function loadProductosParaVenta() {
     try {
         let productos = [];
         
-        // Intentar cargar desde caché local primero
         try {
             productos = await indexedDBOperation('productos_cache', 'getAll') || [];
         } catch (error) {
             console.warn('Error cargando productos desde cache:', error);
         }
         
-        // Si no hay en caché y hay conexión, cargar desde Supabase
         if ((!productos || productos.length === 0) && APP_STATE.supabase && APP_STATE.isOnline) {
-            try {
-                const { data, error } = await APP_STATE.supabase
-                    .from('productos')
-                    .select('*')
-                    .eq('activo', true)
-                    .order('nombre');
-                
-                if (error) throw error;
-                
-                productos = data || [];
-                
-                // Guardar en caché
-                for (const producto of productos) {
-                    await indexedDBOperation('productos_cache', 'put', producto);
-                }
-            } catch (error) {
-                console.error('Error cargando productos desde Supabase:', error);
-            }
+            await syncProductosCache();
+            productos = await indexedDBOperation('productos_cache', 'getAll') || [];
         }
         
-        // Si aún no hay productos, crear algunos de ejemplo
         if (!productos || productos.length === 0) {
-            productos = [
-                {
-                    id: 'prod-1-' + Date.now(),
-                    codigo_barras: '7791234567890',
-                    nombre: 'Coca Cola 2.25L',
-                    descripcion: 'Bebida cola 2.25 litros',
-                    precio_costo: 450,
-                    porcentaje_ganancia: 30,
-                    precio_venta: 585,
-                    stock: 100,
-                    stock_minimo: 10,
-                    categoria: 'Bebidas',
-                    activo: true
-                },
-                {
-                    id: 'prod-2-' + Date.now(),
-                    codigo_barras: '7791234567891',
-                    nombre: 'Pan de Molde Integral',
-                    descripcion: 'Pan de molde integral 500g',
-                    precio_costo: 320,
-                    porcentaje_ganancia: 35,
-                    precio_venta: 432,
-                    stock: 50,
-                    stock_minimo: 5,
-                    categoria: 'Panadería',
-                    activo: true
-                },
-                {
-                    id: 'prod-3-' + Date.now(),
-                    codigo_barras: '7791234567892',
-                    nombre: 'Leche Entera 1L',
-                    descripcion: 'Leche entera larga vida 1 litro',
-                    precio_costo: 280,
-                    porcentaje_ganancia: 40,
-                    precio_venta: 392,
-                    stock: 80,
-                    stock_minimo: 15,
-                    categoria: 'Lácteos',
-                    activo: true
-                },
-                {
-                    id: 'prod-4-' + Date.now(),
-                    codigo_barras: '7791234567893',
-                    nombre: 'Arroz 1kg',
-                    descripcion: 'Arroz blanco 1kg',
-                    precio_costo: 380,
-                    porcentaje_ganancia: 25,
-                    precio_venta: 475,
-                    stock: 60,
-                    stock_minimo: 10,
-                    categoria: 'Almacén',
-                    activo: true
-                }
-            ];
-            
-            // Guardar en caché
+            productos = generarProductosEjemplo();
             for (const producto of productos) {
                 await indexedDBOperation('productos_cache', 'put', producto);
             }
         }
         
-        // Mostrar productos en la página correspondiente
-        if (APP_STATE.currentPage === 'productos') {
-            displayProductos(productos);
+        if (APP_STATE.currentPage === 'pos') {
+            actualizarBuscadorProductos(productos);
         }
+        
+    } catch (error) {
+        console.error('Error cargando productos:', error);
+    }
+}
+
+function actualizarBuscadorProductos(productos) {
+    const searchInput = document.getElementById('productSearch');
+    if (!searchInput) return;
+    
+    let datalist = document.getElementById('productosDatalist');
+    if (!datalist) {
+        datalist = document.createElement('datalist');
+        datalist.id = 'productosDatalist';
+        searchInput.setAttribute('list', 'productosDatalist');
+        document.body.appendChild(datalist);
+    }
+    
+    datalist.innerHTML = '';
+    
+    productos.slice(0, 50).forEach(producto => {
+        const option = document.createElement('option');
+        option.value = `${producto.nombre} (${producto.codigo_barras || producto.codigo_interno || ''})`;
+        option.dataset.id = producto.id;
+        datalist.appendChild(option);
+    });
+}
+
+async function loadProductos() {
+    try {
+        let productos = await indexedDBOperation('productos_cache', 'getAll') || [];
+        
+        if ((!productos || productos.length === 0) && APP_STATE.supabase && APP_STATE.isOnline) {
+            await syncProductosCache();
+            productos = await indexedDBOperation('productos_cache', 'getAll') || [];
+        }
+        
+        displayProductos(productos);
         
     } catch (error) {
         console.error('Error cargando productos:', error);
@@ -1007,30 +1128,41 @@ function displayProductos(productos) {
     
     container.innerHTML = '';
     
-    if (productos.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #9ca3af;">No hay productos disponibles</div>';
+    if (!productos || productos.length === 0) {
+        container.innerHTML = '<div class="no-data">No hay productos cargados</div>';
         return;
     }
     
     productos.forEach(producto => {
-        const stockClass = producto.stock <= producto.stock_minimo ? 'bajo' : 'normal';
+        const stockClass = producto.stock <= producto.stock_minimo ? 'bajo' : 
+                          producto.stock <= (producto.stock_minimo * 2) ? 'critico' : 'normal';
         const precioVenta = producto.precio_venta || producto.precio_costo * (1 + (producto.porcentaje_ganancia || 30) / 100);
+        const ganancia = precioVenta - (producto.precio_costo || 0);
+        const margen = producto.precio_costo ? ((ganancia / producto.precio_costo) * 100).toFixed(1) : '0';
         
         const card = document.createElement('div');
         card.className = 'producto-card';
         card.innerHTML = `
             <div class="producto-header">
                 <h4>${producto.nombre}</h4>
-                <span class="producto-codigo">${producto.codigo_barras || 'Sin código'}</span>
+                <span class="producto-codigo">${producto.codigo_barras || producto.codigo_interno || 'Sin código'}</span>
             </div>
             <p class="producto-descripcion">${producto.descripcion || ''}</p>
             <div class="producto-info">
+                <span class="producto-categoria">${producto.categoria || 'Sin categoría'}</span>
                 <span class="producto-stock ${stockClass}">Stock: ${producto.stock || 0}</span>
-                <span class="producto-precio">$${precioVenta.toFixed(2)}</span>
+            </div>
+            <div class="producto-precios">
+                <span class="producto-costo">Costo: $${(producto.precio_costo || 0).toFixed(2)}</span>
+                <span class="producto-venta">Venta: $${precioVenta.toFixed(2)}</span>
+                <span class="producto-margen">Margen: ${margen}%</span>
             </div>
             <div class="producto-actions">
                 <button class="btn btn-outline btn-sm" onclick="agregarAlCarrito('${producto.id}')">
                     ➕ Agregar
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="editarProducto('${producto.id}')">
+                    ✏️ Editar
                 </button>
             </div>
         `;
@@ -1039,7 +1171,7 @@ function displayProductos(productos) {
     });
 }
 
-function filterProductosList() {
+function filterProductos() {
     const searchInput = document.getElementById('filterProductos');
     if (!searchInput) return;
     
@@ -1049,9 +1181,9 @@ function filterProductosList() {
     productos.forEach(card => {
         const nombre = card.querySelector('h4')?.textContent.toLowerCase() || '';
         const codigo = card.querySelector('.producto-codigo')?.textContent.toLowerCase() || '';
-        const descripcion = card.querySelector('.producto-descripcion')?.textContent.toLowerCase() || '';
+        const categoria = card.querySelector('.producto-categoria')?.textContent.toLowerCase() || '';
         
-        if (nombre.includes(searchTerm) || codigo.includes(searchTerm) || descripcion.includes(searchTerm)) {
+        if (nombre.includes(searchTerm) || codigo.includes(searchTerm) || categoria.includes(searchTerm)) {
             card.style.display = 'block';
         } else {
             card.style.display = 'none';
@@ -1059,162 +1191,125 @@ function filterProductosList() {
     });
 }
 
-function filterStockBajo() {
-    const productos = Array.from(document.querySelectorAll('.producto-card'));
+function filterProductosPorStock(tipo) {
+    const productos = document.querySelectorAll('.producto-card');
     
     productos.forEach(card => {
-        const stockText = card.querySelector('.producto-stock')?.textContent || '';
-        const stockMatch = stockText.match(/Stock: (\d+)/);
+        const stockElement = card.querySelector('.producto-stock');
+        if (!stockElement) return;
         
-        if (stockMatch) {
-            const stock = parseInt(stockMatch[1]);
-            if (stock > 10) {
-                card.style.display = 'none';
-            } else {
-                card.style.display = 'block';
-            }
-        }
+        const hasClass = stockElement.classList.contains(tipo);
+        card.style.display = hasClass ? 'block' : 'none';
     });
 }
 
-// ============================================
-// SISTEMA POS - CARRITO
-// ============================================
-
-async function handleProductSearch(e) {
-    if (e.key === 'Enter') {
-        const searchTerm = e.target.value.trim();
-        if (!searchTerm) return;
-        
-        let producto = null;
-        
-        // Buscar por código de barras en caché
-        try {
-            const productos = await indexedDBOperation('productos_cache', 'getAll') || [];
-            producto = productos.find(p => 
-                (p.codigo_barras && p.codigo_barras === searchTerm) || 
-                (p.nombre && p.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
-            );
-        } catch (error) {
-            console.warn('Error buscando producto en cache:', error);
-        }
-        
-        // Si no se encuentra y hay conexión, buscar en Supabase
-        if (!producto && APP_STATE.supabase && APP_STATE.isOnline) {
-            try {
-                const { data, error } = await APP_STATE.supabase
-                    .from('productos')
-                    .select('*')
-                    .or(`codigo_barras.eq.${searchTerm},nombre.ilike.%${searchTerm}%`)
-                    .eq('activo', true)
-                    .single();
-                
-                if (!error && data) {
-                    producto = data;
-                    // Guardar en caché
-                    await indexedDBOperation('productos_cache', 'put', producto);
-                }
-            } catch (error) {
-                console.warn('Error buscando producto en Supabase:', error);
-            }
-        }
-        
-        if (producto) {
-            agregarAlCarrito(producto);
-            e.target.value = '';
-            e.target.focus();
-        } else {
-            alert('Producto no encontrado');
-        }
-    }
-}
-
 async function agregarAlCarrito(productoId) {
-    let producto = null;
-    
-    // Si se pasa solo el ID, buscar el producto completo
-    if (typeof productoId === 'string') {
-        try {
-            // Buscar en caché primero
-            const productos = await indexedDBOperation('productos_cache', 'getAll') || [];
-            producto = productos.find(p => p.id === productoId);
-            
-            // Si no está en caché y hay conexión, buscar en Supabase
-            if (!producto && APP_STATE.supabase && APP_STATE.isOnline) {
+    try {
+        let producto = await indexedDBOperation('productos_cache', 'get', productoId);
+        
+        if (!producto) {
+            if (APP_STATE.supabase && APP_STATE.isOnline) {
                 const { data, error } = await APP_STATE.supabase
                     .from('productos')
                     .select('*')
                     .eq('id', productoId)
                     .single();
                 
-                if (!error && data) {
-                    producto = data;
-                    await indexedDBOperation('productos_cache', 'put', producto);
-                }
+                if (error) throw error;
+                producto = data;
+                await indexedDBOperation('productos_cache', 'put', producto);
             }
-        } catch (error) {
-            console.error('Error buscando producto:', error);
         }
         
-        // Si aún no se encuentra, crear uno de ejemplo
         if (!producto) {
-            producto = {
-                id: productoId,
-                nombre: `Producto ${productoId.slice(0, 8)}`,
-                precio_venta: 100 + Math.floor(Math.random() * 900),
-                stock: 10
-            };
+            alert('Producto no encontrado');
+            return;
         }
-    } else {
-        producto = productoId;
+        
+        const existingItem = APP_STATE.carrito.find(item => item.id === producto.id);
+        
+        if (existingItem) {
+            if (existingItem.cantidad >= (producto.stock || 9999)) {
+                alert('Stock insuficiente');
+                return;
+            }
+            existingItem.cantidad += 1;
+            existingItem.subtotal = existingItem.cantidad * existingItem.precio;
+        } else {
+            if ((producto.stock || 0) <= 0) {
+                alert('Producto sin stock');
+                return;
+            }
+            APP_STATE.carrito.push({
+                id: producto.id,
+                nombre: producto.nombre,
+                precio: producto.precio_venta || producto.precio || 0,
+                costo: producto.precio_costo || 0,
+                cantidad: 1,
+                subtotal: producto.precio_venta || producto.precio || 0,
+                stock: producto.stock || 0
+            });
+        }
+        
+        updateCartDisplay();
+        
+    } catch (error) {
+        console.error('Error agregando al carrito:', error);
+        alert('Error al agregar producto');
     }
+}
+
+function updateCantidad(index, delta) {
+    const item = APP_STATE.carrito[index];
+    if (!item) return;
     
-    // Verificar stock
-    if (producto.stock <= 0) {
-        alert('⚠️ Producto sin stock disponible');
+    const nuevaCantidad = (item.cantidad || 1) + delta;
+    
+    if (nuevaCantidad < 1) {
+        removeFromCart(index);
         return;
     }
     
-    // Verificar si ya está en el carrito
-    const existingItem = APP_STATE.carrito.find(item => item.id === producto.id);
-    
-    if (existingItem) {
-        // Verificar que no exceda el stock
-        if (existingItem.cantidad >= producto.stock) {
-            alert('⚠️ No hay suficiente stock disponible');
-            return;
-        }
-        existingItem.cantidad += 1;
-        existingItem.subtotal = existingItem.cantidad * existingItem.precio;
-    } else {
-        APP_STATE.carrito.push({
-            id: producto.id,
-            nombre: producto.nombre,
-            precio: producto.precio_venta || producto.precio || 100,
-            cantidad: 1,
-            subtotal: producto.precio_venta || producto.precio || 100
-        });
+    if (nuevaCantidad > (item.stock || 9999)) {
+        alert('Stock insuficiente');
+        return;
     }
     
+    item.cantidad = nuevaCantidad;
+    item.subtotal = item.cantidad * (item.precio || 0);
     updateCartDisplay();
+}
+
+function removeFromCart(index) {
+    APP_STATE.carrito.splice(index, 1);
+    updateCartDisplay();
+}
+
+async function changePrice(index) {
+    const item = APP_STATE.carrito[index];
+    if (!item) return;
+    
+    const nuevoPrecio = prompt('Nuevo precio:', item.precio ? item.precio.toFixed(2) : '0.00');
+    
+    if (nuevoPrecio && !isNaN(nuevoPrecio) && parseFloat(nuevoPrecio) >= 0) {
+        item.precio = parseFloat(nuevoPrecio);
+        item.subtotal = (item.cantidad || 1) * item.precio;
+        updateCartDisplay();
+    }
 }
 
 function updateCartDisplay() {
     const container = document.getElementById('cartItems');
     const subtotalElem = document.getElementById('cartSubtotal');
     const totalElem = document.getElementById('cartTotal');
+    const descuentoElem = document.getElementById('cartDiscount');
     
     if (!container) return;
     
     container.innerHTML = '';
     
     if (APP_STATE.carrito.length === 0) {
-        container.innerHTML = `
-            <div class="cart-empty" style="text-align: center; padding: 40px; color: #9ca3af;">
-                <p>🎯 Busca y agrega productos al carrito</p>
-                <p>🔍 Usa el buscador o escanea códigos de barras</p>
-            </div>
-        `;
+        container.innerHTML = '<div class="cart-empty">🎯 Busca y agrega productos al carrito</div>';
         if (subtotalElem) subtotalElem.textContent = '$0.00';
         if (totalElem) totalElem.textContent = '$0.00';
         return;
@@ -1229,14 +1324,14 @@ function updateCartDisplay() {
         itemElem.className = 'cart-item';
         itemElem.innerHTML = `
             <span>${item.nombre || 'Producto'}</span>
-            <span>
+            <span class="cantidad-controls">
                 <button onclick="updateCantidad(${index}, -1)">-</button>
                 ${item.cantidad || 1}
                 <button onclick="updateCantidad(${index}, 1)">+</button>
             </span>
             <span>$${(item.precio || 0).toFixed(2)}</span>
             <span>$${(item.subtotal || 0).toFixed(2)}</span>
-            <span>
+            <span class="cart-item-actions">
                 <button onclick="removeFromCart(${index})" class="btn btn-danger btn-sm">🗑️</button>
                 <button onclick="changePrice(${index})" class="btn btn-warning btn-sm">💰</button>
             </span>
@@ -1246,58 +1341,30 @@ function updateCartDisplay() {
     });
     
     if (subtotalElem) subtotalElem.textContent = `$${subtotal.toFixed(2)}`;
-    updateCartTotal();
-}
-
-function updateCantidad(index, delta) {
-    const item = APP_STATE.carrito[index];
-    if (!item) return;
     
-    const nuevaCantidad = (item.cantidad || 1) + delta;
+    const descuento = descuentoElem ? parseFloat(descuentoElem.value) || 0 : 0;
+    const total = subtotal - descuento;
     
-    if (nuevaCantidad < 1) {
-        removeFromCart(index);
-        return;
-    }
+    if (totalElem) totalElem.textContent = `$${total.toFixed(2)}`;
     
-    item.cantidad = nuevaCantidad;
-    item.subtotal = item.cantidad * (item.precio || 0);
-    updateCartDisplay();
-}
-
-function removeFromCart(index) {
-    APP_STATE.carrito.splice(index, 1);
-    updateCartDisplay();
-}
-
-function changePrice(index) {
-    const item = APP_STATE.carrito[index];
-    if (!item) return;
-    
-    const nuevoPrecio = prompt('Nuevo precio:', item.precio ? item.precio.toFixed(2) : '0.00');
-    
-    if (nuevoPrecio && !isNaN(nuevoPrecio)) {
-        item.precio = parseFloat(nuevoPrecio);
-        item.subtotal = (item.cantidad || 1) * item.precio;
-        updateCartDisplay();
-    }
+    saveAppState();
 }
 
 function updateCartTotal() {
-    const subtotal = APP_STATE.carrito.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-    const discountInput = document.getElementById('cartDiscount');
-    const discount = discountInput ? parseFloat(discountInput.value) || 0 : 0;
-    const total = Math.max(0, subtotal - discount);
-    
+    const subtotalElem = document.getElementById('cartSubtotal');
     const totalElem = document.getElementById('cartTotal');
+    const discountInput = document.getElementById('cartDiscount');
+    
+    const subtotalText = subtotalElem ? subtotalElem.textContent : '$0.00';
+    const subtotal = parseFloat(subtotalText.replace('$', '').replace(',', '')) || 0;
+    const discount = discountInput ? parseFloat(discountInput.value) || 0 : 0;
+    const total = subtotal - discount;
+    
     if (totalElem) totalElem.textContent = `$${total.toFixed(2)}`;
 }
 
 function cancelarVenta() {
-    if (APP_STATE.carrito.length === 0) {
-        alert('El carrito ya está vacío');
-        return;
-    }
+    if (APP_STATE.carrito.length === 0) return;
     
     if (confirm('¿Cancelar la venta actual? Se perderán todos los items del carrito.')) {
         APP_STATE.carrito = [];
@@ -1308,7 +1375,7 @@ function cancelarVenta() {
 }
 
 // ============================================
-// FINALIZAR VENTA
+// VENTAS Y PAGOS COMPLETOS
 // ============================================
 
 function finalizarVenta() {
@@ -1317,11 +1384,12 @@ function finalizarVenta() {
         return;
     }
     
-    // Mostrar modal de métodos de pago
     const paymentModal = document.getElementById('paymentModal');
-    if (paymentModal) {
-        paymentModal.style.display = 'flex';
-        showPaymentDetails('efectivo'); // Mostrar efectivo por defecto
+    if (paymentModal) paymentModal.style.display = 'flex';
+    
+    const clienteSelect = document.getElementById('selectCliente');
+    if (clienteSelect) {
+        showPaymentDetails(clienteSelect.value === 'cuenta' ? 'cuenta' : 'efectivo');
     }
 }
 
@@ -1344,15 +1412,22 @@ function showPaymentDetails(method) {
                 </div>
                 <div class="form-group">
                     <label>Vuelto:</label>
-                    <input type="number" id="vuelto" placeholder="0.00" value="0.00" readonly>
+                    <input type="number" id="vuelto" placeholder="0.00" readonly value="0.00">
                 </div>
             `;
             break;
         case 'tarjeta':
             html = `
                 <div class="form-group">
+                    <label>Tipo de tarjeta:</label>
+                    <select id="tarjetaTipo">
+                        <option value="credito">Crédito</option>
+                        <option value="debito">Débito</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Número de tarjeta (últimos 4 dígitos):</label>
-                    <input type="text" id="tarjetaNumero" placeholder="**** **** **** 1234" maxlength="4">
+                    <input type="text" id="tarjetaNumero" placeholder="1234" maxlength="4" pattern="\\d{4}">
                 </div>
                 <div class="form-group">
                     <label>Cuotas:</label>
@@ -1369,7 +1444,7 @@ function showPaymentDetails(method) {
             html = `
                 <div class="form-group">
                     <label>Número de transferencia:</label>
-                    <input type="text" id="transferenciaNumero" placeholder="TRF-001">
+                    <input type="text" id="transferenciaNumero" placeholder="TRF-001" value="TRF-${Date.now().toString().slice(-6)}">
                 </div>
                 <div class="form-group">
                     <label>Banco:</label>
@@ -1381,12 +1456,11 @@ function showPaymentDetails(method) {
             html = `
                 <div class="form-group">
                     <label>Escanea el código QR para pagar</label>
-                    <div style="text-align: center; padding: 20px; background: #f0f0f0; border-radius: 10px;">
+                    <div class="qr-simulator">
                         <p>💰 QR de pago</p>
                         <p>Monto: $${total.toFixed(2)}</p>
-                        <button class="btn btn-primary" onclick="simularPagoQR()" style="margin-top: 10px;">
-                            Simular Pago QR
-                        </button>
+                        <p>Código: QR${Date.now().toString().slice(-8)}</p>
+                        <button class="btn btn-primary" onclick="simularPagoQR()">Simular Pago</button>
                     </div>
                 </div>
             `;
@@ -1397,13 +1471,11 @@ function showPaymentDetails(method) {
                     <label>Cliente con cuenta corriente:</label>
                     <select id="clienteCuenta">
                         <option value="">Seleccionar cliente...</option>
-                        <option value="cliente1">Cliente Contado</option>
-                        <option value="cliente2">Cliente Cuenta Corriente</option>
+                        <option value="cliente_cc">Cliente Cuenta Corriente</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Observaciones:</label>
-                    <textarea id="cuentaObservaciones" placeholder="Observaciones del pago..." rows="3"></textarea>
+                    <label>Límite de crédito disponible: $0.00</label>
                 </div>
             `;
             break;
@@ -1411,7 +1483,6 @@ function showPaymentDetails(method) {
     
     container.innerHTML = html;
     
-    // Actualizar vuelto en tiempo real para efectivo
     if (method === 'efectivo') {
         const montoInput = document.getElementById('montoRecibido');
         const vueltoInput = document.getElementById('vuelto');
@@ -1422,11 +1493,6 @@ function showPaymentDetails(method) {
                 const vuelto = monto - total;
                 vueltoInput.value = vuelto > 0 ? vuelto.toFixed(2) : '0.00';
             });
-            
-            // Calcular vuelto inicial
-            const monto = parseFloat(montoInput.value) || 0;
-            const vuelto = monto - total;
-            vueltoInput.value = vuelto > 0 ? vuelto.toFixed(2) : '0.00';
         }
     }
 }
@@ -1440,100 +1506,106 @@ async function confirmarPago() {
     const totalElem = document.getElementById('cartTotal');
     const totalText = totalElem ? totalElem.textContent : '$0.00';
     const total = parseFloat(totalText.replace('$', '').replace(',', '')) || 0;
+    const discountInput = document.getElementById('cartDiscount');
+    const descuento = discountInput ? parseFloat(discountInput.value) || 0 : 0;
+    const subtotal = total + descuento;
     
-    // Determinar método de pago
     let metodo = 'efectivo';
+    let referencia = '';
+    let tarjetaTipo = '';
+    let tarjetaNumero = '';
+    let tarjetaCuotas = 1;
+    
     const activePaymentBtn = document.querySelector('.payment-btn.active');
     if (activePaymentBtn) {
         metodo = activePaymentBtn.dataset.method || 'efectivo';
     }
     
-    // Obtener detalles adicionales según el método
-    let referencia = '';
-    let detalles = {};
-    
     switch (metodo) {
         case 'efectivo':
             const montoRecibido = document.getElementById('montoRecibido');
-            const vuelto = document.getElementById('vuelto');
             referencia = `EF-${Date.now().toString().slice(-6)}`;
-            detalles = {
-                monto_recibido: parseFloat(montoRecibido?.value) || total,
-                vuelto: parseFloat(vuelto?.value) || 0
-            };
             break;
         case 'tarjeta':
-            const tarjetaNumero = document.getElementById('tarjetaNumero');
-            const tarjetaCuotas = document.getElementById('tarjetaCuotas');
+            const tarjetaTipoSelect = document.getElementById('tarjetaTipo');
+            const tarjetaNumeroInput = document.getElementById('tarjetaNumero');
+            const tarjetaCuotasSelect = document.getElementById('tarjetaCuotas');
+            tarjetaTipo = tarjetaTipoSelect ? tarjetaTipoSelect.value : 'credito';
+            tarjetaNumero = tarjetaNumeroInput ? tarjetaNumeroInput.value : '';
+            tarjetaCuotas = tarjetaCuotasSelect ? parseInt(tarjetaCuotasSelect.value) : 1;
             referencia = `TJ-${Date.now().toString().slice(-6)}`;
-            detalles = {
-                ultimos_digitos: tarjetaNumero?.value || '',
-                cuotas: parseInt(tarjetaCuotas?.value) || 1
-            };
             break;
         case 'transferencia':
             const transferenciaNumero = document.getElementById('transferenciaNumero');
-            const transferenciaBanco = document.getElementById('transferenciaBanco');
-            referencia = `TRF-${Date.now().toString().slice(-6)}`;
-            detalles = {
-                numero: transferenciaNumero?.value || '',
-                banco: transferenciaBanco?.value || ''
-            };
+            referencia = transferenciaNumero ? transferenciaNumero.value : `TRF-${Date.now().toString().slice(-6)}`;
             break;
         case 'qr':
             referencia = `QR-${Date.now().toString().slice(-6)}`;
-            detalles = { metodo: 'QR' };
             break;
         case 'cuenta':
-            const clienteCuenta = document.getElementById('clienteCuenta');
             referencia = `CC-${Date.now().toString().slice(-6)}`;
-            detalles = {
-                cliente_id: clienteCuenta?.value || '',
-                observaciones: document.getElementById('cuentaObservaciones')?.value || ''
-            };
             break;
     }
     
-    // Crear venta
+    const clienteSelect = document.getElementById('selectCliente');
+    const clienteId = clienteSelect && clienteSelect.value === 'cuenta' ? 'cliente_cc' : null;
+    
+    const ventaId = 'venta_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
     const venta = {
         local_id: APP_STATE.currentLocal?.id || 'offline',
         caja_id: APP_STATE.currentCaja?.id || 'offline',
         usuario_id: APP_STATE.currentUser?.id || 'offline',
-        cliente_id: metodo === 'cuenta' ? detalles.cliente_id : null,
+        cliente_id: clienteId,
         total: total,
-        descuento: parseFloat(document.getElementById('cartDiscount')?.value) || 0,
+        descuento: descuento,
+        subtotal: subtotal,
         estado: 'completada',
         tipo_venta: metodo === 'cuenta' ? 'cuenta_corriente' : 'contado',
-        offline_id: 'venta_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        tipo_comprobante: 'ticket',
+        numero_venta: `V${Date.now().toString().slice(-8)}`,
+        offline_id: ventaId,
         sync_status: APP_STATE.isOnline ? 'synced' : 'pending',
         created_at: new Date().toISOString()
     };
     
-    // Crear items de venta
     const items = APP_STATE.carrito.map(item => ({
         producto_id: item.id,
         cantidad: item.cantidad || 1,
         precio_unitario: item.precio || 0,
+        descuento_unitario: 0,
         subtotal: item.subtotal || 0,
-        descuento: 0,
         created_at: new Date().toISOString()
     }));
     
-    // Crear pago
     const pago = {
         metodo: metodo,
         monto: total,
         referencia: referencia,
         estado: 'completado',
-        detalles: detalles,
+        tarjeta_tipo: tarjetaTipo,
+        tarjeta_numero: tarjetaNumero,
+        tarjeta_cuotas: tarjetaCuotas,
         offline_id: 'pago_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         sync_status: APP_STATE.isOnline ? 'synced' : 'pending',
         created_at: new Date().toISOString()
     };
     
+    const movimientosInventario = APP_STATE.carrito.map(item => ({
+        producto_id: item.id,
+        tipo_movimiento: 'venta',
+        cantidad: item.cantidad || 1,
+        stock_anterior: item.stock || 0,
+        stock_nuevo: (item.stock || 0) - (item.cantidad || 1),
+        motivo: 'Venta',
+        usuario_id: APP_STATE.currentUser?.id || 'offline',
+        offline_id: 'mov_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        sync_status: 'pending',
+        created_at: new Date().toISOString()
+    }));
+    
     try {
         if (APP_STATE.isOnline && APP_STATE.supabase) {
-            // Online: Guardar en Supabase
             const { data: ventaData, error: ventaError } = await APP_STATE.supabase
                 .from('ventas')
                 .insert([venta])
@@ -1542,7 +1614,6 @@ async function confirmarPago() {
             
             if (ventaError) throw ventaError;
             
-            // Guardar items
             for (const item of items) {
                 item.venta_id = ventaData.id;
                 const { error: itemError } = await APP_STATE.supabase
@@ -1552,7 +1623,6 @@ async function confirmarPago() {
                 if (itemError) throw itemError;
             }
             
-            // Guardar pago
             pago.venta_id = ventaData.id;
             const { error: pagoError } = await APP_STATE.supabase
                 .from('pagos')
@@ -1560,35 +1630,42 @@ async function confirmarPago() {
             
             if (pagoError) throw pagoError;
             
-            // Actualizar stock de productos (simulado)
-            for (const item of APP_STATE.carrito) {
-                try {
-                    // Buscar producto actual
-                    const { data: productoActual } = await APP_STATE.supabase
-                        .from('productos')
-                        .select('stock')
-                        .eq('id', item.id)
-                        .single();
-                    
-                    if (productoActual) {
-                        const nuevoStock = productoActual.stock - (item.cantidad || 1);
-                        await APP_STATE.supabase
-                            .from('productos')
-                            .update({ stock: nuevoStock })
-                            .eq('id', item.id);
-                    }
-                } catch (stockError) {
-                    console.warn('Error actualizando stock:', stockError);
-                }
+            for (const movimiento of movimientosInventario) {
+                movimiento.venta_id = ventaData.id;
+                const { error: movError } = await APP_STATE.supabase
+                    .from('inventario')
+                    .insert([movimiento]);
+                
+                if (movError) throw movError;
+                
+                await actualizarStockLocal(movimiento.producto_id, -movimiento.cantidad);
+            }
+            
+            if (metodo === 'cuenta' && clienteId) {
+                const movimientoCC = {
+                    cliente_id: clienteId,
+                    tipo_movimiento: 'venta',
+                    monto: total,
+                    saldo_anterior: 0,
+                    saldo_nuevo: total,
+                    venta_id: ventaData.id,
+                    observaciones: 'Venta a cuenta corriente',
+                    created_at: new Date().toISOString()
+                };
+                
+                const { error: ccError } = await APP_STATE.supabase
+                    .from('cuentas_corrientes')
+                    .insert([movimientoCC]);
+                
+                if (ccError) throw ccError;
             }
             
         } else {
-            // Offline: Guardar en IndexedDB
             const ventaOffline = {
                 ...venta,
                 items: items,
                 pago: pago,
-                carrito: APP_STATE.carrito // Guardar carrito completo para sincronización
+                movimientos_inventario: movimientosInventario
             };
             
             await indexedDBOperation('ventas_offline', 'add', ventaOffline);
@@ -1599,23 +1676,29 @@ async function confirmarPago() {
                     venta: venta,
                     items: items,
                     pago: pago,
-                    carrito: APP_STATE.carrito,
-                    offline_id: venta.offline_id
-                }
+                    movimientos_inventario: movimientosInventario,
+                    offline_id: ventaId
+                },
+                priority: 10
             });
+            
+            for (const movimiento of movimientosInventario) {
+                await indexedDBOperation('movimientos_inventario', 'add', movimiento);
+                await actualizarStockLocal(movimiento.producto_id, -movimiento.cantidad);
+            }
         }
         
-        // Mostrar ticket
+        APP_STATE.ventasHoy++;
         mostrarTicket(venta, items, pago);
         
-        // Reiniciar carrito
         APP_STATE.carrito = [];
         updateCartDisplay();
-        const discountInput = document.getElementById('cartDiscount');
         if (discountInput) discountInput.value = '0';
         
         const paymentModal = document.getElementById('paymentModal');
         if (paymentModal) paymentModal.style.display = 'none';
+        
+        alert('✅ Venta registrada correctamente');
         
     } catch (error) {
         console.error('Error registrando venta:', error);
@@ -1623,90 +1706,96 @@ async function confirmarPago() {
     }
 }
 
+async function actualizarStockLocal(productoId, cantidad) {
+    try {
+        const producto = await indexedDBOperation('productos_cache', 'get', productoId);
+        if (producto) {
+            producto.stock = (producto.stock || 0) + cantidad;
+            if (producto.stock < 0) producto.stock = 0;
+            await indexedDBOperation('productos_cache', 'put', producto);
+        }
+    } catch (error) {
+        console.error('Error actualizando stock local:', error);
+    }
+}
+
 function mostrarTicket(venta, items, pago) {
     const modal = document.getElementById('genericModal');
     const modalBody = document.getElementById('modalBody');
     const modalTitle = document.getElementById('modalTitle');
-    const modalConfirm = document.getElementById('modalConfirm');
-    const modalCancel = document.getElementById('modalCancel');
     
     if (!modal || !modalBody || !modalTitle) return;
     
+    const configEmpresa = JSON.parse(localStorage.getItem('config_empresa') || '{"nombre":"Mi Local","direccion":"","telefono":""}');
+    
     const ticketContent = `
-        <div class="ticket">
-            <h3>${APP_STATE.currentLocal?.nombre || 'MI NEGOCIO'}</h3>
-            <p>${APP_STATE.currentLocal?.direccion || 'Dirección no especificada'}</p>
-            <p>Tel: ${APP_STATE.currentLocal?.telefono || 'N/A'}</p>
+        <div class="ticket" id="ticketContent">
+            <h3>${configEmpresa.nombre}</h3>
+            <p>${configEmpresa.direccion}</p>
+            <p>Tel: ${configEmpresa.telefono}</p>
             <hr>
-            <p>Fecha: ${new Date().toLocaleString()}</p>
-            <p>Venta: ${venta.offline_id?.slice(0, 10) || 'N/A'}</p>
+            <p>Fecha: ${new Date().toLocaleString('es-AR')}</p>
+            <p>Venta: ${venta.numero_venta || venta.offline_id}</p>
             <p>Vendedor: ${APP_STATE.currentUser?.nombre || APP_STATE.currentUser?.email || 'Offline'}</p>
             <hr>
             <h4>PRODUCTOS:</h4>
             ${items.map(item => `
-                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
-                    <span>${item.cantidad} x $${item.precio_unitario.toFixed(2)}</span>
-                    <span>$${item.subtotal.toFixed(2)}</span>
-                </div>
+                <p>${item.cantidad} x $${item.precio_unitario.toFixed(2)} = $${item.subtotal.toFixed(2)}</p>
             `).join('')}
             <hr>
-            <div style="display: flex; justify-content: space-between; font-weight: bold;">
-                <span>TOTAL:</span>
-                <span>$${venta.total.toFixed(2)}</span>
-            </div>
+            <p>Subtotal: $${(venta.subtotal || venta.total).toFixed(2)}</p>
+            ${venta.descuento > 0 ? `<p>Descuento: -$${venta.descuento.toFixed(2)}</p>` : ''}
+            <p><strong>TOTAL: $${venta.total.toFixed(2)}</strong></p>
             <hr>
             <p>MÉTODO: ${pago.metodo.toUpperCase()}</p>
             <p>REF: ${pago.referencia}</p>
             <hr>
-            <p style="text-align: center; font-weight: bold;">¡Gracias por su compra!</p>
-            <p style="text-align: center; font-size: 0.9em; color: #666;">Sistema POS v${CONFIG.VERSION}</p>
+            <p>¡Gracias por su compra!</p>
+        </div>
+        <div class="ticket-actions" style="margin-top: 20px;">
+            <button onclick="imprimirTicket()" class="btn btn-primary">🖨️ Imprimir</button>
+            <button onclick="enviarTicketWhatsapp()" class="btn btn-success">📱 WhatsApp</button>
         </div>
     `;
     
     modalTitle.textContent = 'Ticket de Venta';
     modalBody.innerHTML = ticketContent;
-    
-    if (modalConfirm) {
-        modalConfirm.textContent = 'Imprimir';
-        modalConfirm.onclick = () => {
-            const printContent = ticketContent;
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>Ticket de Venta</title>
-                        <style>
-                            body { font-family: 'Courier New', monospace; padding: 20px; }
-                            .ticket { max-width: 300px; margin: 0 auto; }
-                            hr { border: none; border-top: 1px dashed #000; margin: 10px 0; }
-                        </style>
-                    </head>
-                    <body>
-                        ${printContent}
-                        <script>
-                            window.onload = function() {
-                                window.print();
-                                setTimeout(() => window.close(), 500);
-                            }
-                        </script>
-                    </body>
-                </html>
-            `);
-        };
-    }
-    
-    if (modalCancel) {
-        modalCancel.textContent = 'Cerrar';
-        modalCancel.onclick = () => {
-            modal.style.display = 'none';
-        };
-    }
-    
     modal.style.display = 'flex';
+    
+    document.getElementById('modalConfirm').style.display = 'none';
+    document.getElementById('modalCancel').textContent = 'Cerrar';
+}
+
+function imprimirTicket() {
+    const ticketContent = document.getElementById('ticketContent');
+    if (!ticketContent) return;
+    
+    const ventana = window.open('', '_blank');
+    ventana.document.write(`
+        <html>
+        <head>
+            <title>Ticket de Venta</title>
+            <style>
+                body { font-family: 'Courier New', monospace; padding: 10px; }
+                h3 { text-align: center; }
+                hr { border-top: 1px dashed #000; margin: 5px 0; }
+                p { margin: 2px 0; }
+                @media print {
+                    body { font-size: 12px; }
+                }
+            </style>
+        </head>
+        <body>
+            ${ticketContent.innerHTML}
+        </body>
+        </html>
+    `);
+    ventana.document.close();
+    ventana.print();
 }
 
 // ============================================
-// PRESUPUESTOS
+// PRESUPUESTOS COMPLETOS
 // ============================================
 
 async function crearPresupuesto() {
@@ -1718,29 +1807,30 @@ async function crearPresupuesto() {
     const clienteSelect = document.getElementById('selectCliente');
     const clienteId = clienteSelect ? clienteSelect.value : null;
     
-    // Pedir validez del presupuesto (default 30 días)
-    const defaultDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    const validoHasta = prompt('Válido hasta (dd/mm/aaaa):', 
-        defaultDate.toLocaleDateString('es-AR'));
-    
-    if (!validoHasta) return;
-    
-    // Convertir fecha al formato YYYY-MM-DD
-    const [dia, mes, anio] = validoHasta.split('/');
-    const fechaValida = `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    const hoy = new Date();
+    const validoHasta = new Date(hoy.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const fechaValido = validoHasta.toISOString().split('T')[0];
     
     const totalElem = document.getElementById('cartTotal');
     const totalText = totalElem ? totalElem.textContent : '$0.00';
     const total = parseFloat(totalText.replace('$', '').replace(',', '')) || 0;
+    const discountInput = document.getElementById('cartDiscount');
+    const descuento = discountInput ? parseFloat(discountInput.value) || 0 : 0;
+    const subtotal = total + descuento;
+    
+    const presupuestoId = 'presupuesto_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
     const presupuesto = {
         local_id: APP_STATE.currentLocal?.id || 'offline',
         cliente_id: clienteId,
         usuario_id: APP_STATE.currentUser?.id || 'offline',
         total: total,
-        valido_hasta: fechaValida,
+        descuento: descuento,
+        subtotal: subtotal,
+        valido_hasta: fechaValido,
         estado: 'pendiente',
-        offline_id: 'presupuesto_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        numero_presupuesto: `P${Date.now().toString().slice(-8)}`,
+        offline_id: presupuestoId,
         sync_status: APP_STATE.isOnline ? 'synced' : 'pending',
         created_at: new Date().toISOString()
     };
@@ -1771,24 +1861,25 @@ async function crearPresupuesto() {
                 
                 if (itemError) throw itemError;
             }
-            
-            alert('✅ Presupuesto creado correctamente - N°: ' + (data.numero_presupuesto || data.id.slice(0, 8)));
         } else {
+            const presupuestoOffline = {
+                ...presupuesto,
+                items: items
+            };
+            
+            await indexedDBOperation('presupuestos_offline', 'add', presupuestoOffline);
+            
             await savePendingOperation({
                 type: 'presupuesto',
-                data: { 
-                    presupuesto: presupuesto, 
-                    items: items 
-                }
+                data: { presupuesto, items },
+                priority: 5
             });
-            
-            alert('✅ Presupuesto guardado localmente. Se sincronizará cuando haya conexión.');
         }
         
-        // Limpiar carrito
+        alert('✅ Presupuesto creado correctamente');
+        
         APP_STATE.carrito = [];
         updateCartDisplay();
-        const discountInput = document.getElementById('cartDiscount');
         if (discountInput) discountInput.value = '0';
         
     } catch (error) {
@@ -1797,9 +1888,553 @@ async function crearPresupuesto() {
     }
 }
 
+async function loadPresupuestos() {
+    const container = document.getElementById('presupuestosList');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Cargando presupuestos...</div>';
+    
+    try {
+        let presupuestos = [];
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('presupuestos')
+                .select('*, clientes(nombre)')
+                .order('created_at', { ascending: false })
+                .limit(50);
+            
+            if (!error && data) {
+                presupuestos = data;
+            }
+        } else {
+            presupuestos = await indexedDBOperation('presupuestos_offline', 'getAll') || [];
+        }
+        
+        if (presupuestos.length === 0) {
+            container.innerHTML = '<div class="no-data">No hay presupuestos</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        presupuestos.forEach(presupuesto => {
+            const card = document.createElement('div');
+            card.className = 'presupuesto-card';
+            card.innerHTML = `
+                <div class="presupuesto-header">
+                    <h4>${presupuesto.numero_presupuesto || 'Sin número'}</h4>
+                    <span class="presupuesto-estado ${presupuesto.estado}">${presupuesto.estado}</span>
+                </div>
+                <p>Cliente: ${presupuesto.clientes?.nombre || 'Sin cliente'}</p>
+                <p>Valido hasta: ${new Date(presupuesto.valido_hasta).toLocaleDateString('es-AR')}</p>
+                <p>Total: $${presupuesto.total.toFixed(2)}</p>
+                <div class="presupuesto-actions">
+                    <button class="btn btn-sm btn-primary" onclick="verPresupuesto('${presupuesto.id}')">Ver</button>
+                    ${presupuesto.estado === 'pendiente' ? 
+                        `<button class="btn btn-sm btn-success" onclick="convertirPresupuestoAVenta('${presupuesto.id}')">Vender</button>` : 
+                        ''}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando presupuestos:', error);
+        container.innerHTML = '<div class="error">Error cargando presupuestos</div>';
+    }
+}
+
 // ============================================
-// SCANNER DE CÓDIGO DE BARRAS
+// CLIENTES Y CUENTA CORRIENTE
 // ============================================
+
+async function loadClientes() {
+    const container = document.getElementById('clientesList');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Cargando clientes...</div>';
+    
+    try {
+        let clientes = await indexedDBOperation('clientes_cache', 'getAll') || [];
+        
+        if ((!clientes || clientes.length === 0) && APP_STATE.supabase && APP_STATE.isOnline) {
+            await syncClientesCache();
+            clientes = await indexedDBOperation('clientes_cache', 'getAll') || [];
+        }
+        
+        if (clientes.length === 0) {
+            container.innerHTML = '<div class="no-data">No hay clientes cargados</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        clientes.forEach(cliente => {
+            const saldoClass = cliente.saldo > 0 ? 'negativo' : 'positivo';
+            const saldoText = cliente.saldo > 0 ? `-$${Math.abs(cliente.saldo).toFixed(2)}` : `$${cliente.saldo.toFixed(2)}`;
+            
+            const row = document.createElement('div');
+            row.className = 'cliente-row';
+            row.innerHTML = `
+                <span>${cliente.nombre} ${cliente.apellido || ''}</span>
+                <span>${cliente.numero_documento || 'Sin DNI'}</span>
+                <span>${cliente.telefono || 'Sin teléfono'}</span>
+                <span class="cliente-saldo ${saldoClass}">${saldoText}</span>
+                <div class="cliente-actions">
+                    <button class="btn btn-sm btn-primary" onclick="verCliente('${cliente.id}')">Ver</button>
+                    <button class="btn btn-sm btn-warning" onclick="editarCliente('${cliente.id}')">Editar</button>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando clientes:', error);
+        container.innerHTML = '<div class="error">Error cargando clientes</div>';
+    }
+}
+
+async function loadClientesParaVenta() {
+    const select = document.getElementById('selectCliente');
+    if (!select) return;
+    
+    try {
+        let clientes = await indexedDBOperation('clientes_cache', 'getAll') || [];
+        
+        if (clientes.length === 0 && APP_STATE.supabase && APP_STATE.isOnline) {
+            await syncClientesCache();
+            clientes = await indexedDBOperation('clientes_cache', 'getAll') || [];
+        }
+        
+        select.innerHTML = '<option value="">Cliente Contado</option>';
+        
+        clientes.forEach(cliente => {
+            if (cliente.tipo_cliente === 'cuenta_corriente') {
+                const option = document.createElement('option');
+                option.value = cliente.id;
+                option.textContent = `${cliente.nombre} (CC) - Saldo: $${cliente.saldo.toFixed(2)}`;
+                select.appendChild(option);
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error cargando clientes para venta:', error);
+    }
+}
+
+async function syncClientesCache() {
+    if (!APP_STATE.supabase) return;
+    
+    try {
+        const { data: clientes, error } = await APP_STATE.supabase
+            .from('clientes')
+            .select('*')
+            .eq('activo', true)
+            .order('nombre')
+            .limit(200);
+        
+        if (error) throw error;
+        
+        for (const cliente of clientes) {
+            await indexedDBOperation('clientes_cache', 'put', cliente);
+        }
+        
+        console.log(`✅ Cache de clientes actualizado: ${clientes.length} clientes`);
+    } catch (error) {
+        console.error('❌ Error actualizando cache de clientes:', error);
+    }
+}
+
+// ============================================
+// CAJA Y CIERRES
+// ============================================
+
+async function loadCajaResumen() {
+    const saldoInicialElem = document.getElementById('saldoInicialResumen');
+    const ventasEfectivoElem = document.getElementById('ventasEfectivo');
+    const ventasTarjetaElem = document.getElementById('ventasTarjeta');
+    const totalVentasElem = document.getElementById('totalVentas');
+    const saldoFinalElem = document.getElementById('saldoFinal');
+    
+    if (!saldoInicialElem) return;
+    
+    try {
+        let cierreActual = null;
+        const hoy = new Date().toISOString().split('T')[0];
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('cierres_caja')
+                .select('*')
+                .eq('fecha', hoy)
+                .eq('local_id', APP_STATE.currentLocal?.id)
+                .eq('caja_id', APP_STATE.currentCaja?.id)
+                .eq('turno', APP_STATE.currentTurno)
+                .eq('estado', 'abierto')
+                .single();
+            
+            if (!error) cierreActual = data;
+        } else {
+            const cierres = await indexedDBOperation('cierres_offline', 'getAll') || [];
+            cierreActual = cierres.find(c => 
+                c.fecha === hoy && 
+                c.local_id === APP_STATE.currentLocal?.id &&
+                c.caja_id === APP_STATE.currentCaja?.id &&
+                c.turno === APP_STATE.currentTurno &&
+                c.estado === 'abierto'
+            );
+        }
+        
+        if (cierreActual) {
+            saldoInicialElem.textContent = `$${cierreActual.saldo_inicial.toFixed(2)}`;
+            
+            let ventasEfectivo = 0;
+            let ventasTarjeta = 0;
+            let totalVentas = 0;
+            
+            if (APP_STATE.supabase && APP_STATE.isOnline) {
+                const { data: ventasHoy, error } = await APP_STATE.supabase
+                    .from('ventas')
+                    .select('total, pagos(metodo)')
+                    .eq('local_id', APP_STATE.currentLocal?.id)
+                    .eq('caja_id', APP_STATE.currentCaja?.id)
+                    .eq('DATE(created_at)', hoy);
+                
+                if (!error && ventasHoy) {
+                    ventasHoy.forEach(venta => {
+                        totalVentas += venta.total;
+                        if (venta.pagos && venta.pagos[0]) {
+                            if (venta.pagos[0].metodo === 'efectivo') ventasEfectivo += venta.total;
+                            if (venta.pagos[0].metodo === 'tarjeta') ventasTarjeta += venta.total;
+                        }
+                    });
+                }
+            }
+            
+            ventasEfectivoElem.textContent = `$${ventasEfectivo.toFixed(2)}`;
+            ventasTarjetaElem.textContent = `$${ventasTarjeta.toFixed(2)}`;
+            totalVentasElem.textContent = `$${totalVentas.toFixed(2)}`;
+            
+            const saldoFinal = cierreActual.saldo_inicial + ventasEfectivo;
+            saldoFinalElem.textContent = `$${saldoFinal.toFixed(2)}`;
+        } else {
+            saldoInicialElem.textContent = '$0.00';
+            ventasEfectivoElem.textContent = '$0.00';
+            ventasTarjetaElem.textContent = '$0.00';
+            totalVentasElem.textContent = '$0.00';
+            saldoFinalElem.textContent = '$0.00';
+        }
+        
+    } catch (error) {
+        console.error('Error cargando resumen de caja:', error);
+    }
+}
+
+async function cerrarCaja() {
+    if (!confirm('¿Estás seguro de cerrar la caja?')) return;
+    
+    try {
+        const hoy = new Date().toISOString().split('T')[0];
+        let cierreActual = null;
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('cierres_caja')
+                .select('*')
+                .eq('fecha', hoy)
+                .eq('local_id', APP_STATE.currentLocal?.id)
+                .eq('caja_id', APP_STATE.currentCaja?.id)
+                .eq('turno', APP_STATE.currentTurno)
+                .eq('estado', 'abierto')
+                .single();
+            
+            if (!error) cierreActual = data;
+        } else {
+            const cierres = await indexedDBOperation('cierres_offline', 'getAll') || [];
+            cierreActual = cierres.find(c => 
+                c.fecha === hoy && 
+                c.local_id === APP_STATE.currentLocal?.id &&
+                c.caja_id === APP_STATE.currentCaja?.id &&
+                c.turno === APP_STATE.currentTurno &&
+                c.estado === 'abierto'
+            );
+        }
+        
+        if (!cierreActual) {
+            alert('No hay caja abierta para cerrar');
+            return;
+        }
+        
+        const saldoFinalInput = prompt('Ingrese el saldo final en caja:', '0.00');
+        if (!saldoFinalInput) return;
+        
+        const saldoFinal = parseFloat(saldoFinalInput) || 0;
+        const diferencia = saldoFinal - (cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0));
+        
+        cierreActual.saldo_final = saldoFinal;
+        cierreActual.diferencia = diferencia;
+        cierreActual.estado = 'cerrado';
+        cierreActual.updated_at = new Date().toISOString();
+        
+        if (APP_STATE.isOnline && APP_STATE.supabase) {
+            const { error } = await APP_STATE.supabase
+                .from('cierres_caja')
+                .update(cierreActual)
+                .eq('id', cierreActual.id);
+            
+            if (error) throw error;
+        } else {
+            cierreActual.offline_id = cierreActual.offline_id || 'cierre_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            cierreActual.sync_status = 'pending';
+            await indexedDBOperation('cierres_offline', 'put', cierreActual);
+            
+            await savePendingOperation({
+                type: 'cierre_caja',
+                data: cierreActual,
+                priority: 10
+            });
+        }
+        
+        alert(`✅ Caja cerrada correctamente\nDiferencia: $${diferencia.toFixed(2)}`);
+        
+        APP_STATE.currentLocal = null;
+        APP_STATE.currentCaja = null;
+        APP_STATE.currentTurno = null;
+        
+        localStorage.removeItem('currentLocal');
+        localStorage.removeItem('currentCaja');
+        localStorage.removeItem('currentTurno');
+        
+        showAppScreen();
+        
+    } catch (error) {
+        console.error('Error cerrando caja:', error);
+        alert(`❌ Error: ${error.message || 'Error desconocido'}`);
+    }
+}
+
+// ============================================
+// PROVEEDORES
+// ============================================
+
+async function loadProveedores() {
+    const container = document.getElementById('proveedoresList');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Cargando proveedores...</div>';
+    
+    try {
+        let proveedores = await indexedDBOperation('proveedores_cache', 'getAll') || [];
+        
+        if ((!proveedores || proveedores.length === 0) && APP_STATE.supabase && APP_STATE.isOnline) {
+            await syncProveedoresCache();
+            proveedores = await indexedDBOperation('proveedores_cache', 'getAll') || [];
+        }
+        
+        if (proveedores.length === 0) {
+            container.innerHTML = '<div class="no-data">No hay proveedores cargados</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        proveedores.forEach(proveedor => {
+            const card = document.createElement('div');
+            card.className = 'proveedor-card';
+            card.innerHTML = `
+                <div class="proveedor-header">
+                    <h4>${proveedor.nombre}</h4>
+                    <span class="proveedor-cuit">${proveedor.cuit || 'Sin CUIT'}</span>
+                </div>
+                <p>Contacto: ${proveedor.contacto || 'Sin contacto'}</p>
+                <p>Tel: ${proveedor.telefono || 'Sin teléfono'}</p>
+                <p>Email: ${proveedor.email || 'Sin email'}</p>
+                <div class="proveedor-actions">
+                    <button class="btn btn-sm btn-primary" onclick="contactarProveedor('${proveedor.telefono}', '${proveedor.nombre}')">📞 Contactar</button>
+                    <button class="btn btn-sm btn-secondary" onclick="verProveedor('${proveedor.id}')">Ver</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando proveedores:', error);
+        container.innerHTML = '<div class="error">Error cargando proveedores</div>';
+    }
+}
+
+async function syncProveedoresCache() {
+    if (!APP_STATE.supabase) return;
+    
+    try {
+        const { data: proveedores, error } = await APP_STATE.supabase
+            .from('proveedores')
+            .select('*')
+            .eq('activo', true)
+            .order('nombre')
+            .limit(100);
+        
+        if (error) throw error;
+        
+        for (const proveedor of proveedores) {
+            await indexedDBOperation('proveedores_cache', 'put', proveedor);
+        }
+        
+        console.log(`✅ Cache de proveedores actualizado: ${proveedores.length} proveedores`);
+    } catch (error) {
+        console.error('❌ Error actualizando cache de proveedores:', error);
+    }
+}
+
+function contactarProveedor(telefono, nombre) {
+    if (!telefono || telefono === 'Sin teléfono') {
+        alert('No hay teléfono registrado');
+        return;
+    }
+    
+    const mensaje = `Hola ${nombre}, necesito hacer un pedido`;
+    const url = `https://wa.me/${telefono.replace(/\D/g, '')}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+}
+
+// ============================================
+// REPORTES
+// ============================================
+
+async function loadReportes() {
+    const container = document.getElementById('reportesContent');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div class="reportes-grid">
+            <div class="reporte-card">
+                <h3>📊 Ventas Hoy</h3>
+                <div class="reporte-data" id="reporteVentasHoy">Cargando...</div>
+            </div>
+            <div class="reporte-card">
+                <h3>📦 Stock Bajo</h3>
+                <div class="reporte-data" id="reporteStockBajo">Cargando...</div>
+            </div>
+            <div class="reporte-card">
+                <h3>👥 Clientes con Deuda</h3>
+                <div class="reporte-data" id="reporteClientesDeuda">Cargando...</div>
+            </div>
+            <div class="reporte-card">
+                <h3>💰 Cierre de Caja</h3>
+                <div class="reporte-data" id="reporteCierreCaja">Cargando...</div>
+            </div>
+        </div>
+    `;
+    
+    await cargarDatosReportes();
+}
+
+async function cargarDatosReportes() {
+    try {
+        // Ventas Hoy
+        const hoy = new Date().toISOString().split('T')[0];
+        let ventasHoy = 0;
+        let totalVentasHoy = 0;
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('ventas')
+                .select('total')
+                .eq('DATE(created_at)', hoy);
+            
+            if (!error && data) {
+                ventasHoy = data.length;
+                totalVentasHoy = data.reduce((sum, v) => sum + v.total, 0);
+            }
+        }
+        
+        document.getElementById('reporteVentasHoy').innerHTML = `
+            <p>Ventas: ${ventasHoy}</p>
+            <p>Total: $${totalVentasHoy.toFixed(2)}</p>
+        `;
+        
+        // Stock Bajo
+        const productos = await indexedDBOperation('productos_cache', 'getAll') || [];
+        const stockBajo = productos.filter(p => p.stock <= p.stock_minimo);
+        
+        document.getElementById('reporteStockBajo').innerHTML = `
+            <p>Productos: ${stockBajo.length}</p>
+            ${stockBajo.slice(0, 3).map(p => `<p>${p.nombre}: ${p.stock}</p>`).join('')}
+            ${stockBajo.length > 3 ? `<p>... y ${stockBajo.length - 3} más</p>` : ''}
+        `;
+        
+        // Clientes con Deuda
+        const clientes = await indexedDBOperation('clientes_cache', 'getAll') || [];
+        const clientesDeuda = clientes.filter(c => c.saldo > 0);
+        
+        document.getElementById('reporteClientesDeuda').innerHTML = `
+            <p>Clientes: ${clientesDeuda.length}</p>
+            <p>Deuda total: $${clientesDeuda.reduce((sum, c) => sum + c.saldo, 0).toFixed(2)}</p>
+        `;
+        
+        // Cierre de Caja
+        document.getElementById('reporteCierreCaja').innerHTML = `
+            <p>Turno: ${APP_STATE.currentTurno || 'No iniciado'}</p>
+            <p>Caja: ${APP_STATE.currentCaja?.numero || 'No seleccionada'}</p>
+            <p>Local: ${APP_STATE.currentLocal?.nombre || 'No seleccionado'}</p>
+        `;
+        
+    } catch (error) {
+        console.error('Error cargando reportes:', error);
+    }
+}
+
+// ============================================
+// SCANNER Y BÚSQUEDA
+// ============================================
+
+async function handleProductSearch(e) {
+    if (e.key === 'Enter') {
+        const searchTerm = e.target.value.trim();
+        if (!searchTerm) return;
+        
+        let producto = null;
+        
+        try {
+            const productos = await indexedDBOperation('productos_cache', 'getAll') || [];
+            producto = productos.find(p => 
+                (p.codigo_barras && p.codigo_barras === searchTerm) || 
+                (p.codigo_interno && p.codigo_interno === searchTerm) ||
+                (p.nombre && p.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+        } catch (error) {
+            console.warn('Error buscando producto en cache:', error);
+        }
+        
+        if (!producto && APP_STATE.supabase && APP_STATE.isOnline) {
+            try {
+                const { data, error } = await APP_STATE.supabase
+                    .from('productos')
+                    .select('*')
+                    .or(`codigo_barras.eq.${searchTerm},codigo_interno.eq.${searchTerm},nombre.ilike.%${searchTerm}%`)
+                    .eq('activo', true)
+                    .limit(1)
+                    .single();
+                
+                if (!error && data) {
+                    producto = data;
+                    await indexedDBOperation('productos_cache', 'put', producto);
+                }
+            } catch (error) {
+                console.warn('Error buscando producto en Supabase:', error);
+            }
+        }
+        
+        if (producto) {
+            agregarAlCarrito(producto.id);
+            e.target.value = '';
+            e.target.focus();
+        } else {
+            alert('Producto no encontrado');
+        }
+    }
+}
 
 let scannerStream = null;
 
@@ -1815,7 +2450,11 @@ async function toggleScanner() {
     }
     
     try {
-        // Solicitar acceso a la cámara
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Tu navegador no soporta el acceso a la cámara');
+            return;
+        }
+        
         scannerStream = await navigator.mediaDevices.getUserMedia({ 
             video: { facingMode: 'environment' } 
         });
@@ -1824,9 +2463,7 @@ async function toggleScanner() {
         scannerContainer.style.display = 'block';
         APP_STATE.scannerActive = true;
         
-        // En una implementación real, aquí usarías una librería como Quagga.js
-        // Por ahora, solo mostramos la cámara
-        console.log('📷 Cámara activada para escaneo');
+        simulateBarcodeDetection();
         
     } catch (error) {
         console.error('Error accediendo a la cámara:', error);
@@ -1846,390 +2483,129 @@ function stopScanner() {
     APP_STATE.scannerActive = false;
 }
 
+function simulateBarcodeDetection() {
+    console.log('Simulando detección de código de barras...');
+    
+    setTimeout(() => {
+        if (APP_STATE.scannerActive) {
+            const fakeBarcode = '779123456789' + Math.floor(Math.random() * 10);
+            const productSearch = document.getElementById('productSearch');
+            if (productSearch) {
+                productSearch.value = fakeBarcode;
+                const event = new KeyboardEvent('keyup', { key: 'Enter' });
+                productSearch.dispatchEvent(event);
+            }
+            stopScanner();
+        }
+    }, 2000);
+}
+
 function activateKeyboardMode() {
     const productSearch = document.getElementById('productSearch');
     if (productSearch) {
         productSearch.focus();
         productSearch.value = '';
-        productSearch.select();
     }
 }
 
 // ============================================
-// UTILIDADES
+// CONFIGURACIONES Y UTILIDADES
 // ============================================
 
-function updateSyncStatus() {
-    const statusBtn = document.getElementById('syncStatus');
-    if (!statusBtn) return;
-    
-    if (!APP_STATE.isOnline) {
-        statusBtn.textContent = '🔴 Offline';
-        statusBtn.className = 'btn-status offline';
-        statusBtn.title = 'Modo offline activado';
-    } else if (APP_STATE.isSyncing) {
-        statusBtn.textContent = '🟡 Sincronizando...';
-        statusBtn.className = 'btn-status syncing';
-        statusBtn.title = 'Sincronizando datos...';
-    } else {
-        statusBtn.textContent = '🟢 Online';
-        statusBtn.className = 'btn-status online';
-        statusBtn.title = 'Conectado a Supabase';
-    }
-}
-
-// ============================================
-// FUNCIONES DE INICIALIZACIÓN DE DATOS
-// ============================================
-
-async function loadInitialData() {
-    // Cargar productos
-    await loadProductos();
-    
-    // Cargar locales y cajas si estamos en Supabase
-    if (APP_STATE.supabase && APP_STATE.isOnline) {
-        await loadLocalesYCajas();
-    }
-}
-
-async function loadClientes() {
-    const container = document.getElementById('clientesList');
-    if (!container) return;
-    
-    container.innerHTML = '<div style="text-align: center; padding: 40px; color: #9ca3af;">Cargando clientes...</div>';
-    
-    let clientes = [];
-    
-    try {
-        // Intentar cargar desde caché
-        clientes = await indexedDBOperation('clientes_cache', 'getAll') || [];
-        
-        // Si no hay en caché y hay conexión, cargar desde Supabase
-        if ((!clientes || clientes.length === 0) && APP_STATE.supabase && APP_STATE.isOnline) {
-            const { data, error } = await APP_STATE.supabase
-                .from('clientes')
-                .select('*')
-                .eq('activo', true)
-                .order('nombre');
-            
-            if (!error && data) {
-                clientes = data;
-                
-                // Guardar en caché
-                for (const cliente of clientes) {
-                    await indexedDBOperation('clientes_cache', 'put', cliente);
-                }
-            }
-        }
-        
-        // Si aún no hay clientes, mostrar algunos de ejemplo
-        if (!clientes || clientes.length === 0) {
-            clientes = [
-                {
-                    id: 'cli-1-' + Date.now(),
-                    nombre: 'Consumidor Final',
-                    apellido: '',
-                    tipo_documento: 'DNI',
-                    numero_documento: '00000000',
-                    telefono: '',
-                    email: '',
-                    tipo_cliente: 'consumidor_final',
-                    saldo: 0,
-                    categoria_iva: 'consumidor_final'
-                },
-                {
-                    id: 'cli-2-' + Date.now(),
-                    nombre: 'Juan',
-                    apellido: 'Pérez',
-                    tipo_documento: 'DNI',
-                    numero_documento: '30123456',
-                    telefono: '011-1234-5678',
-                    email: 'juan@email.com',
-                    tipo_cliente: 'contado',
-                    saldo: 0,
-                    categoria_iva: 'monotributista'
-                },
-                {
-                    id: 'cli-3-' + Date.now(),
-                    nombre: 'María',
-                    apellido: 'Gómez',
-                    tipo_documento: 'DNI',
-                    numero_documento: '28987654',
-                    telefono: '011-8765-4321',
-                    email: 'maria@email.com',
-                    tipo_cliente: 'cuenta_corriente',
-                    saldo: 1500.50,
-                    limite_credito: 10000,
-                    categoria_iva: 'responsable_inscripto'
-                }
-            ];
-            
-            // Guardar en caché
-            for (const cliente of clientes) {
-                await indexedDBOperation('clientes_cache', 'put', cliente);
-            }
-        }
-        
-        // Mostrar clientes
-        if (clientes.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #9ca3af;">No hay clientes disponibles</div>';
-            return;
-        }
-        
-        let html = '';
-        clientes.forEach(cliente => {
-            const saldoClass = cliente.saldo > 0 ? 'negativo' : 'positivo';
-            html += `
-                <div class="cliente-row">
-                    <span>${cliente.nombre} ${cliente.apellido || ''}</span>
-                    <span>${cliente.numero_documento || 'Sin DNI'}</span>
-                    <span>${cliente.telefono || 'Sin teléfono'}</span>
-                    <span class="cliente-saldo ${saldoClass}">$${(cliente.saldo || 0).toFixed(2)}</span>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = html;
-        
-    } catch (error) {
-        console.error('Error cargando clientes:', error);
-        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #ef4444;">Error cargando clientes</div>';
-    }
-}
-
-async function loadProveedores() {
-    // Similar a loadClientes pero para proveedores
-    console.log('Cargando proveedores...');
-}
-
-async function loadCajaResumen() {
-    const saldoInicialElem = document.getElementById('saldoInicialResumen');
-    const ventasEfectivoElem = document.getElementById('ventasEfectivo');
-    const ventasTarjetaElem = document.getElementById('ventasTarjeta');
-    const totalVentasElem = document.getElementById('totalVentas');
-    const saldoFinalElem = document.getElementById('saldoFinal');
-    
-    if (!APP_STATE.currentLocal || !APP_STATE.currentCaja) {
-        alert('Primero configura el local y la caja');
-        return;
-    }
-    
-    // Valores de ejemplo - en una implementación real buscarías estos datos
-    const saldoInicial = 10000;
-    const ventasEfectivo = 12500;
-    const ventasTarjeta = 8500;
-    const totalVentas = ventasEfectivo + ventasTarjeta;
-    const saldoFinal = saldoInicial + ventasEfectivo; // Solo el efectivo suma a la caja
-    
-    if (saldoInicialElem) saldoInicialElem.textContent = `$${saldoInicial.toFixed(2)}`;
-    if (ventasEfectivoElem) ventasEfectivoElem.textContent = `$${ventasEfectivo.toFixed(2)}`;
-    if (ventasTarjetaElem) ventasTarjetaElem.textContent = `$${ventasTarjeta.toFixed(2)}`;
-    if (totalVentasElem) totalVentasElem.textContent = `$${totalVentas.toFixed(2)}`;
-    if (saldoFinalElem) saldoFinalElem.textContent = `$${saldoFinal.toFixed(2)}`;
-}
-
-async function cerrarCajaFunc() {
-    if (!APP_STATE.currentLocal || !APP_STATE.currentCaja) {
-        alert('Primero configura el local y la caja');
-        return;
-    }
-    
-    const confirmacion = confirm('¿Estás seguro de cerrar la caja? Esta acción no se puede deshacer.');
-    if (!confirmacion) return;
-    
-    // Aquí iría la lógica real de cierre de caja
-    // Por ahora es solo un ejemplo
-    
+async function loadConfiguraciones() {
     try {
         if (APP_STATE.supabase && APP_STATE.isOnline) {
-            const { error } = await APP_STATE.supabase
-                .from('cierres_caja')
-                .update({ estado: 'cerrado' })
-                .eq('local_id', APP_STATE.currentLocal.id)
-                .eq('caja_id', APP_STATE.currentCaja.id)
-                .eq('estado', 'abierto');
+            const { data, error } = await APP_STATE.supabase
+                .from('configuraciones')
+                .select('*');
             
-            if (error) throw error;
-            
-            alert('✅ Caja cerrada correctamente');
-            loadCajaResumen(); // Recargar resumen
-        } else {
-            await savePendingOperation({
-                type: 'cierre_caja',
-                data: {
-                    local_id: APP_STATE.currentLocal.id,
-                    caja_id: APP_STATE.currentCaja.id,
-                    estado: 'cerrado',
-                    fecha: new Date().toISOString().split('T')[0]
-                }
-            });
-            
-            alert('✅ Solicitud de cierre guardada localmente. Se sincronizará cuando haya conexión.');
+            if (!error && data) {
+                data.forEach(config => {
+                    localStorage.setItem(`config_${config.clave}`, JSON.stringify(config.valor));
+                });
+            }
         }
     } catch (error) {
-        console.error('Error cerrando caja:', error);
-        alert(`❌ Error: ${error.message || 'Error desconocido'}`);
+        console.warn('Error cargando configuraciones:', error);
     }
 }
 
-function showNuevoProductoModal() {
+function handleModalConfirm() {
     const modal = document.getElementById('genericModal');
-    const modalBody = document.getElementById('modalBody');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalConfirm = document.getElementById('modalConfirm');
-    const modalCancel = document.getElementById('modalCancel');
-    
-    if (!modal || !modalBody || !modalTitle) return;
-    
-    modalTitle.textContent = '➕ Nuevo Producto';
-    modalBody.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 15px;">
-            <div class="form-group">
-                <label>Nombre del producto:</label>
-                <input type="text" id="nuevoProductoNombre" placeholder="Ej: Coca Cola 2.25L" style="width: 100%; padding: 10px;">
-            </div>
-            <div class="form-group">
-                <label>Código de barras:</label>
-                <input type="text" id="nuevoProductoCodigo" placeholder="7791234567890 (opcional)" style="width: 100%; padding: 10px;">
-            </div>
-            <div class="form-group">
-                <label>Precio de costo:</label>
-                <input type="number" id="nuevoProductoCosto" placeholder="0.00" step="0.01" style="width: 100%; padding: 10px;">
-            </div>
-            <div class="form-group">
-                <label>Porcentaje de ganancia:</label>
-                <input type="number" id="nuevoProductoGanancia" placeholder="30" value="30" style="width: 100%; padding: 10px;">
-            </div>
-            <div class="form-group">
-                <label>Stock inicial:</label>
-                <input type="number" id="nuevoProductoStock" placeholder="0" value="0" style="width: 100%; padding: 10px;">
-            </div>
-            <div class="form-group">
-                <label>Categoría:</label>
-                <select id="nuevoProductoCategoria" style="width: 100%; padding: 10px;">
-                    <option value="General">General</option>
-                    <option value="Bebidas">Bebidas</option>
-                    <option value="Almacén">Almacén</option>
-                    <option value="Lácteos">Lácteos</option>
-                    <option value="Panadería">Panadería</option>
-                    <option value="Otros">Otros</option>
-                </select>
-            </div>
-        </div>
-    `;
-    
-    if (modalConfirm) {
-        modalConfirm.textContent = 'Guardar';
-        modalConfirm.onclick = async () => {
-            const nombre = document.getElementById('nuevoProductoNombre')?.value;
-            const codigo = document.getElementById('nuevoProductoCodigo')?.value;
-            const costo = parseFloat(document.getElementById('nuevoProductoCosto')?.value) || 0;
-            const ganancia = parseFloat(document.getElementById('nuevoProductoGanancia')?.value) || 30;
-            const stock = parseInt(document.getElementById('nuevoProductoStock')?.value) || 0;
-            const categoria = document.getElementById('nuevoProductoCategoria')?.value;
-            
-            if (!nombre) {
-                alert('El nombre del producto es obligatorio');
-                return;
-            }
-            
-            const precioVenta = costo * (1 + ganancia / 100);
-            
-            const nuevoProducto = {
-                id: 'prod-nuevo-' + Date.now(),
-                nombre: nombre,
-                codigo_barras: codigo || null,
-                descripcion: '',
-                precio_costo: costo,
-                porcentaje_ganancia: ganancia,
-                precio_venta: precioVenta,
-                stock: stock,
-                stock_minimo: 5,
-                categoria: categoria,
-                activo: true,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
-            
-            try {
-                // Guardar en caché local
-                await indexedDBOperation('productos_cache', 'put', nuevoProducto);
-                
-                // Si hay conexión, guardar en Supabase también
-                if (APP_STATE.supabase && APP_STATE.isOnline) {
-                    const { error } = await APP_STATE.supabase
-                        .from('productos')
-                        .insert([nuevoProducto]);
-                    
-                    if (error) throw error;
-                } else {
-                    // Guardar operación pendiente para sincronizar
-                    await savePendingOperation({
-                        type: 'producto',
-                        data: nuevoProducto
-                    });
-                }
-                
-                alert('✅ Producto creado correctamente');
-                modal.style.display = 'none';
-                
-                // Recargar lista de productos si estamos en esa página
-                if (APP_STATE.currentPage === 'productos') {
-                    await loadProductos();
-                }
-                
-            } catch (error) {
-                console.error('Error creando producto:', error);
-                alert(`❌ Error: ${error.message || 'Error desconocido'}`);
-            }
-        };
-    }
-    
-    if (modalCancel) {
-        modalCancel.textContent = 'Cancelar';
-        modalCancel.onclick = () => {
-            modal.style.display = 'none';
-        };
-    }
-    
-    modal.style.display = 'flex';
+    if (modal) modal.style.display = 'none';
 }
 
-function showNuevoClienteModal() {
-    alert('Funcionalidad de nuevo cliente en desarrollo');
-    // Implementación similar a showNuevoProductoModal
+function handleModalCancel() {
+    const modal = document.getElementById('genericModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function generarProductosEjemplo() {
+    return [
+        {
+            id: 'prod-1-' + Date.now(),
+            codigo_barras: '7791234567890',
+            codigo_interno: 'HERR-001',
+            nombre: 'Martillo de Acero 500g',
+            descripcion: 'Martillo con mango de fibra de vidrio',
+            marca: 'Truper',
+            categoria: 'Herramientas Manuales',
+            subcategoria: 'Martillos',
+            unidad_medida: 'unidad',
+            precio_costo: 1250,
+            porcentaje_ganancia: 40,
+            precio_venta: 1750,
+            stock: 15,
+            stock_minimo: 5,
+            stock_maximo: 30,
+            ubicacion: 'A-01',
+            activo: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        },
+        {
+            id: 'prod-2-' + Date.now(),
+            codigo_barras: '7791234567891',
+            codigo_interno: 'HERR-002',
+            nombre: 'Destornillador Plano 6x100',
+            descripcion: 'Destornillador plano profesional',
+            marca: 'Bahco',
+            categoria: 'Herramientas Manuales',
+            subcategoria: 'Destornilladores',
+            unidad_medida: 'unidad',
+            precio_costo: 850,
+            porcentaje_ganancia: 45,
+            precio_venta: 1232.5,
+            stock: 8,
+            stock_minimo: 10,
+            stock_maximo: 50,
+            ubicacion: 'A-02',
+            activo: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        }
+    ];
 }
 
 // ============================================
-// FUNCIONES GLOBALES (para acceso desde HTML)
+// FUNCIONES GLOBALES
 // ============================================
 
-// Hacer funciones disponibles globalmente
 window.agregarAlCarrito = agregarAlCarrito;
 window.updateCantidad = updateCantidad;
 window.removeFromCart = removeFromCart;
 window.changePrice = changePrice;
-window.simularPagoQR = simularPagoQR;
+window.handleProductSearch = handleProductSearch;
 
 // ============================================
-// INICIALIZACIÓN FINAL
+// REAL-TIME SUBSCRIPTIONS
 // ============================================
-
-// Guardar estado antes de cerrar
-window.addEventListener('beforeunload', saveAppState);
-
-// Iniciar Realtime subscriptions si hay Supabase
-if (APP_STATE.supabase) {
-    setTimeout(() => {
-        setupRealtimeSubscriptions();
-    }, 1000);
-}
 
 async function setupRealtimeSubscriptions() {
     if (!APP_STATE.supabase) return;
     
-    // Suscribirse a cambios en productos
     try {
+        // Productos
         const productosChannel = APP_STATE.supabase
             .channel('productos-changes')
             .on('postgres_changes', 
@@ -2237,25 +2613,49 @@ async function setupRealtimeSubscriptions() {
                 async (payload) => {
                     console.log('Cambio en productos:', payload);
                     
-                    // Actualizar caché local
                     if (payload.new) {
                         await indexedDBOperation('productos_cache', 'put', payload.new);
                     } else if (payload.old) {
                         await indexedDBOperation('productos_cache', 'delete', payload.old.id);
                     }
                     
-                    // Refrescar lista si estamos en la página de productos
-                    if (APP_STATE.currentPage === 'productos') {
+                    if (APP_STATE.currentPage === 'productos' || APP_STATE.currentPage === 'pos') {
                         await loadProductos();
                     }
                 }
             )
             .subscribe();
         
-        console.log('✅ Suscripción a cambios en productos activada');
+        // Ventas
+        const ventasChannel = APP_STATE.supabase
+            .channel('ventas-changes')
+            .on('postgres_changes', 
+                { event: 'INSERT', schema: 'public', table: 'ventas' }, 
+                (payload) => {
+                    console.log('Nueva venta:', payload);
+                    if (payload.new.local_id === APP_STATE.currentLocal?.id) {
+                        APP_STATE.ventasHoy++;
+                    }
+                }
+            )
+            .subscribe();
+        
+        console.log('✅ Suscripciones realtime activadas');
+        
     } catch (error) {
-        console.error('Error configurando suscripción:', error);
+        console.error('Error configurando suscripciones:', error);
     }
 }
 
-console.log('✅ Sistema POS cargado completamente');
+// ============================================
+// EVENTOS FINALES
+// ============================================
+
+window.addEventListener('beforeunload', saveAppState);
+window.addEventListener('load', () => {
+    if (APP_STATE.carrito && APP_STATE.carrito.length > 0) {
+        updateCartDisplay();
+    }
+});
+
+console.log('✅ app.js cargado completamente');
