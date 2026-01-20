@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Usuarios - Sistema POS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            color: #718096;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #e2e8f0;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #cbd5e0;
+        }
+
+        .btn-success {
+            background: #38a169;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #2f855a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(56, 161, 105, 0.4);
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c53030;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .info {
+            background: #bee3f8;
+            color: #2a4365;
+            border: 1px solid #90cdf4;
+        }
+
+        .warning {
+            background: #feebc8;
+            color: #744210;
+            border: 1px solid #fbd38d;
+        }
+
+        .user-card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info h4 {
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+
+        .user-details {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-icon {
+            padding: 8px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1.2rem;
+        }
+
+        .btn-icon:hover {
+            background: #e2e8f0;
+        }
+
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .role-card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .role-card h4 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .role-permissions {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .role-permissions li {
+            padding: 5px 0;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .password-strength {
+            height: 5px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s, background 0.3s;
+        }
+
+        .strength-weak { width: 25%; background: #e53e3e; }
+        .strength-fair { width: 50%; background: #d69e2e; }
+        .strength-good { width: 75%; background: #38a169; }
+        .strength-strong { width: 100%; background: #2f855a; }
+
+        .navigation {
+            margin-top: 30px;
+            text-align: center;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .navigation {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👥 Registro de Usuarios</h1>
+            <p class="subtitle">Sistema POS - Gestión de Usuarios y Permisos</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="nuevo-usuario">➕ Nuevo Usuario</button>
+            <button class="tab-btn" data-tab="lista-usuarios">📋 Lista de Usuarios</button>
+            <button class="tab-btn" data-tab="roles">👑 Roles y Permisos</button>
+            <button class="tab-btn" data-tab="configuracion">⚙️ Configuración</button>
+        </div>
+
+        <!-- Pestaña: Nuevo Usuario -->
+        <div id="nuevo-usuario" class="tab-content active">
+            <h2>Registrar Nuevo Usuario</h2>
+            <form id="registerForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombre">Nombre *</label>
+                        <input type="text" id="nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="apellido">Apellido *</label>
+                        <input type="text" id="apellido" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dni">DNI/CUIT *</label>
+                        <input type="text" id="dni" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="username">Nombre de Usuario</label>
+                        <input type="text" id="username">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">Contraseña *</label>
+                        <input type="password" id="password" required oninput="checkPasswordStrength()">
+                        <div class="password-strength">
+                            <div id="passwordStrengthBar" class="password-strength-bar"></div>
+                        </div>
+                        <small id="passwordHelp" style="color: #718096; font-size: 0.8rem;">
+                            Mínimo 8 caracteres con letras y números
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirmar Contraseña *</label>
+                        <input type="password" id="confirmPassword" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="rol">Rol/Perfil *</label>
+                        <select id="rol" required>
+                            <option value="">Seleccionar rol...</option>
+                            <option value="administrador">👑 Administrador</option>
+                            <option value="gerente">💼 Gerente</option>
+                            <option value="supervisor">👔 Supervisor</option>
+                            <option value="cajero">💰 Cajero/Vendedor</option>
+                            <option value="almacen">📦 Almacén/Depósito</option>
+                            <option value="contador">🧮 Contador</option>
+                            <option value="invitado">👤 Invitado/Limitado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="local">Local Asignado</label>
+                        <select id="local">
+                            <option value="">Todos los locales</option>
+                            <!-- Se llenará dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="direccion">Dirección</label>
+                    <input type="text" id="direccion">
+                </div>
+
+                <div class="form-group">
+                    <label for="notas">Notas/Observaciones</label>
+                    <textarea id="notas" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="activo" checked>
+                        <span>Usuario activo</span>
+                    </label>
+                </div>
+
+                <button type="submit" id="registerBtn" class="btn btn-primary">Registrar Usuario</button>
+                <div id="registerStatus" class="status"></div>
+            </form>
+        </div>
+
+        <!-- Pestaña: Lista de Usuarios -->
+        <div id="lista-usuarios" class="tab-content">
+            <h2>Usuarios Registrados</h2>
+            <div class="form-group">
+                <input type="text" id="searchUsers" placeholder="🔍 Buscar usuario...">
+            </div>
+            
+            <div id="usersList">
+                <!-- Se llenará dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Pestaña: Roles y Permisos -->
+        <div id="roles" class="tab-content">
+            <h2>Roles y Permisos del Sistema</h2>
+            
+            <div class="roles-grid">
+                <div class="role-card">
+                    <h4>👑 Administrador</h4>
+                    <p>Acceso completo a todos los módulos y configuraciones</p>
+                    <ul class="role-permissions">
+                        <li>✓ Configuración del sistema</li>
+                        <li>✓ Gestión de usuarios</li>
+                        <li>✓ Todos los reportes</li>
+                        <li>✓ Cierre de cajas</li>
+                        <li>✓ Modificación de precios</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>💼 Gerente</h4>
+                    <p>Gestión operativa y supervisión</p>
+                    <ul class="role-permissions">
+                        <li>✓ Ver todas las ventas</li>
+                        <li>✓ Reportes y estadísticas</li>
+                        <li>✓ Modificar productos</li>
+                        <li>✓ Gestión de clientes</li>
+                        <li>✗ Configuración del sistema</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>💰 Cajero/Vendedor</h4>
+                    <p>Operaciones diarias de venta</p>
+                    <ul class="role-permissions">
+                        <li>✓ Realizar ventas</li>
+                        <li>✓ Crear presupuestos</li>
+                        <li>✓ Ver clientes</li>
+                        <li>✓ Ver productos</li>
+                        <li>✗ Modificar precios</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <h4>📦 Almacén/Depósito</h4>
+                    <p>Gestión de inventario</p>
+                    <ul class="role-permissions">
+                        <li>✓ Gestión de productos</li>
+                        <li>✓ Control de stock</li>
+                        <li>✓ Ingreso de mercadería</li>
+                        <li>✓ Ajustes de inventario</li>
+                        <li>✗ Realizar ventas</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3>Personalizar Permisos</h3>
+                <div class="form-group">
+                    <select id="selectRoleForPermissions">
+                        <option value="">Seleccionar rol para editar...</option>
+                    </select>
+                </div>
+                
+                <div id="permissionsList" style="display: none;">
+                    <h4>Permisos disponibles:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 15px;">
+                        <!-- Permisos se agregarán dinámicamente -->
+                    </div>
+                    <button id="savePermissions" class="btn btn-success" style="margin-top: 20px;">Guardar Permisos</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña: Configuración -->
+        <div id="configuracion" class="tab-content">
+            <h2>Configuración del Sistema</h2>
+            
+            <div class="form-group">
+                <label for="sessionTimeout">Tiempo de sesión (minutos)</label>
+                <input type="number" id="sessionTimeout" value="60" min="5" max="480">
+            </div>
+
+            <div class="form-group">
+                <label for="passwordPolicy">Política de contraseñas</label>
+                <select id="passwordPolicy">
+                    <option value="low">Baja: Mínimo 6 caracteres</option>
+                    <option value="medium" selected>Media: 8 caracteres con números</option>
+                    <option value="high">Alta: 10 caracteres con números y símbolos</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="maxLoginAttempts">Intentos de login máximos</label>
+                <input type="number" id="maxLoginAttempts" value="3" min="1" max="10">
+            </div>
+
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="requireTwoFactor">
+                    <span>Requerir autenticación de dos factores para administradores</span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="notifyNewUsers">
+                    <span>Notificar por email cuando se crea un nuevo usuario</span>
+                </label>
+            </div>
+
+            <button id="saveConfig" class="btn btn-primary">Guardar Configuración</button>
+            <div id="configStatus" class="status"></div>
+        </div>
+
+        <div class="navigation">
+            <button id="backToSetup" class="btn btn-secondary">← Volver al Setup</button>
+            <button id="goToLogin" class="btn btn-primary">Ir al Login →</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuración
+        let supabaseClient = null;
+        let currentUser = null;
+        let locales = [];
+        let users = [];
+
+        // Elementos del DOM
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const registerForm = document.getElementById('registerForm');
+        const registerBtn = document.getElementById('registerBtn');
+        const registerStatus = document.getElementById('registerStatus');
+        const usersList = document.getElementById('usersList');
+        const searchUsers = document.getElementById('searchUsers');
+        const backToSetup = document.getElementById('backToSetup');
+        const goToLogin = document.getElementById('goToLogin');
+        const localSelect = document.getElementById('local');
+        const passwordInput = document.getElementById('password');
+        const passwordStrengthBar = document.getElementById('passwordStrengthBar');
+        const passwordHelp = document.getElementById('passwordHelp');
+
+        // Inicializar
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Cargar Supabase si no está disponible
+            await loadSupabase();
+            
+            // Obtener credenciales de localStorage
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            
+            if (!supabaseUrl || !supabaseKey) {
+                alert('Primero debes configurar Supabase en el setup');
+                window.location.href = 'setup.html';
+                return;
+            }
+            
+            // Inicializar cliente de Supabase
+            supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            
+            // Verificar que el usuario esté autenticado (admin)
+            await checkAdminAccess();
+            
+            // Cargar datos iniciales
+            await loadInitialData();
+            
+            // Configurar eventos
+            setupEventListeners();
+        });
+
+        // Función para cargar Supabase
+        async function loadSupabase() {
+            if (window.supabase) return;
+            
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // Verificar acceso de administrador
+        async function checkAdminAccess() {
+            try {
+                // Verificar sesión activa
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                
+                if (error || !session) {
+                    // Redirigir al login
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                currentUser = session.user;
+                
+                // Verificar si el usuario es administrador
+                const { data: usuarioData } = await supabaseClient
+                    .from('usuarios')
+                    .select('rol_id, roles(nombre)')
+                    .eq('auth_id', currentUser.id)
+                    .single();
+                
+                if (!usuarioData || usuarioData.roles?.nombre !== 'administrador') {
+                    alert('Acceso denegado. Solo administradores pueden acceder a esta sección.');
+                    window.location.href = 'index.html';
+                }
+                
+            } catch (error) {
+                console.error('Error verificando acceso:', error);
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Cargar datos iniciales
+        async function loadInitialData() {
+            try {
+                // Cargar locales
+                const { data: localesData } = await supabaseClient
+                    .from('locales')
+                    .select('*')
+                    .eq('activo', true);
+                
+                if (localesData) {
+                    locales = localesData;
+                    populateLocalSelect();
+                }
+                
+                // Cargar usuarios
+                await loadUsers();
+                
+                // Cargar roles
+                await loadRoles();
+                
+            } catch (error) {
+                console.error('Error cargando datos iniciales:', error);
+            }
+        }
+
+        // Poblar select de locales
+        function populateLocalSelect() {
+            localSelect.innerHTML = '<option value="">Todos los locales</option>';
+            locales.forEach(local => {
+                const option = document.createElement('option');
+                option.value = local.id;
+                option.textContent = local.nombre;
+                localSelect.appendChild(option);
+            });
+        }
+
+        // Configurar eventos
+        function setupEventListeners() {
+            // Tabs
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabId = btn.dataset.tab;
+                    switchTab(tabId);
+                });
+            });
+            
+            // Registro de usuario
+            registerForm.addEventListener('submit', handleRegister);
+            
+            // Buscar usuarios
+            searchUsers.addEventListener('input', filterUsers);
+            
+            // Navegación
+            backToSetup.addEventListener('click', () => {
+                window.location.href = 'setup.html';
+            });
+            
+            goToLogin.addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+            
+            // Guardar configuración
+            const saveConfigBtn = document.getElementById('saveConfig');
+            if (saveConfigBtn) {
+                saveConfigBtn.addEventListener('click', saveConfiguration);
+            }
+        }
+
+        // Cambiar pestaña
+        function switchTab(tabId) {
+            // Actualizar botones
+            tabBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabId);
+            });
+            
+            // Actualizar contenidos
+            tabContents.forEach(content => {
+                content.classList.toggle('active', content.id === tabId);
+            });
+            
+            // Cargar datos específicos de la pestaña
+            if (tabId === 'lista-usuarios') {
+                loadUsers();
+            }
+        }
+
+        // Verificar fortaleza de contraseña
+        function checkPasswordStrength() {
+            const password = passwordInput.value;
+            let strength = 0;
+            
+            // Longitud mínima
+            if (password.length >= 8) strength++;
+            
+            // Contiene números
+            if (/\d/.test(password)) strength++;
+            
+            // Contiene letras mayúsculas y minúsculas
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            
+            // Contiene caracteres especiales
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            // Actualizar barra de fortaleza
+            passwordStrengthBar.className = 'password-strength-bar';
+            
+            if (password.length === 0) {
+                passwordStrengthBar.style.width = '0%';
+                passwordHelp.textContent = 'Mínimo 8 caracteres con letras y números';
+            } else if (password.length < 8) {
+                passwordStrengthBar.classList.add('strength-weak');
+                passwordHelp.textContent = 'Muy débil - Mínimo 8 caracteres';
+            } else if (strength === 1) {
+                passwordStrengthBar.classList.add('strength-weak');
+                passwordHelp.textContent = 'Débil - Agrega números y letras';
+            } else if (strength === 2) {
+                passwordStrengthBar.classList.add('strength-fair');
+                passwordHelp.textContent = 'Aceptable - Podría ser más fuerte';
+            } else if (strength === 3) {
+                passwordStrengthBar.classList.add('strength-good');
+                passwordHelp.textContent = 'Buena - Contraseña segura';
+            } else {
+                passwordStrengthBar.classList.add('strength-strong');
+                passwordHelp.textContent = 'Excelente - Contraseña muy segura';
+            }
+            
+            // Verificar si las contraseñas coinciden
+            const confirmPassword = document.getElementById('confirmPassword');
+            if (confirmPassword.value && password !== confirmPassword.value) {
+                passwordHelp.textContent = '⚠️ Las contraseñas no coinciden';
+                passwordHelp.style.color = '#e53e3e';
+            } else if (confirmPassword.value) {
+                passwordHelp.textContent = '✓ Las contraseñas coinciden';
+                passwordHelp.style.color = '#38a169';
+            }
+        }
+
+        // Cargar usuarios
+        async function loadUsers() {
+            try {
+                const { data: usuariosData, error } = await supabaseClient
+                    .from('usuarios')
+                    .select(`
+                        *,
+                        roles(nombre),
+                        locales(nombre)
+                    `)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                users = usuariosData || [];
+                displayUsers(users);
+                
+            } catch (error) {
+                console.error('Error cargando usuarios:', error);
+                usersList.innerHTML = '<p class="error">Error cargando usuarios</p>';
+            }
+        }
+
+        // Mostrar usuarios
+        function displayUsers(usersArray) {
+            usersList.innerHTML = '';
+            
+            if (usersArray.length === 0) {
+                usersList.innerHTML = '<p class="info">No hay usuarios registrados</p>';
+                return;
+            }
+            
+            usersArray.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                
+                const roleName = user.roles?.nombre || 'Sin rol';
+                const localName = user.locales?.nombre || 'Todos los locales';
+                const statusClass = user.activo ? 'success' : 'error';
+                const statusText = user.activo ? 'Activo' : 'Inactivo';
+                
+                userCard.innerHTML = `
+                    <div class="user-info">
+                        <h4>${user.nombre} ${user.apellido || ''}</h4>
+                        <div class="user-details">
+                            <div>📧 ${user.email}</div>
+                            <div>👤 ${roleName} • ${localName}</div>
+                            <div>📅 Registro: ${new Date(user.created_at).toLocaleDateString()}</div>
+                            <div><span class="${statusClass}">${statusText}</span></div>
+                        </div>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn-icon" onclick="editUser('${user.id}')" title="Editar">✏️</button>
+                        <button class="btn-icon" onclick="toggleUserStatus('${user.id}', ${user.activo})" title="${user.activo ? 'Desactivar' : 'Activar'}">
+                            ${user.activo ? '⏸️' : '▶️'}
+                        </button>
+                        <button class="btn-icon" onclick="resetUserPassword('${user.id}')" title="Restablecer contraseña">🔑</button>
+                    </div>
+                `;
+                
+                usersList.appendChild(userCard);
+            });
+        }
+
+        // Filtrar usuarios
+        function filterUsers() {
+            const searchTerm = searchUsers.value.toLowerCase();
+            const filteredUsers = users.filter(user => 
+                user.nombre.toLowerCase().includes(searchTerm) ||
+                user.apellido?.toLowerCase().includes(searchTerm) ||
+                user.email.toLowerCase().includes(searchTerm) ||
+                user.dni?.toLowerCase().includes(searchTerm)
+            );
+            
+            displayUsers(filteredUsers);
+        }
+
+        // Cargar roles
+        async function loadRoles() {
+            try {
+                const { data: rolesData } = await supabaseClient
+                    .from('roles')
+                    .select('*');
+                
+                if (rolesData) {
+                    const roleSelect = document.getElementById('selectRoleForPermissions');
+                    if (roleSelect) {
+                        roleSelect.innerHTML = '<option value="">Seleccionar rol para editar...</option>';
+                        rolesData.forEach(role => {
+                            const option = document.createElement('option');
+                            option.value = role.id;
+                            option.textContent = role.nombre;
+                            roleSelect.appendChild(option);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando roles:', error);
+            }
+        }
+
+        // Manejar registro de usuario
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            // Validaciones
+            const nombre = document.getElementById('nombre').value;
+            const apellido = document.getElementById('apellido').value;
+            const email = document.getElementById('email').value;
+            const dni = document.getElementById('dni').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const rol = document.getElementById('rol').value;
+            const localId = document.getElementById('local').value;
+            
+            if (password !== confirmPassword) {
+                registerStatus.innerHTML = '<p class="error">Las contraseñas no coinciden</p>';
+                return;
+            }
+            
+            if (password.length < 8) {
+                registerStatus.innerHTML = '<p class="error">La contraseña debe tener al menos 8 caracteres</p>';
+                return;
+            }
+            
+            registerBtn.disabled = true;
+            registerBtn.textContent = '🔄 Registrando...';
+            registerStatus.innerHTML = '<p class="info">Registrando usuario...</p>';
+            
+            try {
+                // 1. Registrar usuario en Supabase Auth
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            nombre: nombre,
+                            apellido: apellido,
+                            dni: dni,
+                            rol: rol
+                        }
+                    }
+                });
+                
+                if (authError) {
+                    // Si el usuario ya existe en Auth pero no en nuestra tabla
+                    if (authError.message.includes('already registered')) {
+                        console.log('Usuario ya existe en Auth, continuando...');
+                    } else {
+                        throw authError;
+                    }
+                }
+                
+                // Obtener el auth_id (nuevo o existente)
+                let authId = authData?.user?.id;
+                
+                // Si no se creó un nuevo usuario, buscar el existente
+                if (!authId) {
+                    const { data: existingUser } = await supabaseClient.auth.admin.listUsers();
+                    const user = existingUser.users.find(u => u.email === email);
+                    authId = user?.id;
+                }
+                
+                // 2. Crear usuario en la tabla usuarios
+                const username = document.getElementById('username').value || email.split('@')[0];
+                const telefono = document.getElementById('telefono').value;
+                const direccion = document.getElementById('direccion').value;
+                const notas = document.getElementById('notas').value;
+                const activo = document.getElementById('activo').checked;
+                
+                // Mapear rol seleccionado a role_id
+                const roleMap = {
+                    'administrador': 'admin',
+                    'gerente': 'gerente',
+                    'supervisor': 'supervisor',
+                    'cajero': 'vendedor',
+                    'almacen': 'almacen',
+                    'contador': 'contador',
+                    'invitado': 'invitado'
+                };
+                
+                // Primero obtener el role_id correspondiente
+                let roleId = null;
+                const { data: roleData } = await supabaseClient
+                    .from('roles')
+                    .select('id')
+                    .eq('nombre', roleMap[rol] || 'vendedor')
+                    .single();
+                
+                if (roleData) {
+                    roleId = roleData.id;
+                }
+                
+                const userData = {
+                    auth_id: authId,
+                    nombre: nombre,
+                    apellido: apellido,
+                    email: email,
+                    telefono: telefono,
+                    dni: dni,
+                    username: username,
+                    password_hash: btoa(password), // Encriptación básica para offline
+                    rol_id: roleId,
+                    local_id: localId || null,
+                    direccion: direccion,
+                    activo: activo,
+                    config: {
+                        notas: notas,
+                        created_by: currentUser.id
+                    }
+                };
+                
+                const { data: usuarioData, error: usuarioError } = await supabaseClient
+                    .from('usuarios')
+                    .insert([userData])
+                    .select()
+                    .single();
+                
+                if (usuarioError) {
+                    // Si es error de duplicado, actualizar en lugar de insertar
+                    if (usuarioError.code === '23505') {
+                        const { data: updatedUser } = await supabaseClient
+                            .from('usuarios')
+                            .update(userData)
+                            .eq('email', email)
+                            .select()
+                            .single();
+                        
+                        if (updatedUser) {
+                            registerStatus.innerHTML = '<p class="success">✅ Usuario actualizado correctamente</p>';
+                        } else {
+                            throw new Error('Error actualizando usuario existente');
+                        }
+                    } else {
+                        throw usuarioError;
+                    }
+                } else {
+                    registerStatus.innerHTML = '<p class="success">✅ Usuario registrado correctamente</p>';
+                }
+                
+                // 3. Limpiar formulario
+                registerForm.reset();
+                passwordStrengthBar.style.width = '0%';
+                passwordHelp.textContent = 'Mínimo 8 caracteres con letras y números';
+                passwordHelp.style.color = '#718096';
+                
+                // 4. Actualizar lista de usuarios
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('Error registrando usuario:', error);
+                registerStatus.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            } finally {
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Registrar Usuario';
+            }
+        }
+
+        // Editar usuario
+        function editUser(userId) {
+            alert('Funcionalidad de edición en desarrollo. User ID: ' + userId);
+            // Aquí implementarías un modal para editar usuario
+        }
+
+        // Cambiar estado de usuario
+        async function toggleUserStatus(userId, isActive) {
+            if (confirm(`¿${isActive ? 'Desactivar' : 'Activar'} este usuario?`)) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('usuarios')
+                        .update({ activo: !isActive })
+                        .eq('id', userId);
+                    
+                    if (error) throw error;
+                    
+                    // Recargar usuarios
+                    await loadUsers();
+                    
+                } catch (error) {
+                    console.error('Error cambiando estado:', error);
+                    alert('Error al cambiar estado del usuario');
+                }
+            }
+        }
+
+        // Restablecer contraseña
+        async function resetUserPassword(userId) {
+            const newPassword = prompt('Ingresa la nueva contraseña (mínimo 8 caracteres):');
+            
+            if (!newPassword || newPassword.length < 8) {
+                alert('La contraseña debe tener al menos 8 caracteres');
+                return;
+            }
+            
+            try {
+                // Obtener email del usuario
+                const { data: user } = await supabaseClient
+                    .from('usuarios')
+                    .select('email')
+                    .eq('id', userId)
+                    .single();
+                
+                if (!user) throw new Error('Usuario no encontrado');
+                
+                // Enviar email de restablecimiento de contraseña
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(user.email, {
+                    redirectTo: window.location.origin + '/reset-password.html'
+                });
+                
+                if (error) throw error;
+                
+                alert('✅ Email de restablecimiento enviado al usuario');
+                
+            } catch (error) {
+                console.error('Error restableciendo contraseña:', error);
+                alert('Error al enviar email de restablecimiento');
+            }
+        }
+
+        // Guardar configuración
+        async function saveConfiguration() {
+            const configBtn = document.getElementById('saveConfig');
+            const configStatus = document.getElementById('configStatus');
+            
+            configBtn.disabled = true;
+            configBtn.textContent = '🔄 Guardando...';
+            configStatus.innerHTML = '<p class="info">Guardando configuración...</p>';
+            
+            try {
+                const configData = {
+                    sessionTimeout: document.getElementById('sessionTimeout').value,
+                    passwordPolicy: document.getElementById('passwordPolicy').value,
+                    maxLoginAttempts: document.getElementById('maxLoginAttempts').value,
+                    requireTwoFactor: document.getElementById('requireTwoFactor').checked,
+                    notifyNewUsers: document.getElementById('notifyNewUsers').checked
+                };
+                
+                // Guardar en localStorage
+                localStorage.setItem('systemConfig', JSON.stringify(configData));
+                
+                // Guardar en Supabase si está disponible
+                if (supabaseClient) {
+                    const { error } = await supabaseClient
+                        .from('configuraciones')
+                        .upsert([
+                            {
+                                clave: 'seguridad',
+                                valor: configData,
+                                descripcion: 'Configuración de seguridad del sistema',
+                                categoria: 'seguridad'
+                            }
+                        ]);
+                    
+                    if (error) throw error;
+                }
+                
+                configStatus.innerHTML = '<p class="success">✅ Configuración guardada correctamente</p>';
+                
+            } catch (error) {
+                console.error('Error guardando configuración:', error);
+                configStatus.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            } finally {
+                configBtn.disabled = false;
+                configBtn.textContent = 'Guardar Configuración';
+            }
+        }
+
+        // Hacer funciones disponibles globalmente
+        window.editUser = editUser;
+        window.toggleUserStatus = toggleUserStatus;
+        window.resetUserPassword = resetUserPassword;
+    </script>
+</body>
+</html>
