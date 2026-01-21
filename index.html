@@ -3,548 +3,552 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema POS Online 3.0</title>
+    <title>Sistema POS - Ferretería</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <style>
-        /* RESET Y ESTILOS GENERALES */
+        :root {
+            /* Variables modo claro */
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --success-color: #10b981;
+            
+            --bg-color: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            
+            --border-color: #e2e8f0;
+            --border-radius: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            
+            --header-height: 64px;
+            --sidebar-width: 240px;
+            --transition: all 0.2s ease;
+        }
+        
+        /* Variables modo oscuro */
+        .dark-mode {
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --success-color: #10b981;
+            
+            --bg-color: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            
+            --border-color: #475569;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+        }
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
-
+        
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
-            min-height: 100vh;
-            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+            height: 100vh;
+            overflow: hidden;
         }
-
-        /* CONTENEDORES PRINCIPALES */
-        .screen {
-            min-height: 100vh;
+        
+        /* Pantalla de Login */
+        #loginScreen {
             display: flex;
             justify-content: center;
             align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             padding: 20px;
         }
-
-        .container {
+        
+        .login-container {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
             width: 100%;
-            max-width: 1400px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* LOGIN SCREEN */
-        #loginScreen {
-            background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
-        }
-
-        .login-box {
             max-width: 400px;
-            width: 100%;
             padding: 40px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .logo {
             text-align: center;
+        }
+        
+        .login-container h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+        
+        .login-container p {
+            color: var(--text-secondary);
             margin-bottom: 30px;
         }
-
-        .logo h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            background: linear-gradient(90deg, #00b4db, #0083b0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .logo p {
-            color: #aaa;
-            font-size: 0.9rem;
-        }
-
-        /* FORMULARIOS */
+        
         .form-group {
             margin-bottom: 20px;
+            text-align: left;
         }
-
+        
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #ddd;
             font-weight: 500;
+            color: var(--text-primary);
         }
-
+        
         .form-control {
             width: 100%;
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 1rem;
-            transition: all 0.3s;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 16px;
         }
-
+        
         .form-control:focus {
             outline: none;
-            border-color: #00b4db;
-            box-shadow: 0 0 0 2px rgba(0, 180, 219, 0.2);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
-
-        select.form-control {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23fff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 15px center;
-            background-size: 16px;
-            padding-right: 40px;
-        }
-
-        /* BOTONES */
+        
         .btn {
             display: inline-block;
             padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s;
             text-align: center;
-            text-decoration: none;
+            transition: var(--transition);
         }
-
-        .btn-primary {
-            background: linear-gradient(90deg, #00b4db, #0083b0);
-            color: white;
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
         }
-
-        .btn-primary:hover {
-            background: linear-gradient(90deg, #0083b0, #005f7a);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 131, 176, 0.4);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(90deg, #7b4397, #dc2430);
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: linear-gradient(90deg, #6a3093, #c1353d);
-            transform: translateY(-2px);
-        }
-
-        .btn-success {
-            background: linear-gradient(90deg, #56ab2f, #a8e063);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: linear-gradient(90deg, #4d9929, #95d057);
-            transform: translateY(-2px);
-        }
-
-        .btn-danger {
-            background: linear-gradient(90deg, #ff416c, #ff4b2b);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: linear-gradient(90deg, #e53a61, #e64427);
-            transform: translateY(-2px);
-        }
-
-        .btn-warning {
-            background: linear-gradient(90deg, #f7971e, #ffd200);
-            color: #333;
-        }
-
-        .btn-warning:hover {
-            background: linear-gradient(90deg, #df881b, #e6be00);
-            transform: translateY(-2px);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #fff;
-        }
-
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .btn-sm {
-            padding: 8px 16px;
-            font-size: 0.85rem;
-        }
-
+        
         .btn-block {
-            display: block;
             width: 100%;
         }
-
-        /* HEADER DE LA APP */
+        
+        /* Pantalla de la App */
+        #appScreen {
+            display: none;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Configuración inicial */
+        #initialConfig {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 20px;
+            background-color: var(--bg-color);
+        }
+        
+        .config-container {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+        }
+        
+        .config-container h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* Main App Layout */
+        #mainApp {
+            display: none;
+            height: 100%;
+        }
+        
+        /* Header */
         .app-header {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px 30px;
+            height: var(--header-height);
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0 20px;
+            position: relative;
+            z-index: 100;
         }
-
-        .app-header h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .app-header .user-info {
+        
+        .header-left {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
-
-        .app-header .status-info {
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--primary-color);
+        }
+        
+        .session-info {
             display: flex;
             gap: 15px;
-            font-size: 0.9rem;
-            color: #ccc;
+            font-size: 14px;
+            color: var(--text-secondary);
         }
-
-        .status-info span {
-            padding: 4px 8px;
-            background: rgba(255, 255, 255, 0.05);
+        
+        .session-info span {
+            padding: 4px 10px;
+            background-color: var(--bg-tertiary);
             border-radius: 4px;
         }
-
-        .btn-status {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
+        
+        /* Botón modo oscuro/claro */
+        .theme-toggle {
+            background: none;
             border: none;
-            cursor: default;
-        }
-
-        .btn-status.online {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4CAF50;
-            border: 1px solid #4CAF50;
-        }
-
-        /* NAVEGACIÓN */
-        .nav-container {
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
             display: flex;
-            min-height: calc(100vh - 80px);
+            align-items: center;
+            justify-content: center;
         }
-
-        .nav-sidebar {
-            width: 220px;
-            background: rgba(0, 0, 0, 0.2);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        
+        .theme-toggle:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        /* Contenedor principal */
+        .app-container {
+            display: flex;
+            height: calc(100vh - var(--header-height));
+        }
+        
+        /* Sidebar/Navegación */
+        .app-sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
             padding: 20px 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
-
-        .nav-sidebar .nav-btn {
+        
+        .nav-section {
+            margin-bottom: 30px;
+        }
+        
+        .nav-section h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: 0 20px;
+            margin-bottom: 10px;
+        }
+        
+        .nav-btn {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 15px 25px;
-            color: #ccc;
-            text-decoration: none;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
+            padding: 14px 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 15px;
+            text-align: left;
+            width: 100%;
             cursor: pointer;
+            border-radius: 0;
+            transition: var(--transition);
         }
-
-        .nav-sidebar .nav-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-            border-left-color: #00b4db;
+        
+        .nav-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
         }
-
-        .nav-sidebar .nav-btn.active {
-            background: rgba(0, 180, 219, 0.1);
-            color: #00b4db;
-            border-left-color: #00b4db;
+        
+        .nav-btn.active {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: var(--primary-color);
+            border-right: 3px solid var(--primary-color);
         }
-
-        .nav-sidebar .nav-btn i {
-            font-size: 1.2rem;
-            width: 24px;
+        
+        .nav-btn i {
+            width: 20px;
             text-align: center;
         }
-
-        /* CONTENIDO PRINCIPAL */
-        .main-content {
+        
+        /* Contenido principal */
+        .app-content {
             flex: 1;
-            padding: 0;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: var(--bg-color);
         }
-
+        
         .page {
             display: none;
-            padding: 30px;
             height: 100%;
         }
-
+        
         .page.active {
             display: block;
         }
-
+        
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-
-        .page-header h3 {
-            font-size: 1.8rem;
+        
+        .page-title {
+            font-size: 24px;
             font-weight: 600;
         }
-
-        .page-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        /* PÁGINA POS (PUNTO DE VENTA) */
+        
+        /* Página POS - Enfoque en carrito */
         .pos-container {
             display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: 30px;
-            height: calc(100vh - 180px);
+            grid-template-columns: 1fr 1.5fr;
+            gap: 20px;
+            height: calc(100vh - var(--header-height) - 60px);
         }
-
-        .pos-products {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            padding: 20px;
-            overflow: hidden;
-        }
-
-        .pos-cart {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            padding: 20px;
+        
+        /* Sección izquierda: Búsqueda e info */
+        .pos-left {
             display: flex;
             flex-direction: column;
+            gap: 20px;
         }
-
+        
+        .search-section {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
         .search-box {
-            margin-bottom: 20px;
             display: flex;
             gap: 10px;
+            margin-bottom: 15px;
         }
-
+        
         .search-box input {
             flex: 1;
         }
-
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            max-height: 600px;
-            overflow-y: auto;
-            padding: 5px;
+        
+        .btn-icon {
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
         }
-
-        .product-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s;
-            cursor: pointer;
-            text-align: center;
+        
+        .cliente-section {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
         }
-
-        .product-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(0, 180, 219, 0.5);
-            transform: translateY(-3px);
+        
+        .cliente-section h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
         }
-
-        .product-card h4 {
-            font-size: 1rem;
-            margin-bottom: 8px;
-            color: #fff;
-            height: 40px;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+        
+        /* Sección derecha: Carrito */
+        .pos-right {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
-
-        .product-card .price {
-            color: #4CAF50;
-            font-weight: 600;
-            font-size: 1.2rem;
-            margin: 10px 0;
-        }
-
-        .product-card .stock {
-            font-size: 0.85rem;
-            color: #aaa;
-            margin-bottom: 10px;
-        }
-
-        .stock.bajo {
-            color: #ff9800;
-        }
-
-        .stock.critico {
-            color: #f44336;
-        }
-
-        /* CARRITO DE COMPRAS */
+        
         .cart-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--border-color);
         }
-
-        .cart-header h4 {
-            font-size: 1.3rem;
+        
+        .cart-header h2 {
+            font-size: 20px;
         }
-
+        
+        .cart-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+        }
+        
+        .btn-success:hover {
+            background-color: #0da271;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+        }
+        
+        .btn-warning:hover {
+            background-color: #e5940a;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        
         .cart-items {
             flex: 1;
             overflow-y: auto;
             margin-bottom: 20px;
+            border-radius: var(--border-radius);
+            background-color: var(--bg-color);
+            padding: 10px;
         }
-
+        
         .cart-item {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-
+        
         .cart-item:last-child {
             border-bottom: none;
         }
-
+        
         .cantidad-controls {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
-
+        
         .cantidad-controls button {
             width: 28px;
             height: 28px;
             border-radius: 50%;
+            background-color: var(--bg-tertiary);
             border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
+            cursor: pointer;
+            color: var(--text-primary);
         }
-
-        .cantidad-controls button:hover {
-            background: rgba(255, 255, 255, 0.2);
+        
+        .cart-item-actions {
+            display: flex;
+            gap: 5px;
         }
-
-        .cart-totals {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 10px;
+        
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 14px;
+        }
+        
+        .cart-summary {
+            background-color: var(--bg-tertiary);
+            border-radius: var(--border-radius);
             padding: 20px;
-            margin-top: auto;
         }
-
-        .total-row {
+        
+        .summary-row {
             display: flex;
             justify-content: space-between;
             margin-bottom: 10px;
-            padding: 5px 0;
         }
-
-        .total-row.total {
-            font-size: 1.3rem;
+        
+        .summary-row.total {
+            font-size: 20px;
             font-weight: 600;
-            color: #4CAF50;
-            padding-top: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
         }
-
-        .cart-actions {
+        
+        .cart-footer {
             display: flex;
             gap: 10px;
             margin-top: 20px;
         }
-
-        .cart-actions .btn {
+        
+        .cart-footer .btn {
             flex: 1;
         }
-
-        /* PÁGINAS DE LISTADOS */
-        .list-container {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            padding: 20px;
-            max-height: 700px;
-            overflow-y: auto;
-        }
-
-        .list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .list-search {
-            width: 300px;
-        }
-
-        .producto-card, .cliente-row, .proveedor-card, .presupuesto-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .producto-header, .cliente-header, .proveedor-header, .presupuesto-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .producto-actions, .cliente-actions, .proveedor-actions, .presupuesto-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-
-        /* MODALES */
+        
+        /* Modal de pago */
         .modal {
             display: none;
             position: fixed;
@@ -552,772 +556,659 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            padding: 20px;
         }
-
+        
         .modal-content {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            border-radius: 15px;
-            max-width: 800px;
-            width: 100%;
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
             max-height: 90vh;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
         }
-
+        
         .modal-header {
-            padding: 20px 30px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-
-        .modal-header h3 {
-            font-size: 1.5rem;
-        }
-
+        
         .modal-body {
-            padding: 30px;
-            max-height: calc(90vh - 130px);
-            overflow-y: auto;
+            padding: 20px;
         }
-
+        
         .modal-footer {
-            padding: 20px 30px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: flex-end;
-            gap: 15px;
+            gap: 10px;
         }
-
-        /* MÉTODOS DE PAGO */
+        
+        /* Métodos de pago */
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
         .payment-btn {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 15px;
-            min-width: 100px;
-            border-radius: 10px;
-            background: transparent;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
+            padding: 15px 10px;
+            background-color: var(--bg-tertiary);
+            border: 2px solid transparent;
+            border-radius: var(--border-radius);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: var(--transition);
         }
-
-        .payment-btn:hover, .payment-btn.active {
-            border-color: #00b4db;
-            background: rgba(0, 180, 219, 0.1);
-            transform: translateY(-2px);
+        
+        .payment-btn:hover {
+            background-color: var(--border-color);
         }
-
+        
+        .payment-btn.active {
+            border-color: var(--primary-color);
+            background-color: rgba(37, 99, 235, 0.1);
+        }
+        
         .payment-btn i {
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 24px;
+            margin-bottom: 8px;
         }
-
-        .payment-simple {
-            text-align: center;
-            padding: 20px;
-        }
-
-        .payment-icon {
-            margin-bottom: 20px;
-        }
-
-        /* SCANNER */
-        #scannerContainer {
+        
+        /* Scanner */
+        .scanner-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 1001;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
             display: none;
-            justify-content: center;
-            align-items: center;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
         }
-
-        #scannerVideo {
-            width: 80%;
-            max-width: 600px;
-            border-radius: 10px;
-            border: 3px solid #00b4db;
+        
+        .scanner-video {
+            width: 100%;
+            max-width: 500px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
         }
-
+        
         .scanner-overlay {
             position: absolute;
-            width: 80%;
-            max-width: 600px;
-            height: 300px;
-            border: 2px dashed #00b4db;
-            pointer-events: none;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.7);
         }
-
-        .scanner-controls {
-            margin-top: 30px;
-        }
-
-        /* CONFIGURACIÓN INICIAL */
-        #initialConfig {
-            padding: 40px;
-            text-align: center;
-        }
-
-        .config-box {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .config-box h3 {
-            margin-bottom: 30px;
-            font-size: 1.8rem;
-        }
-
-        /* ESTADOS Y ALERTAS */
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #aaa;
-            font-size: 1.1rem;
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #777;
-            font-style: italic;
-            font-size: 1.1rem;
-        }
-
-        .error {
-            color: #f44336;
-            padding: 10px;
-            background: rgba(244, 67, 54, 0.1);
-            border-radius: 8px;
-            margin: 10px 0;
-            border-left: 3px solid #f44336;
-        }
-
-        .info {
-            color: #2196F3;
-            padding: 10px;
-            background: rgba(33, 150, 243, 0.1);
-            border-radius: 8px;
-            margin: 10px 0;
-            border-left: 3px solid #2196F3;
-        }
-
-        .success {
-            color: #4CAF50;
-            padding: 10px;
-            background: rgba(76, 175, 80, 0.1);
-            border-radius: 8px;
-            margin: 10px 0;
-            border-left: 3px solid #4CAF50;
-        }
-
-        .warning {
-            color: #FF9800;
-            padding: 10px;
-            background: rgba(255, 152, 0, 0.1);
-            border-radius: 8px;
-            margin: 10px 0;
-            border-left: 3px solid #FF9800;
-        }
-
-        /* TABLAS */
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-
-        .table th, .table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .table th {
-            background: rgba(255, 255, 255, 0.05);
-            font-weight: 600;
-            color: #ddd;
-        }
-
-        .table tr:hover {
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        /* TARJETAS DE RESUMEN CAJA */
-        .caja-resumen {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            padding: 30px;
-        }
-
-        .caja-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
+        
+        /* Estilos para otras páginas */
+        .page-content {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
             padding: 20px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow);
+            min-height: 400px;
         }
-
-        .caja-card h5 {
-            font-size: 0.9rem;
-            color: #aaa;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .caja-valor {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .caja-valor.total {
-            color: #4CAF50;
-        }
-
-        .caja-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        /* REPORTES */
-        .reportes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .reporte-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .reporte-card h3 {
-            margin-bottom: 15px;
-            color: #00b4db;
-            font-size: 1.2rem;
-        }
-
-        .reporte-data p {
-            margin: 8px 0;
-            color: #ddd;
-        }
-
-        .reporte-actions {
-            margin-top: 30px;
+        
+        .data-list {
             display: flex;
-            gap: 15px;
-            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 600px;
+            overflow-y: auto;
         }
-
-        /* RESPONSIVE */
-        @media (max-width: 1200px) {
+        
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .data-row:last-child {
+            border-bottom: none;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
             .pos-container {
                 grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
                 height: auto;
+                max-height: calc(100vh - var(--header-height) - 60px);
             }
             
-            .nav-sidebar {
-                width: 70px;
+            .pos-left {
+                max-height: 300px;
+                overflow-y: auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 70px;
             }
             
-            .nav-sidebar .nav-btn span {
+            .app-sidebar {
+                padding: 10px 0;
+            }
+            
+            .nav-btn span {
                 display: none;
             }
             
-            .nav-sidebar .nav-btn {
+            .nav-btn {
                 justify-content: center;
-                padding: 15px 10px;
+                padding: 15px 0;
             }
             
-            .caja-grid {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
-        }
-
-        @media (max-width: 768px) {
-            .app-header {
+            .session-info {
                 flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-            
-            .user-info, .status-info {
-                flex-wrap: wrap;
-                justify-content: center;
+                gap: 5px;
             }
             
             .page-header {
                 flex-direction: column;
-                gap: 15px;
+                align-items: flex-start;
             }
             
-            .page-actions {
-                width: 100%;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            
-            .modal-body {
-                padding: 20px;
-            }
-            
-            .product-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            .payment-methods {
+                grid-template-columns: repeat(2, 1fr);
             }
             
             .cart-item {
-                flex-wrap: wrap;
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+            
+            .cart-item-actions {
+                justify-content: flex-end;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 20px;
+            }
+            
+            .app-header {
+                padding: 0 10px;
+            }
+            
+            .logo {
+                font-size: 18px;
+            }
+            
+            .session-info {
+                font-size: 12px;
+            }
+            
+            .pos-container {
                 gap: 10px;
             }
             
-            .list-search {
-                width: 100%;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .login-box {
-                padding: 30px 20px;
-            }
-            
-            .container {
-                border-radius: 10px;
-            }
-            
-            .btn {
-                padding: 10px 16px;
-            }
-            
-            .cart-actions {
+            .search-box {
                 flex-direction: column;
             }
             
-            .payment-btn {
-                min-width: 80px;
-                padding: 10px;
+            .btn-icon {
+                width: 100%;
             }
             
-            .payment-btn i {
-                font-size: 1.5rem;
+            .cart-footer {
+                flex-direction: column;
             }
         }
-
-        /* ANIMACIONES */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        
+        /* Estados y utilidades */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: var(--text-muted);
         }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-out;
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
         }
-
-        /* SCROLLBAR PERSONALIZADA */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        
+        .error {
+            color: var(--danger-color);
+            padding: 10px;
+            border-radius: var(--border-radius);
+            background-color: rgba(239, 68, 68, 0.1);
+            margin: 10px 0;
         }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
+        
+        .info {
+            color: var(--info-color);
+            padding: 10px;
+            border-radius: var(--border-radius);
+            background-color: rgba(59, 130, 246, 0.1);
+            margin: 10px 0;
         }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 180, 219, 0.5);
-            border-radius: 4px;
+        
+        .hidden {
+            display: none !important;
         }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 180, 219, 0.8);
+        
+        .online {
+            color: var(--success-color) !important;
+        }
+        
+        .offline {
+            color: var(--danger-color) !important;
         }
     </style>
 </head>
 <body>
-    <!-- PANTALLA DE LOGIN -->
-    <div id="loginScreen" class="screen">
-        <div class="login-box fade-in">
-            <div class="logo">
-                <h1><i class="fas fa-cash-register"></i> POS Online</h1>
-                <p>Versión 3.0 - Sistema de Punto de Venta en Tiempo Real</p>
-            </div>
-            
+    <!-- Pantalla de Login -->
+    <div id="loginScreen">
+        <div class="login-container">
+            <h1>Sistema POS Ferretería</h1>
+            <p>Ingresa tus credenciales para acceder</p>
             <div class="form-group">
-                <label for="loginEmail"><i class="fas fa-envelope"></i> Email</label>
-                <input type="email" id="loginEmail" class="form-control" placeholder="tu@email.com" value="admin@pos.com">
+                <label for="loginEmail">Email</label>
+                <input type="email" id="loginEmail" class="form-control" placeholder="usuario@ejemplo.com">
             </div>
-            
             <div class="form-group">
-                <label for="loginPassword"><i class="fas fa-lock"></i> Contraseña</label>
-                <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" value="admin123">
+                <label for="loginPassword">Contraseña</label>
+                <input type="password" id="loginPassword" class="form-control" placeholder="••••••••">
             </div>
-            
             <div id="loginStatus"></div>
-            
-            <button id="loginBtn" class="btn btn-primary btn-block">
-                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-            </button>
-            
-            <div style="margin-top: 30px; color: #777; font-size: 0.8rem; text-align: center;">
-                <p><i class="fas fa-info-circle"></i> Sistema POS Online v3.0</p>
-                <p>Requiere conexión a internet</p>
-            </div>
+            <button id="loginBtn" class="btn btn-block">Iniciar Sesión</button>
         </div>
     </div>
 
-    <!-- PANTALLA DE LA APLICACIÓN -->
-    <div id="appScreen" class="screen" style="display: none;">
-        <div class="container">
-            <!-- HEADER DE LA APP -->
-            <div class="app-header">
-                <h2><i class="fas fa-store"></i> Sistema POS Online</h2>
-                <div class="user-info">
-                    <div class="status-info">
+    <!-- Pantalla de la Aplicación -->
+    <div id="appScreen">
+        <!-- Configuración inicial de sesión -->
+        <div id="initialConfig">
+            <div class="config-container">
+                <h2>Configuración de Sesión</h2>
+                <div class="form-group">
+                    <label for="selectLocal">Local</label>
+                    <select id="selectLocal" class="form-control">
+                        <option value="">Seleccionar local...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="selectCaja">Caja</label>
+                    <select id="selectCaja" class="form-control">
+                        <option value="">Seleccionar caja...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="selectTurno">Turno</label>
+                    <select id="selectTurno" class="form-control">
+                        <option value="mañana">Mañana</option>
+                        <option value="tarde">Tarde</option>
+                        <option value="noche">Noche</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="saldoInicial">Saldo Inicial en Caja</label>
+                    <input type="number" id="saldoInicial" class="form-control" value="0" step="0.01">
+                </div>
+                <button id="startSession" class="btn btn-block">Iniciar Sesión de Trabajo</button>
+            </div>
+        </div>
+
+        <!-- Aplicación Principal -->
+        <div id="mainApp">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-left">
+                    <div class="logo">POS Ferretería</div>
+                    <div class="session-info">
                         <span id="userInfo">Usuario: ...</span>
                         <span id="localInfo">Local: ...</span>
                         <span id="cajaInfo">Caja: ...</span>
                         <span id="turnoInfo">Turno: ...</span>
                     </div>
-                    <button id="syncStatus" class="btn-status online">🟢 Online</button>
-                    <button id="logoutBtn" class="btn btn-danger btn-sm">
-                        <i class="fas fa-sign-out-alt"></i> Salir
-                    </button>
                 </div>
-            </div>
-
-            <!-- CONFIGURACIÓN INICIAL -->
-            <div id="initialConfig" style="display: none;">
-                <div class="config-box">
-                    <h3><i class="fas fa-cogs"></i> Configuración Inicial</h3>
-                    <p style="margin-bottom: 30px; color: #ccc;">Selecciona tu local, caja y turno para comenzar</p>
-                    
-                    <div class="form-group">
-                        <label for="selectLocal"><i class="fas fa-store-alt"></i> Local de Trabajo</label>
-                        <select id="selectLocal" class="form-control">
-                            <option value="">Seleccionar local...</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="selectCaja"><i class="fas fa-cash-register"></i> Caja</label>
-                        <select id="selectCaja" class="form-control">
-                            <option value="">Seleccionar caja...</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="selectTurno"><i class="fas fa-clock"></i> Turno</label>
-                        <select id="selectTurno" class="form-control">
-                            <option value="mañana">Mañana (8:00 - 14:00)</option>
-                            <option value="tarde">Tarde (14:00 - 20:00)</option>
-                            <option value="noche">Noche (20:00 - 2:00)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="saldoInicial"><i class="fas fa-money-bill-wave"></i> Saldo Inicial en Caja</label>
-                        <input type="number" id="saldoInicial" class="form-control" value="0" step="0.01" min="0">
-                    </div>
-                    
-                    <button id="startSession" class="btn btn-success btn-block">
-                        <i class="fas fa-play-circle"></i> Iniciar Sesión de Trabajo
+                <div class="header-right">
+                    <span id="syncStatus" class="btn-status online">🟢 Online</span>
+                    <button id="syncManual" class="btn btn-sm btn-outline" title="Sincronizar datos">
+                        <i class="fas fa-sync-alt"></i>
                     </button>
+                    <button id="themeToggle" class="theme-toggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button id="logoutBtn" class="btn btn-sm btn-danger">Cerrar Sesión</button>
                 </div>
-            </div>
+            </header>
 
-            <!-- APLICACIÓN PRINCIPAL -->
-            <div id="mainApp" style="display: none;">
-                <div class="nav-container">
-                    <!-- SIDEBAR DE NAVEGACIÓN -->
-                    <div class="nav-sidebar">
-                        <a class="nav-btn active" data-page="pos">
-                            <i class="fas fa-shopping-cart"></i>
-                            <span>Punto de Venta</span>
-                        </a>
-                        <a class="nav-btn" data-page="productos">
+            <!-- Contenedor principal -->
+            <div class="app-container">
+                <!-- Sidebar/Navegación -->
+                <nav class="app-sidebar">
+                    <div class="nav-section">
+                        <h3>Principal</h3>
+                        <button class="nav-btn active" data-page="pos">
+                            <i class="fas fa-cash-register"></i>
+                            <span>POS / Venta</span>
+                        </button>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <h3>Gestión</h3>
+                        <button class="nav-btn" data-page="productos">
                             <i class="fas fa-boxes"></i>
                             <span>Productos</span>
-                        </a>
-                        <a class="nav-btn" data-page="clientes">
+                        </button>
+                        <button class="nav-btn" data-page="clientes">
                             <i class="fas fa-users"></i>
                             <span>Clientes</span>
-                        </a>
-                        <a class="nav-btn" data-page="proveedores">
+                        </button>
+                        <button class="nav-btn" data-page="proveedores">
                             <i class="fas fa-truck"></i>
                             <span>Proveedores</span>
-                        </a>
-                        <a class="nav-btn" data-page="presupuestos">
+                        </button>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <h3>Finanzas</h3>
+                        <button class="nav-btn" data-page="presupuestos">
                             <i class="fas fa-file-invoice-dollar"></i>
                             <span>Presupuestos</span>
-                        </a>
-                        <a class="nav-btn" data-page="caja">
+                        </button>
+                        <button class="nav-btn" data-page="ventas">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>Ventas</span>
+                        </button>
+                        <button class="nav-btn" data-page="caja">
                             <i class="fas fa-calculator"></i>
                             <span>Caja</span>
-                        </a>
-                        <a class="nav-btn" data-page="reportes">
+                        </button>
+                        <button class="nav-btn" data-page="reportes">
                             <i class="fas fa-chart-bar"></i>
                             <span>Reportes</span>
-                        </a>
+                        </button>
                     </div>
+                </nav>
 
-                    <!-- CONTENIDO PRINCIPAL -->
-                    <div class="main-content">
-                        <!-- PÁGINA: PUNTO DE VENTA -->
-                        <div id="pagePos" class="page active">
-                            <div class="page-header">
-                                <h3><i class="fas fa-shopping-cart"></i> Punto de Venta</h3>
-                                <div class="page-actions">
-                                    <button id="syncManual" class="btn btn-outline btn-sm">
-                                        <i class="fas fa-sync-alt"></i> Sincronizar
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="pos-container">
-                                <!-- COLUMNA IZQUIERDA: PRODUCTOS -->
-                                <div class="pos-products">
+                <!-- Contenido principal -->
+                <main class="app-content">
+                    <!-- Página POS -->
+                    <div id="pagePos" class="page active">
+                        <div class="page-header">
+                            <h1 class="page-title">Punto de Venta (POS)</h1>
+                            <div id="currentPage">POS / Venta</div>
+                        </div>
+                        
+                        <div class="pos-container">
+                            <!-- Sección izquierda: Búsqueda y cliente -->
+                            <div class="pos-left">
+                                <!-- Búsqueda de productos -->
+                                <div class="search-section">
+                                    <h3>Buscar Producto</h3>
                                     <div class="search-box">
-                                        <input type="text" id="productSearch" class="form-control" placeholder="Buscar producto por nombre, código o código de barras...">
-                                        <button id="scanBarcode" class="btn btn-secondary">
-                                            <i class="fas fa-barcode"></i> Escanear
+                                        <input type="text" id="productSearch" class="form-control" 
+                                               placeholder="Código, nombre del producto o escanear código de barras...">
+                                        <button id="scanBarcode" class="btn btn-primary btn-icon" title="Escanear código de barras">
+                                            <i class="fas fa-barcode"></i>
                                         </button>
-                                        <button id="keyboardMode" class="btn btn-outline">
+                                        <button id="keyboardMode" class="btn btn-outline btn-icon" title="Modo teclado">
                                             <i class="fas fa-keyboard"></i>
                                         </button>
                                     </div>
-                                    
-                                    <div class="product-grid" id="productsGrid">
-                                        <div class="loading">Cargando productos...</div>
-                                    </div>
+                                    <div id="searchSuggestions"></div>
                                 </div>
                                 
-                                <!-- COLUMNA DERECHA: CARRITO -->
-                                <div class="pos-cart">
-                                    <div class="cart-header">
-                                        <h4><i class="fas fa-shopping-basket"></i> Carrito de Venta</h4>
-                                        <div>
-                                            <select id="selectCliente" class="form-control" style="width: auto; display: inline-block;">
-                                                <option value="">Cliente Contado</option>
-                                                <option value="nuevo">➕ Nuevo Cliente</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="cart-items" id="cartItems">
-                                        <div class="no-data">🎯 Busca y agrega productos al carrito</div>
-                                    </div>
-                                    
-                                    <div class="cart-totals">
-                                        <div class="total-row">
-                                            <span>Subtotal:</span>
-                                            <span id="cartSubtotal">$0.00</span>
-                                        </div>
-                                        <div class="total-row">
-                                            <span>Descuento:</span>
-                                            <span>
-                                                <input type="number" id="cartDiscount" class="form-control" style="width: 100px; display: inline-block; padding: 5px 10px;" value="0" min="0" step="0.01">
-                                            </span>
-                                        </div>
-                                        <div class="total-row total">
-                                            <span>TOTAL:</span>
-                                            <span id="cartTotal">$0.00</span>
-                                        </div>
-                                        
-                                        <div class="cart-actions">
-                                            <button id="crearPresupuesto" class="btn btn-warning">
-                                                <i class="fas fa-file-invoice"></i> Presupuesto
-                                            </button>
-                                            <button id="cancelarVenta" class="btn btn-danger">
-                                                <i class="fas fa-times"></i> Cancelar
-                                            </button>
-                                            <button id="finalizarVenta" class="btn btn-success">
-                                                <i class="fas fa-check-circle"></i> Finalizar Venta
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- PÁGINA: PRODUCTOS -->
-                        <div id="pageProductos" class="page">
-                            <div class="page-header">
-                                <h3><i class="fas fa-boxes"></i> Gestión de Productos</h3>
-                                <div class="page-actions">
-                                    <div class="list-search">
-                                        <input type="text" id="filterProductos" class="form-control" placeholder="Buscar productos...">
-                                    </div>
-                                    <button id="filterStockBajo" class="btn btn-warning btn-sm">
-                                        <i class="fas fa-exclamation-triangle"></i> Stock Bajo
-                                    </button>
-                                    <button id="nuevoProducto" class="btn btn-primary">
-                                        <i class="fas fa-plus"></i> Nuevo Producto
-                                    </button>
-                                    <button id="importarExcel" class="btn btn-outline btn-sm">
-                                        <i class="fas fa-file-import"></i> Importar
-                                    </button>
-                                    <button id="exportarExcel" class="btn btn-outline btn-sm">
-                                        <i class="fas fa-file-export"></i> Exportar
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="list-container" id="productosList">
-                                <div class="loading">Cargando productos...</div>
-                            </div>
-                        </div>
-
-                        <!-- PÁGINA: CLIENTES -->
-                        <div id="pageClientes" class="page">
-                            <div class="page-header">
-                                <h3><i class="fas fa-users"></i> Gestión de Clientes</h3>
-                                <div class="page-actions">
-                                    <button id="nuevoCliente" class="btn btn-primary">
+                                <!-- Selección de cliente -->
+                                <div class="cliente-section">
+                                    <h3>Cliente</h3>
+                                    <select id="selectCliente" class="form-control">
+                                        <option value="">Cliente Contado</option>
+                                        <option value="nuevo">➕ Nuevo Cliente</option>
+                                    </select>
+                                    <button id="nuevoClientePage" class="btn btn-outline btn-sm" style="margin-top: 10px;">
                                         <i class="fas fa-plus"></i> Nuevo Cliente
                                     </button>
                                 </div>
                             </div>
                             
-                            <div class="list-container" id="clientesList">
+                            <!-- Sección derecha: Carrito -->
+                            <div class="pos-right">
+                                <div class="cart-header">
+                                    <h2>Carrito de Venta</h2>
+                                    <div class="cart-actions">
+                                        <button id="cancelarVenta" class="btn btn-sm btn-danger">Cancelar</button>
+                                        <button id="crearPresupuesto" class="btn btn-sm btn-warning">Presupuesto</button>
+                                    </div>
+                                </div>
+                                
+                                <div id="cartItems" class="cart-items">
+                                    <!-- Los items del carrito se cargan aquí -->
+                                    <div class="cart-empty">🎯 Busca y agrega productos al carrito</div>
+                                </div>
+                                
+                                <div class="cart-summary">
+                                    <div class="summary-row">
+                                        <span>Subtotal:</span>
+                                        <span id="cartSubtotal">$0.00</span>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span>Descuento:</span>
+                                        <span>
+                                            <input type="number" id="cartDiscount" value="0" min="0" step="0.01" 
+                                                   style="width: 80px; padding: 5px; border: 1px solid var(--border-color); border-radius: 4px;">
+                                        </span>
+                                    </div>
+                                    <div class="summary-row total">
+                                        <span>Total:</span>
+                                        <span id="cartTotal">$0.00</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="cart-footer">
+                                    <button id="finalizarVenta" class="btn btn-success btn-lg">
+                                        <i class="fas fa-check-circle"></i> Finalizar Venta
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Productos -->
+                    <div id="pageProductos" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Gestión de Productos</h1>
+                            <div class="actions">
+                                <button id="filterStockBajo" class="btn btn-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Stock Bajo
+                                </button>
+                                <button id="exportarExcel" class="btn btn-outline">
+                                    <i class="fas fa-file-export"></i> Exportar
+                                </button>
+                                <button id="importarExcel" class="btn btn-outline">
+                                    <i class="fas fa-file-import"></i> Importar
+                                </button>
+                                <button id="nuevoProducto" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Nuevo Producto
+                                </button>
+                            </div>
+                        </div>
+                        <div class="page-content">
+                            <div class="form-group">
+                                <input type="text" id="filterProductos" class="form-control" placeholder="Buscar productos...">
+                            </div>
+                            <div id="productosList" class="data-list">
+                                <!-- Lista de productos -->
+                                <div class="loading">Cargando productos...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Clientes -->
+                    <div id="pageClientes" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Gestión de Clientes</h1>
+                            <button id="nuevoCliente" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nuevo Cliente
+                            </button>
+                        </div>
+                        <div class="page-content">
+                            <div id="clientesList" class="data-list">
+                                <!-- Lista de clientes -->
                                 <div class="loading">Cargando clientes...</div>
                             </div>
                         </div>
-
-                        <!-- PÁGINA: PROVEEDORES -->
-                        <div id="pageProveedores" class="page">
-                            <div class="page-header">
-                                <h3><i class="fas fa-truck"></i> Gestión de Proveedores</h3>
-                                <div class="page-actions">
-                                    <button id="nuevoProveedor" class="btn btn-primary">
-                                        <i class="fas fa-plus"></i> Nuevo Proveedor
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="list-container" id="proveedoresList">
+                    </div>
+                    
+                    <!-- Página Proveedores -->
+                    <div id="pageProveedores" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Gestión de Proveedores</h1>
+                            <button id="nuevoProveedor" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nuevo Proveedor
+                            </button>
+                        </div>
+                        <div class="page-content">
+                            <div id="proveedoresList" class="data-list">
+                                <!-- Lista de proveedores -->
                                 <div class="loading">Cargando proveedores...</div>
                             </div>
                         </div>
-
-                        <!-- PÁGINA: PRESUPUESTOS -->
-                        <div id="pagePresupuestos" class="page">
-                            <div class="page-header">
-                                <h3><i class="fas fa-file-invoice-dollar"></i> Presupuestos</h3>
-                                <div class="page-actions">
-                                    <button id="nuevoClientePage" class="btn btn-outline">
-                                        <i class="fas fa-user-plus"></i> Nuevo Cliente
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="list-container" id="presupuestosList">
+                    </div>
+                    
+                    <!-- Página Presupuestos -->
+                    <div id="pagePresupuestos" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Presupuestos</h1>
+                        </div>
+                        <div class="page-content">
+                            <div id="presupuestosList" class="data-list">
+                                <!-- Lista de presupuestos -->
                                 <div class="loading">Cargando presupuestos...</div>
                             </div>
                         </div>
-
-                        <!-- PÁGINA: CAJA -->
-                        <div id="pageCaja" class="page">
-                            <div class="page-header">
-                                <h3><i class="fas fa-calculator"></i> Caja</h3>
-                                <div class="page-actions">
-                                    <button id="cerrarCaja" class="btn btn-danger">
-                                        <i class="fas fa-door-closed"></i> Cerrar Caja
-                                    </button>
-                                </div>
+                    </div>
+                    
+                    <!-- Página Ventas -->
+                    <div id="pageVentas" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Historial de Ventas</h1>
+                        </div>
+                        <div class="page-content">
+                            <div id="ventasList" class="data-list">
+                                <!-- Lista de ventas -->
+                                <div class="loading">Cargando ventas...</div>
                             </div>
-                            
+                        </div>
+                    </div>
+                    
+                    <!-- Página Caja -->
+                    <div id="pageCaja" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Cierre de Caja</h1>
+                            <button id="cerrarCaja" class="btn btn-danger">Cerrar Caja</button>
+                        </div>
+                        <div class="page-content">
                             <div class="caja-resumen">
-                                <h4 style="margin-bottom: 20px; color: #00b4db;">Resumen del Día</h4>
-                                <div class="caja-grid">
-                                    <div class="caja-card">
-                                        <h5>Saldo Inicial</h5>
-                                        <p id="saldoInicialResumen" class="caja-valor">$0.00</p>
-                                    </div>
-                                    <div class="caja-card">
-                                        <h5>Ventas Efectivo</h5>
-                                        <p id="ventasEfectivo" class="caja-valor">$0.00</p>
-                                    </div>
-                                    <div class="caja-card">
-                                        <h5>Ventas Tarjeta</h5>
-                                        <p id="ventasTarjeta" class="caja-valor">$0.00</p>
-                                    </div>
-                                    <div class="caja-card">
-                                        <h5>Ventas Transferencia</h5>
-                                        <p id="ventasTransferencia" class="caja-valor">$0.00</p>
-                                    </div>
-                                    <div class="caja-card">
-                                        <h5>Ventas QR</h5>
-                                        <p id="ventasQr" class="caja-valor">$0.00</p>
-                                    </div>
-                                    <div class="caja-card">
-                                        <h5>Ventas Cuenta Corriente</h5>
-                                        <p id="ventasCuenta" class="caja-valor">$0.00</p>
-                                    </div>
-                                    <div class="caja-card">
-                                        <h5>Total Ventas</h5>
-                                        <p id="totalVentas" class="caja-valor total">$0.00</p>
-                                    </div>
-                                    <div class="caja-card">
-                                        <h5>Saldo Final</h5>
-                                        <p id="saldoFinal" class="caja-valor">$0.00</p>
-                                    </div>
-                                    <div class="caja-card">
-                                        <h5>Diferencia</h5>
-                                        <p id="diferenciaResumen" class="caja-valor">$0.00</p>
-                                    </div>
+                                <h3>Resumen del Turno</h3>
+                                <div class="summary-row">
+                                    <span>Saldo Inicial:</span>
+                                    <span id="saldoInicialResumen">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Ventas Efectivo:</span>
+                                    <span id="ventasEfectivo">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Ventas Tarjeta:</span>
+                                    <span id="ventasTarjeta">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Ventas Transferencia:</span>
+                                    <span id="ventasTransferencia">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Ventas QR:</span>
+                                    <span id="ventasQr">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Ventas Cuenta Corriente:</span>
+                                    <span id="ventasCuenta">$0.00</span>
+                                </div>
+                                <div class="summary-row total">
+                                    <span>Total Ventas:</span>
+                                    <span id="totalVentas">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Saldo Final:</span>
+                                    <span id="saldoFinal">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Diferencia:</span>
+                                    <span id="diferenciaResumen">$0.00</span>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- PÁGINA: REPORTES -->
-                        <div id="pageReportes" class="page">
-                            <div class="page-header">
-                                <h3><i class="fas fa-chart-bar"></i> Reportes</h3>
-                            </div>
-                            
+                    </div>
+                    
+                    <!-- Página Reportes -->
+                    <div id="pageReportes" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Reportes y Estadísticas</h1>
+                        </div>
+                        <div class="page-content">
                             <div id="reportesContent">
+                                <!-- Contenido de reportes -->
                                 <div class="loading">Cargando reportes...</div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </main>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DE PAGO -->
+    <!-- Modal de Pago -->
     <div id="paymentModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-credit-card"></i> Seleccionar Método de Pago</h3>
+                <h2>Finalizar Pago</h2>
+                <button id="cancelPayment" class="btn btn-outline btn-sm">✕</button>
             </div>
             <div class="modal-body">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h4>Total a Pagar: <span id="paymentTotalAmount" style="color: #4CAF50; font-size: 1.5rem;">$0.00</span></h4>
+                <div class="payment-total">
+                    <h3>Total a pagar: <span id="paymentTotalAmount">$0.00</span></h3>
                 </div>
                 
-                <div style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center;">
+                <div class="payment-methods">
                     <button class="payment-btn active" data-method="efectivo">
                         <i class="fas fa-money-bill-wave"></i>
                         <span>Efectivo</span>
@@ -1338,70 +1229,103 @@
                         <i class="fas fa-file-invoice-dollar"></i>
                         <span>Cuenta Corriente</span>
                     </button>
+                    <button class="payment-btn" data-method="combinado">
+                        <i class="fas fa-random"></i>
+                        <span>Combinado</span>
+                    </button>
                 </div>
                 
                 <div id="paymentDetails">
-                    <!-- Los detalles de pago se cargan dinámicamente aquí -->
+                    <!-- Detalles del método de pago seleccionado -->
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="cancelPayment" class="btn btn-danger">Cancelar</button>
                 <button id="confirmPayment" class="btn btn-success">Confirmar Pago</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL GENÉRICO -->
+    <!-- Modal Genérico -->
     <div id="genericModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle">Modal</h3>
+                <h2 id="modalTitle">Título del Modal</h2>
+                <button id="modalCancel" class="btn btn-outline btn-sm">✕</button>
             </div>
             <div class="modal-body" id="modalBody">
-                <!-- Contenido dinámico del modal -->
+                <!-- Contenido del modal -->
             </div>
             <div class="modal-footer">
-                <button id="modalCancel" class="btn btn-danger">Cancelar</button>
-                <button id="modalConfirm" class="btn btn-success">Aceptar</button>
+                <button id="modalConfirm" class="btn btn-primary">Confirmar</button>
+                <button id="modalCancel" class="btn btn-outline">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <!-- SCANNER -->
-    <div id="scannerContainer">
+    <!-- Scanner de código de barras -->
+    <div id="scannerContainer" class="scanner-container">
         <div class="scanner-overlay"></div>
-        <video id="scannerVideo" autoplay playsinline></video>
-        <div class="scanner-controls">
-            <button id="stopScanner" class="btn btn-danger">
-                <i class="fas fa-times"></i> Detener Scanner
+        <video id="scannerVideo" autoplay playsinline class="scanner-video"></video>
+        <div style="margin-top: 20px; text-align: center;">
+            <p>Enfoca el código de barras del producto</p>
+            <button id="stopScanner" class="btn btn-danger" style="margin-top: 15px;">
+                <i class="fas fa-times"></i> Cancelar Escaneo
             </button>
         </div>
     </div>
 
-    <!-- SCRIPT DE LA APLICACIÓN -->
+    <!-- Alertas -->
+    <div id="alertasContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;"></div>
+
+    <!-- Script de Supabase (se cargará dinámicamente desde app.js) -->
     <script src="app.js"></script>
-    
     <script>
-        // Configuración inicial adicional
+        // Configuración del tema claro/oscuro
         document.addEventListener('DOMContentLoaded', function() {
-            // Añadir datalist para productos
-            const productSearch = document.getElementById('productSearch');
-            if (productSearch) {
-                const datalist = document.createElement('datalist');
-                datalist.id = 'productosDatalist';
-                productSearch.setAttribute('list', 'productosDatalist');
-                document.body.appendChild(datalist);
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = themeToggle.querySelector('i');
+            
+            // Verificar preferencia guardada
+            const savedTheme = localStorage.getItem('pos-theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeIcon.className = 'fas fa-sun';
+            } else if (savedTheme === 'light') {
+                document.body.classList.remove('dark-mode');
+                themeIcon.className = 'fas fa-moon';
+            } else {
+                // Si no hay preferencia, usar la del sistema
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark-mode');
+                    themeIcon.className = 'fas fa-sun';
+                    localStorage.setItem('pos-theme', 'dark');
+                }
             }
             
-            // Forzar recarga de productos cuando se cambia a página de productos
-            document.querySelectorAll('.nav-btn[data-page="productos"]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    setTimeout(() => {
-                        if (typeof loadProductos === 'function') {
-                            loadProductos();
-                        }
-                    }, 100);
-                });
+            // Alternar tema
+            themeToggle.addEventListener('click', function() {
+                if (document.body.classList.contains('dark-mode')) {
+                    document.body.classList.remove('dark-mode');
+                    themeIcon.className = 'fas fa-moon';
+                    localStorage.setItem('pos-theme', 'light');
+                } else {
+                    document.body.classList.add('dark-mode');
+                    themeIcon.className = 'fas fa-sun';
+                    localStorage.setItem('pos-theme', 'dark');
+                }
+            });
+            
+            // Detectar cambios en el tema del sistema
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (!localStorage.getItem('pos-theme')) {
+                    if (e.matches) {
+                        document.body.classList.add('dark-mode');
+                        themeIcon.className = 'fas fa-sun';
+                    } else {
+                        document.body.classList.remove('dark-mode');
+                        themeIcon.className = 'fas fa-moon';
+                    }
+                }
             });
         });
     </script>
