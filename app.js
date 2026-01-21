@@ -234,7 +234,7 @@ async function savePendingOperation(operation) {
 
 async function initSupabase() {
     const supabaseUrl = localStorage.getItem('supabase_url') || 'https://manccbrodsboxtkrgpvm.supabase.co';
-    const supabaseKey = localStorage.getItem('supabase_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+    const supabaseKey = localStorage.getItem('supabase_key') || 'sb_publishable_uFJcZUlmh3htTha0wX7knQ_4h8Z3FH3';
     
     try {
         if (!window.supabase) {
