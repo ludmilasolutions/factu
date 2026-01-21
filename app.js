@@ -1450,7 +1450,415 @@ function enviarTicketWhatsapp() {
 }
 
 // ============================================
-// CLIENTES Y CUENTA CORRIENTE
+// FUNCIONES DE PRODUCTOS COMPLETAS
+// ============================================
+
+function showNuevoProductoModal() {
+    const modal = document.getElementById('genericModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    modalTitle.textContent = 'Nuevo Producto';
+    modalBody.innerHTML = `
+        <div class="form-producto">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" id="productoNombre" class="form-control" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Código de Barras</label>
+                    <input type="text" id="productoCodigoBarras" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Código Interno</label>
+                    <input type="text" id="productoCodigoInterno" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="productoDescripcion" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Categoría *</label>
+                    <input type="text" id="productoCategoria" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Unidad de Medida</label>
+                    <select id="productoUnidadMedida" class="form-control">
+                        <option value="unidad">Unidad</option>
+                        <option value="metro">Metro</option>
+                        <option value="kg">Kilogramo</option>
+                        <option value="litro">Litro</option>
+                        <option value="caja">Caja</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Precio Costo</label>
+                    <input type="number" id="productoPrecioCosto" class="form-control" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label>% Ganancia</label>
+                    <input type="number" id="productoPorcentajeGanancia" class="form-control" step="0.01" value="40">
+                </div>
+                <div class="form-group">
+                    <label>Precio Venta *</label>
+                    <input type="number" id="productoPrecioVenta" class="form-control" step="0.01" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Stock Actual</label>
+                    <input type="number" id="productoStock" class="form-control" step="0.001" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Stock Mínimo</label>
+                    <input type="number" id="productoStockMinimo" class="form-control" step="0.001" value="5">
+                </div>
+                <div class="form-group">
+                    <label>Stock Máximo</label>
+                    <input type="number" id="productoStockMaximo" class="form-control" step="0.001" value="100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Proveedor</label>
+                <select id="productoProveedor" class="form-control">
+                    <option value="">Sin proveedor</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Observaciones</label>
+                <textarea id="productoObservaciones" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+    
+    document.getElementById('modalConfirm').textContent = 'Guardar';
+    document.getElementById('modalConfirm').style.display = 'inline-block';
+    document.getElementById('modalCancel').textContent = 'Cancelar';
+    
+    // Cargar proveedores en el select
+    cargarProveedoresSelect();
+    
+    document.getElementById('modalConfirm').onclick = async () => {
+        await guardarProducto();
+    };
+}
+
+async function cargarProveedoresSelect() {
+    const select = document.getElementById('productoProveedor');
+    if (!select) return;
+    
+    try {
+        const { data: proveedores, error } = await APP_STATE.supabase
+            .from('proveedores')
+            .select('id, nombre')
+            .eq('activo', true)
+            .order('nombre');
+        
+        if (error) throw error;
+        
+        proveedores.forEach(prov => {
+            const option = document.createElement('option');
+            option.value = prov.id;
+            option.textContent = prov.nombre;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error cargando proveedores:', error);
+    }
+}
+
+async function guardarProducto() {
+    const productoData = {
+        nombre: document.getElementById('productoNombre').value.trim(),
+        codigo_barras: document.getElementById('productoCodigoBarras').value.trim() || null,
+        codigo_interno: document.getElementById('productoCodigoInterno').value.trim() || null,
+        descripcion: document.getElementById('productoDescripcion').value.trim(),
+        categoria: document.getElementById('productoCategoria').value.trim(),
+        unidad_medida: document.getElementById('productoUnidadMedida').value,
+        precio_costo: parseFloat(document.getElementById('productoPrecioCosto').value) || 0,
+        porcentaje_ganancia: parseFloat(document.getElementById('productoPorcentajeGanancia').value) || 0,
+        precio_venta: parseFloat(document.getElementById('productoPrecioVenta').value) || 0,
+        stock: parseFloat(document.getElementById('productoStock').value) || 0,
+        stock_minimo: parseFloat(document.getElementById('productoStockMinimo').value) || 5,
+        stock_maximo: parseFloat(document.getElementById('productoStockMaximo').value) || 100,
+        proveedor_id: document.getElementById('productoProveedor').value || null,
+        observaciones: document.getElementById('productoObservaciones').value.trim(),
+        activo: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!productoData.nombre || !productoData.categoria || productoData.precio_venta <= 0) {
+        alert('Completa los campos obligatorios (Nombre, Categoría, Precio Venta)');
+        return;
+    }
+    
+    try {
+        const { data, error } = await APP_STATE.supabase
+            .from('productos')
+            .insert([productoData])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        alert('✅ Producto guardado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        await loadProductos();
+        await loadProductosParaVenta();
+        
+    } catch (error) {
+        console.error('Error guardando producto:', error);
+        alert(`❌ Error: ${error.message || 'Error al guardar producto'}`);
+    }
+}
+
+async function editarProducto(productoId) {
+    try {
+        const { data: producto, error } = await APP_STATE.supabase
+            .from('productos')
+            .select('*')
+            .eq('id', productoId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = 'Editar Producto';
+        modalBody.innerHTML = `
+            <div class="form-producto">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="productoNombre" class="form-control" value="${producto.nombre || ''}" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Código de Barras</label>
+                        <input type="text" id="productoCodigoBarras" class="form-control" value="${producto.codigo_barras || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Código Interno</label>
+                        <input type="text" id="productoCodigoInterno" class="form-control" value="${producto.codigo_interno || ''}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="productoDescripcion" class="form-control" rows="2">${producto.descripcion || ''}</textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Categoría *</label>
+                        <input type="text" id="productoCategoria" class="form-control" value="${producto.categoria || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Unidad de Medida</label>
+                        <select id="productoUnidadMedida" class="form-control">
+                            <option value="unidad" ${producto.unidad_medida === 'unidad' ? 'selected' : ''}>Unidad</option>
+                            <option value="metro" ${producto.unidad_medida === 'metro' ? 'selected' : ''}>Metro</option>
+                            <option value="kg" ${producto.unidad_medida === 'kg' ? 'selected' : ''}>Kilogramo</option>
+                            <option value="litro" ${producto.unidad_medida === 'litro' ? 'selected' : ''}>Litro</option>
+                            <option value="caja" ${producto.unidad_medida === 'caja' ? 'selected' : ''}>Caja</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Precio Costo</label>
+                        <input type="number" id="productoPrecioCosto" class="form-control" step="0.01" value="${producto.precio_costo || 0}">
+                    </div>
+                    <div class="form-group">
+                        <label>% Ganancia</label>
+                        <input type="number" id="productoPorcentajeGanancia" class="form-control" step="0.01" value="${producto.porcentaje_ganancia || 40}">
+                    </div>
+                    <div class="form-group">
+                        <label>Precio Venta *</label>
+                        <input type="number" id="productoPrecioVenta" class="form-control" step="0.01" value="${producto.precio_venta || 0}" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Stock Actual</label>
+                        <input type="number" id="productoStock" class="form-control" step="0.001" value="${producto.stock || 0}">
+                    </div>
+                    <div class="form-group">
+                        <label>Stock Mínimo</label>
+                        <input type="number" id="productoStockMinimo" class="form-control" step="0.001" value="${producto.stock_minimo || 5}">
+                    </div>
+                    <div class="form-group">
+                        <label>Stock Máximo</label>
+                        <input type="number" id="productoStockMaximo" class="form-control" step="0.001" value="${producto.stock_maximo || 100}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Proveedor</label>
+                    <select id="productoProveedor" class="form-control">
+                        <option value="">Sin proveedor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Activo</label>
+                    <select id="productoActivo" class="form-control">
+                        <option value="true" ${producto.activo ? 'selected' : ''}>Sí</option>
+                        <option value="false" ${!producto.activo ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="productoObservaciones" class="form-control" rows="3">${producto.observaciones || ''}</textarea>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').textContent = 'Actualizar';
+        document.getElementById('modalConfirm').style.display = 'inline-block';
+        document.getElementById('modalCancel').textContent = 'Cancelar';
+        
+        // Cargar proveedores en el select
+        await cargarProveedoresSelect();
+        document.getElementById('productoProveedor').value = producto.proveedor_id || '';
+        
+        document.getElementById('modalConfirm').onclick = async () => {
+            await actualizarProducto(productoId);
+        };
+        
+    } catch (error) {
+        console.error('Error cargando producto para editar:', error);
+        alert('Error al cargar producto');
+    }
+}
+
+async function actualizarProducto(productoId) {
+    const productoData = {
+        nombre: document.getElementById('productoNombre').value.trim(),
+        codigo_barras: document.getElementById('productoCodigoBarras').value.trim() || null,
+        codigo_interno: document.getElementById('productoCodigoInterno').value.trim() || null,
+        descripcion: document.getElementById('productoDescripcion').value.trim(),
+        categoria: document.getElementById('productoCategoria').value.trim(),
+        unidad_medida: document.getElementById('productoUnidadMedida').value,
+        precio_costo: parseFloat(document.getElementById('productoPrecioCosto').value) || 0,
+        porcentaje_ganancia: parseFloat(document.getElementById('productoPorcentajeGanancia').value) || 0,
+        precio_venta: parseFloat(document.getElementById('productoPrecioVenta').value) || 0,
+        stock: parseFloat(document.getElementById('productoStock').value) || 0,
+        stock_minimo: parseFloat(document.getElementById('productoStockMinimo').value) || 5,
+        stock_maximo: parseFloat(document.getElementById('productoStockMaximo').value) || 100,
+        proveedor_id: document.getElementById('productoProveedor').value || null,
+        activo: document.getElementById('productoActivo').value === 'true',
+        observaciones: document.getElementById('productoObservaciones').value.trim(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!productoData.nombre || !productoData.categoria || productoData.precio_venta <= 0) {
+        alert('Completa los campos obligatorios (Nombre, Categoría, Precio Venta)');
+        return;
+    }
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('productos')
+            .update(productoData)
+            .eq('id', productoId);
+        
+        if (error) throw error;
+        
+        alert('✅ Producto actualizado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        await loadProductos();
+        await loadProductosParaVenta();
+        
+    } catch (error) {
+        console.error('Error actualizando producto:', error);
+        alert(`❌ Error: ${error.message || 'Error al actualizar producto'}`);
+    }
+}
+
+async function eliminarProducto(productoId) {
+    if (!confirm('¿Estás seguro de eliminar este producto?')) return;
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('productos')
+            .update({ activo: false, updated_at: new Date().toISOString() })
+            .eq('id', productoId);
+        
+        if (error) throw error;
+        
+        alert('✅ Producto eliminado correctamente');
+        
+        await loadProductos();
+        await loadProductosParaVenta();
+        
+    } catch (error) {
+        console.error('Error eliminando producto:', error);
+        alert(`❌ Error: ${error.message || 'Error al eliminar producto'}`);
+    }
+}
+
+async function importarExcelProductos() {
+    alert('Función de importar Excel en desarrollo. Por ahora, usa la interfaz manual.');
+}
+
+async function exportarExcelProductos() {
+    try {
+        const { data: productos, error } = await APP_STATE.supabase
+            .from('productos')
+            .select('*')
+            .order('nombre');
+        
+        if (error) throw error;
+        
+        // Convertir a CSV
+        const headers = ['Nombre', 'Código Barras', 'Código Interno', 'Categoría', 'Precio Costo', 'Precio Venta', 'Stock', 'Stock Mínimo'];
+        const rows = productos.map(p => [
+            p.nombre,
+            p.codigo_barras || '',
+            p.codigo_interno || '',
+            p.categoria || '',
+            p.precio_costo || 0,
+            p.precio_venta || 0,
+            p.stock || 0,
+            p.stock_minimo || 5
+        ]);
+        
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+        
+        // Descargar archivo
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `productos_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+    } catch (error) {
+        console.error('Error exportando productos:', error);
+        alert('Error al exportar productos');
+    }
+}
+
+// ============================================
+// CLIENTES Y CUENTA CORRIENTE COMPLETAS
 // ============================================
 
 async function loadClientes() {
@@ -1640,8 +2048,1469 @@ async function guardarCliente() {
     }
 }
 
+async function verCliente(clienteId) {
+    try {
+        const { data: cliente, error } = await APP_STATE.supabase
+            .from('clientes')
+            .select('*')
+            .eq('id', clienteId)
+            .single();
+        
+        if (error) throw error;
+        
+        const { data: movimientos, error: movError } = await APP_STATE.supabase
+            .from('cuentas_corrientes')
+            .select('*')
+            .eq('cliente_id', clienteId)
+            .order('created_at', { ascending: false })
+            .limit(20);
+        
+        if (movError) throw movError;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = `Cliente: ${cliente.nombre} ${cliente.apellido || ''}`;
+        
+        let movimientosHtml = '';
+        if (movimientos && movimientos.length > 0) {
+            movimientosHtml = `
+                <h4>Últimos Movimientos:</h4>
+                <div class="movimientos-list">
+                    ${movimientos.map(mov => `
+                        <div class="movimiento-row">
+                            <span>${new Date(mov.created_at).toLocaleDateString()}</span>
+                            <span>${mov.tipo_movimiento}</span>
+                            <span>$${mov.monto.toFixed(2)}</span>
+                            <span>Saldo: $${mov.saldo_nuevo.toFixed(2)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            movimientosHtml = '<p>No hay movimientos registrados</p>';
+        }
+        
+        modalBody.innerHTML = `
+            <div class="cliente-detail">
+                <p><strong>Documento:</strong> ${cliente.numero_documento || 'No especificado'}</p>
+                <p><strong>Teléfono:</strong> ${cliente.telefono || 'No especificado'}</p>
+                <p><strong>Email:</strong> ${cliente.email || 'No especificado'}</p>
+                <p><strong>Dirección:</strong> ${cliente.direccion || 'No especificado'}</p>
+                <p><strong>Tipo:</strong> ${cliente.tipo_cliente}</p>
+                <p><strong>Límite Crédito:</strong> $${cliente.limite_credito.toFixed(2)}</p>
+                <p><strong>Saldo Actual:</strong> <span class="${cliente.saldo > 0 ? 'negativo' : 'positivo'}">$${cliente.saldo.toFixed(2)}</span></p>
+                ${movimientosHtml}
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error viendo cliente:', error);
+        alert('Error al cargar información del cliente');
+    }
+}
+
+async function editarCliente(clienteId) {
+    try {
+        const { data: cliente, error } = await APP_STATE.supabase
+            .from('clientes')
+            .select('*')
+            .eq('id', clienteId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = 'Editar Cliente';
+        modalBody.innerHTML = `
+            <div class="form-cliente">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="clienteNombre" class="form-control" value="${cliente.nombre}" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido</label>
+                    <input type="text" id="clienteApellido" class="form-control" value="${cliente.apellido || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Documento</label>
+                    <input type="text" id="clienteDocumento" class="form-control" value="${cliente.numero_documento || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="clienteTelefono" class="form-control" value="${cliente.telefono || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="clienteEmail" class="form-control" value="${cliente.email || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <textarea id="clienteDireccion" class="form-control" rows="2">${cliente.direccion || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Cliente</label>
+                    <select id="clienteTipo" class="form-control">
+                        <option value="consumidor_final" ${cliente.tipo_cliente === 'consumidor_final' ? 'selected' : ''}>Consumidor Final</option>
+                        <option value="cuenta_corriente" ${cliente.tipo_cliente === 'cuenta_corriente' ? 'selected' : ''}>Cuenta Corriente</option>
+                        <option value="mayorista" ${cliente.tipo_cliente === 'mayorista' ? 'selected' : ''}>Mayorista</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Límite de Crédito</label>
+                    <input type="number" id="clienteLimite" class="form-control" value="${cliente.limite_credito || 0}" step="100">
+                </div>
+                <div class="form-group">
+                    <label>Activo</label>
+                    <select id="clienteActivo" class="form-control">
+                        <option value="true" ${cliente.activo ? 'selected' : ''}>Sí</option>
+                        <option value="false" ${!cliente.activo ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="clienteObservaciones" class="form-control" rows="3">${cliente.observaciones || ''}</textarea>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').textContent = 'Actualizar';
+        document.getElementById('modalConfirm').style.display = 'inline-block';
+        document.getElementById('modalCancel').textContent = 'Cancelar';
+        
+        document.getElementById('modalConfirm').onclick = async () => {
+            await actualizarCliente(clienteId);
+        };
+        
+    } catch (error) {
+        console.error('Error cargando cliente para editar:', error);
+        alert('Error al cargar cliente');
+    }
+}
+
+async function actualizarCliente(clienteId) {
+    const clienteData = {
+        nombre: document.getElementById('clienteNombre').value.trim(),
+        apellido: document.getElementById('clienteApellido').value.trim(),
+        numero_documento: document.getElementById('clienteDocumento').value.trim(),
+        telefono: document.getElementById('clienteTelefono').value.trim(),
+        email: document.getElementById('clienteEmail').value.trim(),
+        direccion: document.getElementById('clienteDireccion').value.trim(),
+        tipo_cliente: document.getElementById('clienteTipo').value,
+        limite_credito: parseFloat(document.getElementById('clienteLimite').value) || 0,
+        activo: document.getElementById('clienteActivo').value === 'true',
+        observaciones: document.getElementById('clienteObservaciones').value.trim(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!clienteData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('clientes')
+            .update(clienteData)
+            .eq('id', clienteId);
+        
+        if (error) throw error;
+        
+        alert('✅ Cliente actualizado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        await loadClientes();
+        await loadClientesParaVenta();
+        
+    } catch (error) {
+        console.error('Error actualizando cliente:', error);
+        alert(`❌ Error: ${error.message || 'Error al actualizar cliente'}`);
+    }
+}
+
+async function verMovimientosCliente(clienteId) {
+    try {
+        const { data: movimientos, error } = await APP_STATE.supabase
+            .from('cuentas_corrientes')
+            .select('*')
+            .eq('cliente_id', clienteId)
+            .order('created_at', { ascending: false })
+            .limit(50);
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = 'Movimientos de Cuenta Corriente';
+        
+        let movimientosHtml = '';
+        if (movimientos && movimientos.length > 0) {
+            let saldoTotal = 0;
+            movimientosHtml = `
+                <div class="movimientos-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Saldo Anterior</th>
+                                <th>Saldo Nuevo</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${movimientos.map(mov => {
+                                saldoTotal = mov.saldo_nuevo;
+                                return `
+                                    <tr>
+                                        <td>${new Date(mov.created_at).toLocaleDateString()}</td>
+                                        <td>${mov.tipo_movimiento}</td>
+                                        <td>$${mov.monto.toFixed(2)}</td>
+                                        <td>$${mov.saldo_anterior.toFixed(2)}</td>
+                                        <td>$${mov.saldo_nuevo.toFixed(2)}</td>
+                                        <td>${mov.observaciones || ''}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                    <div class="saldo-total">
+                        <strong>Saldo Total: $${saldoTotal.toFixed(2)}</strong>
+                    </div>
+                </div>
+            `;
+        } else {
+            movimientosHtml = '<p>No hay movimientos registrados</p>';
+        }
+        
+        modalBody.innerHTML = movimientosHtml;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error cargando movimientos:', error);
+        alert('Error al cargar movimientos');
+    }
+}
+
+async function registrarPagoCliente(clienteId) {
+    try {
+        const { data: cliente, error } = await APP_STATE.supabase
+            .from('clientes')
+            .select('saldo')
+            .eq('id', clienteId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = 'Registrar Pago de Cliente';
+        modalBody.innerHTML = `
+            <div class="form-pago-cliente">
+                <p><strong>Saldo Actual:</strong> $${cliente.saldo.toFixed(2)}</p>
+                <div class="form-group">
+                    <label>Monto a Pagar *</label>
+                    <input type="number" id="montoPago" class="form-control" max="${cliente.saldo}" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Método de Pago</label>
+                    <select id="metodoPagoCliente" class="form-control">
+                        <option value="efectivo">Efectivo</option>
+                        <option value="transferencia">Transferencia</option>
+                        <option value="tarjeta">Tarjeta</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="observacionesPago" class="form-control" rows="3" placeholder="Referencia, número de operación, etc."></textarea>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').textContent = 'Registrar Pago';
+        document.getElementById('modalConfirm').style.display = 'inline-block';
+        document.getElementById('modalCancel').textContent = 'Cancelar';
+        
+        document.getElementById('modalConfirm').onclick = async () => {
+            await procesarPagoCliente(clienteId);
+        };
+        
+    } catch (error) {
+        console.error('Error cargando saldo del cliente:', error);
+        alert('Error al cargar información del cliente');
+    }
+}
+
+async function procesarPagoCliente(clienteId) {
+    const monto = parseFloat(document.getElementById('montoPago').value);
+    const metodo = document.getElementById('metodoPagoCliente').value;
+    const observaciones = document.getElementById('observacionesPago').value;
+    
+    if (!monto || monto <= 0) {
+        alert('Ingrese un monto válido');
+        return;
+    }
+    
+    try {
+        // Obtener saldo actual
+        const { data: cliente, error: clienteError } = await APP_STATE.supabase
+            .from('clientes')
+            .select('saldo')
+            .eq('id', clienteId)
+            .single();
+        
+        if (clienteError) throw clienteError;
+        
+        if (monto > cliente.saldo) {
+            alert('El monto no puede ser mayor al saldo adeudado');
+            return;
+        }
+        
+        // Registrar movimiento en cuenta corriente
+        const movimientoCC = {
+            cliente_id: clienteId,
+            tipo_movimiento: 'pago',
+            monto: monto,
+            saldo_anterior: cliente.saldo,
+            saldo_nuevo: cliente.saldo - monto,
+            observaciones: `Pago ${metodo}: ${observaciones || 'Sin observaciones'}`,
+            created_at: new Date().toISOString()
+        };
+        
+        const { error: ccError } = await APP_STATE.supabase
+            .from('cuentas_corrientes')
+            .insert([movimientoCC]);
+        
+        if (ccError) throw ccError;
+        
+        // Actualizar saldo del cliente
+        await APP_STATE.supabase.rpc('incrementar_saldo_cliente', {
+            cliente_id: clienteId,
+            monto: -monto
+        });
+        
+        alert('✅ Pago registrado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        await loadClientes();
+        
+    } catch (error) {
+        console.error('Error registrando pago:', error);
+        alert(`❌ Error: ${error.message || 'Error al registrar pago'}`);
+    }
+}
+
 // ============================================
-// CAJA Y CIERRES
+// PROVEEDORES COMPLETOS
+// ============================================
+
+async function loadProveedores() {
+    const container = document.getElementById('proveedoresList');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Cargando proveedores...</div>';
+    
+    try {
+        const { data: proveedores, error } = await APP_STATE.supabase
+            .from('proveedores')
+            .select('*')
+            .order('nombre')
+            .limit(200);
+        
+        if (error) throw error;
+        
+        if (proveedores.length === 0) {
+            container.innerHTML = '<div class="no-data">No hay proveedores cargados</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        proveedores.forEach(proveedor => {
+            const row = document.createElement('div');
+            row.className = 'proveedor-row';
+            row.innerHTML = `
+                <span>${proveedor.nombre}</span>
+                <span>${proveedor.contacto || 'Sin contacto'}</span>
+                <span>${proveedor.telefono || 'Sin teléfono'}</span>
+                <span>${proveedor.cuit || 'Sin CUIT'}</span>
+                <div class="proveedor-actions">
+                    <button class="btn btn-sm btn-primary" onclick="verProveedor('${proveedor.id}')">Ver</button>
+                    <button class="btn btn-sm btn-warning" onclick="editarProveedor('${proveedor.id}')">Editar</button>
+                    <button class="btn btn-sm btn-info" onclick="contactarProveedor('${proveedor.id}')">Contactar</button>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando proveedores:', error);
+        container.innerHTML = '<div class="error">Error cargando proveedores</div>';
+    }
+}
+
+function showNuevoProveedorModal() {
+    const modal = document.getElementById('genericModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    modalTitle.textContent = 'Nuevo Proveedor';
+    modalBody.innerHTML = `
+        <div class="form-proveedor">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" id="proveedorNombre" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Razón Social</label>
+                <input type="text" id="proveedorRazonSocial" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Contacto</label>
+                <input type="text" id="proveedorContacto" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="tel" id="proveedorTelefono" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="proveedorEmail" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Dirección</label>
+                <textarea id="proveedorDireccion" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>CUIT</label>
+                    <input type="text" id="proveedorCuit" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Condición IVA</label>
+                    <select id="proveedorCondicionIva" class="form-control">
+                        <option value="responsable_inscripto">Responsable Inscripto</option>
+                        <option value="monotributista">Monotributista</option>
+                        <option value="exento">Exento</option>
+                        <option value="consumidor_final">Consumidor Final</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Productos que vende</label>
+                <textarea id="proveedorProductos" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Plazo de entrega</label>
+                <input type="text" id="proveedorPlazoEntrega" class="form-control" placeholder="Ej: 48 hs">
+            </div>
+            <div class="form-group">
+                <label>Observaciones</label>
+                <textarea id="proveedorObservaciones" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+    
+    document.getElementById('modalConfirm').textContent = 'Guardar';
+    document.getElementById('modalConfirm').style.display = 'inline-block';
+    document.getElementById('modalCancel').textContent = 'Cancelar';
+    
+    document.getElementById('modalConfirm').onclick = async () => {
+        await guardarProveedor();
+    };
+}
+
+async function guardarProveedor() {
+    const proveedorData = {
+        nombre: document.getElementById('proveedorNombre').value.trim(),
+        razon_social: document.getElementById('proveedorRazonSocial').value.trim(),
+        contacto: document.getElementById('proveedorContacto').value.trim(),
+        telefono: document.getElementById('proveedorTelefono').value.trim(),
+        email: document.getElementById('proveedorEmail').value.trim(),
+        direccion: document.getElementById('proveedorDireccion').value.trim(),
+        cuit: document.getElementById('proveedorCuit').value.trim(),
+        condicion_iva: document.getElementById('proveedorCondicionIva').value,
+        productos_que_vende: document.getElementById('proveedorProductos').value.trim(),
+        plazo_entrega: document.getElementById('proveedorPlazoEntrega').value.trim(),
+        observaciones: document.getElementById('proveedorObservaciones').value.trim(),
+        activo: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!proveedorData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    
+    try {
+        const { data, error } = await APP_STATE.supabase
+            .from('proveedores')
+            .insert([proveedorData])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        alert('✅ Proveedor guardado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        await loadProveedores();
+        
+    } catch (error) {
+        console.error('Error guardando proveedor:', error);
+        alert(`❌ Error: ${error.message || 'Error al guardar proveedor'}`);
+    }
+}
+
+async function verProveedor(proveedorId) {
+    try {
+        const { data: proveedor, error } = await APP_STATE.supabase
+            .from('proveedores')
+            .select('*')
+            .eq('id', proveedorId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = `Proveedor: ${proveedor.nombre}`;
+        
+        modalBody.innerHTML = `
+            <div class="proveedor-detail">
+                <p><strong>Razón Social:</strong> ${proveedor.razon_social || 'No especificado'}</p>
+                <p><strong>Contacto:</strong> ${proveedor.contacto || 'No especificado'}</p>
+                <p><strong>Teléfono:</strong> ${proveedor.telefono || 'No especificado'}</p>
+                <p><strong>Email:</strong> ${proveedor.email || 'No especificado'}</p>
+                <p><strong>Dirección:</strong> ${proveedor.direccion || 'No especificado'}</p>
+                <p><strong>CUIT:</strong> ${proveedor.cuit || 'No especificado'}</p>
+                <p><strong>Condición IVA:</strong> ${proveedor.condicion_iva || 'No especificado'}</p>
+                <p><strong>Productos que vende:</strong> ${proveedor.productos_que_vende || 'No especificado'}</p>
+                <p><strong>Plazo de entrega:</strong> ${proveedor.plazo_entrega || 'No especificado'}</p>
+                <p><strong>Observaciones:</strong> ${proveedor.observaciones || 'No especificado'}</p>
+                <div class="proveedor-links">
+                    <button class="btn btn-success btn-sm" onclick="abrirWhatsAppProveedor('${proveedor.telefono}')">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="abrirWebProveedor('${proveedor.email}')">
+                        <i class="fas fa-globe"></i> Email
+                    </button>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error viendo proveedor:', error);
+        alert('Error al cargar información del proveedor');
+    }
+}
+
+function abrirWhatsAppProveedor(telefono) {
+    if (!telefono) {
+        alert('No hay teléfono registrado');
+        return;
+    }
+    
+    const numero = telefono.replace(/\D/g, '');
+    const url = `https://wa.me/${numero}`;
+    window.open(url, '_blank');
+}
+
+function abrirWebProveedor(email) {
+    if (!email) {
+        alert('No hay email registrado');
+        return;
+    }
+    
+    const url = `mailto:${email}`;
+    window.open(url, '_blank');
+}
+
+async function editarProveedor(proveedorId) {
+    try {
+        const { data: proveedor, error } = await APP_STATE.supabase
+            .from('proveedores')
+            .select('*')
+            .eq('id', proveedorId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = 'Editar Proveedor';
+        modalBody.innerHTML = `
+            <div class="form-proveedor">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="proveedorNombre" class="form-control" value="${proveedor.nombre}" required>
+                </div>
+                <div class="form-group">
+                    <label>Razón Social</label>
+                    <input type="text" id="proveedorRazonSocial" class="form-control" value="${proveedor.razon_social || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Contacto</label>
+                    <input type="text" id="proveedorContacto" class="form-control" value="${proveedor.contacto || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="proveedorTelefono" class="form-control" value="${proveedor.telefono || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="proveedorEmail" class="form-control" value="${proveedor.email || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <textarea id="proveedorDireccion" class="form-control" rows="2">${proveedor.direccion || ''}</textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>CUIT</label>
+                        <input type="text" id="proveedorCuit" class="form-control" value="${proveedor.cuit || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Condición IVA</label>
+                        <select id="proveedorCondicionIva" class="form-control">
+                            <option value="responsable_inscripto" ${proveedor.condicion_iva === 'responsable_inscripto' ? 'selected' : ''}>Responsable Inscripto</option>
+                            <option value="monotributista" ${proveedor.condicion_iva === 'monotributista' ? 'selected' : ''}>Monotributista</option>
+                            <option value="exento" ${proveedor.condicion_iva === 'exento' ? 'selected' : ''}>Exento</option>
+                            <option value="consumidor_final" ${proveedor.condicion_iva === 'consumidor_final' ? 'selected' : ''}>Consumidor Final</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Productos que vende</label>
+                    <textarea id="proveedorProductos" class="form-control" rows="3">${proveedor.productos_que_vende || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Plazo de entrega</label>
+                    <input type="text" id="proveedorPlazoEntrega" class="form-control" value="${proveedor.plazo_entrega || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Activo</label>
+                    <select id="proveedorActivo" class="form-control">
+                        <option value="true" ${proveedor.activo ? 'selected' : ''}>Sí</option>
+                        <option value="false" ${!proveedor.activo ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="proveedorObservaciones" class="form-control" rows="3">${proveedor.observaciones || ''}</textarea>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').textContent = 'Actualizar';
+        document.getElementById('modalConfirm').style.display = 'inline-block';
+        document.getElementById('modalCancel').textContent = 'Cancelar';
+        
+        document.getElementById('modalConfirm').onclick = async () => {
+            await actualizarProveedor(proveedorId);
+        };
+        
+    } catch (error) {
+        console.error('Error cargando proveedor para editar:', error);
+        alert('Error al cargar proveedor');
+    }
+}
+
+async function actualizarProveedor(proveedorId) {
+    const proveedorData = {
+        nombre: document.getElementById('proveedorNombre').value.trim(),
+        razon_social: document.getElementById('proveedorRazonSocial').value.trim(),
+        contacto: document.getElementById('proveedorContacto').value.trim(),
+        telefono: document.getElementById('proveedorTelefono').value.trim(),
+        email: document.getElementById('proveedorEmail').value.trim(),
+        direccion: document.getElementById('proveedorDireccion').value.trim(),
+        cuit: document.getElementById('proveedorCuit').value.trim(),
+        condicion_iva: document.getElementById('proveedorCondicionIva').value,
+        productos_que_vende: document.getElementById('proveedorProductos').value.trim(),
+        plazo_entrega: document.getElementById('proveedorPlazoEntrega').value.trim(),
+        activo: document.getElementById('proveedorActivo').value === 'true',
+        observaciones: document.getElementById('proveedorObservaciones').value.trim(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!proveedorData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('proveedores')
+            .update(proveedorData)
+            .eq('id', proveedorId);
+        
+        if (error) throw error;
+        
+        alert('✅ Proveedor actualizado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        await loadProveedores();
+        
+    } catch (error) {
+        console.error('Error actualizando proveedor:', error);
+        alert(`❌ Error: ${error.message || 'Error al actualizar proveedor'}`);
+    }
+}
+
+async function contactarProveedor(proveedorId) {
+    try {
+        const { data: proveedor, error } = await APP_STATE.supabase
+            .from('proveedores')
+            .select('nombre, telefono, email')
+            .eq('id', proveedorId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = `Contactar: ${proveedor.nombre}`;
+        
+        modalBody.innerHTML = `
+            <div class="contactar-proveedor">
+                <div class="contacto-info">
+                    <p><strong>Teléfono:</strong> ${proveedor.telefono || 'No disponible'}</p>
+                    <p><strong>Email:</strong> ${proveedor.email || 'No disponible'}</p>
+                </div>
+                <div class="contacto-actions">
+                    ${proveedor.telefono ? `
+                        <button class="btn btn-success btn-lg" onclick="abrirWhatsAppProveedor('${proveedor.telefono}')">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </button>
+                    ` : ''}
+                    ${proveedor.email ? `
+                        <button class="btn btn-primary btn-lg" onclick="abrirWebProveedor('${proveedor.email}')">
+                            <i class="fas fa-envelope"></i> Email
+                        </button>
+                    ` : ''}
+                </div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Mensaje predeterminado (para WhatsApp/Email)</label>
+                    <textarea id="mensajeContacto" class="form-control" rows="4">
+Hola ${proveedor.nombre}, necesito realizar un pedido. ¿Podrían enviarme su lista de precios actualizada? Gracias.
+                    </textarea>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error contactando proveedor:', error);
+        alert('Error al cargar información de contacto');
+    }
+}
+
+// ============================================
+// PRESUPUESTOS COMPLETOS
+// ============================================
+
+async function crearPresupuesto() {
+    if (APP_STATE.carrito.length === 0) {
+        alert('El carrito está vacío');
+        return;
+    }
+    
+    const clienteSelect = document.getElementById('selectCliente');
+    const clienteId = clienteSelect && clienteSelect.value && clienteSelect.value !== '' ? clienteSelect.value : null;
+    
+    if (!clienteId) {
+        alert('Selecciona un cliente para crear el presupuesto');
+        return;
+    }
+    
+    const totalElem = document.getElementById('cartTotal');
+    const totalText = totalElem ? totalElem.textContent : '$0.00';
+    const total = parseFloat(totalText.replace('$', '').replace(',', '')) || 0;
+    const discountInput = document.getElementById('cartDiscount');
+    const descuento = discountInput ? parseFloat(discountInput.value) || 0 : 0;
+    const subtotal = total + descuento;
+    
+    const validoHasta = prompt('Válido hasta (días desde hoy):', '30');
+    if (!validoHasta) return;
+    
+    const dias = parseInt(validoHasta) || 30;
+    const fechaValidoHasta = new Date();
+    fechaValidoHasta.setDate(fechaValidoHasta.getDate() + dias);
+    
+    const presupuestoData = {
+        local_id: APP_STATE.currentLocal?.id,
+        cliente_id: clienteId,
+        usuario_id: APP_STATE.currentUser?.id,
+        total: total,
+        descuento: descuento,
+        subtotal: subtotal,
+        valido_hasta: fechaValidoHasta.toISOString().split('T')[0],
+        estado: 'pendiente',
+        observaciones: `Presupuesto generado el ${new Date().toLocaleDateString()}`,
+        created_at: new Date().toISOString()
+    };
+    
+    try {
+        const { data: presupuesto, error } = await APP_STATE.supabase
+            .from('presupuestos')
+            .insert([presupuestoData])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        // Insertar items del presupuesto
+        const items = APP_STATE.carrito.map(item => ({
+            presupuesto_id: presupuesto.id,
+            producto_id: item.id,
+            cantidad: item.cantidad || 1,
+            precio_unitario: item.precio || 0,
+            subtotal: item.subtotal || 0,
+            created_at: new Date().toISOString()
+        }));
+        
+        for (const item of items) {
+            const { error: itemError } = await APP_STATE.supabase
+                .from('presupuesto_items')
+                .insert([item]);
+            
+            if (itemError) throw itemError;
+        }
+        
+        alert(`✅ Presupuesto creado correctamente\nNúmero: ${presupuesto.numero_presupuesto || presupuesto.id}\nVálido hasta: ${fechaValidoHasta.toLocaleDateString()}`);
+        
+        APP_STATE.carrito = [];
+        updateCartDisplay();
+        if (discountInput) discountInput.value = '0';
+        
+        await loadPresupuestos();
+        
+    } catch (error) {
+        console.error('Error creando presupuesto:', error);
+        alert(`❌ Error: ${error.message || 'Error al crear presupuesto'}`);
+    }
+}
+
+async function loadPresupuestos() {
+    const container = document.getElementById('presupuestosList');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Cargando presupuestos...</div>';
+    
+    try {
+        const { data: presupuestos, error } = await APP_STATE.supabase
+            .from('presupuestos')
+            .select(`
+                *,
+                clientes:cliente_id (nombre, apellido),
+                usuarios:usuario_id (nombre)
+            `)
+            .order('created_at', { ascending: false })
+            .limit(50);
+        
+        if (error) throw error;
+        
+        if (presupuestos.length === 0) {
+            container.innerHTML = '<div class="no-data">No hay presupuestos cargados</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        presupuestos.forEach(presupuesto => {
+            const cliente = presupuesto.clientes;
+            const usuario = presupuesto.usuarios;
+            const estadoClass = presupuesto.estado === 'convertido' ? 'convertido' : 
+                               presupuesto.estado === 'vencido' ? 'vencido' : 'pendiente';
+            const fechaValido = new Date(presupuesto.valido_hasta);
+            const hoy = new Date();
+            const diasRestantes = Math.ceil((fechaValido - hoy) / (1000 * 60 * 60 * 24));
+            
+            const row = document.createElement('div');
+            row.className = 'presupuesto-row';
+            row.innerHTML = `
+                <div class="presupuesto-header">
+                    <span class="presupuesto-numero">${presupuesto.numero_presupuesto || 'Sin número'}</span>
+                    <span class="presupuesto-fecha">${new Date(presupuesto.created_at).toLocaleDateString()}</span>
+                    <span class="presupuesto-estado ${estadoClass}">${presupuesto.estado}</span>
+                </div>
+                <div class="presupuesto-info">
+                    <span><strong>Cliente:</strong> ${cliente?.nombre || ''} ${cliente?.apellido || ''}</span>
+                    <span><strong>Vendedor:</strong> ${usuario?.nombre || 'Sin vendedor'}</span>
+                    <span><strong>Total:</strong> $${presupuesto.total.toFixed(2)}</span>
+                    <span><strong>Válido hasta:</strong> ${fechaValido.toLocaleDateString()} (${diasRestantes} días)</span>
+                </div>
+                <div class="presupuesto-actions">
+                    <button class="btn btn-sm btn-primary" onclick="verPresupuesto('${presupuesto.id}')">Ver</button>
+                    <button class="btn btn-sm btn-success" onclick="convertirPresupuestoAVenta('${presupuesto.id}')" ${presupuesto.estado !== 'pendiente' ? 'disabled' : ''}>Convertir a Venta</button>
+                    <button class="btn btn-sm btn-warning" onclick="editarPresupuesto('${presupuesto.id}')">Editar</button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarPresupuesto('${presupuesto.id}')">Eliminar</button>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando presupuestos:', error);
+        container.innerHTML = '<div class="error">Error cargando presupuestos</div>';
+    }
+}
+
+async function verPresupuesto(presupuestoId) {
+    try {
+        const { data: presupuesto, error } = await APP_STATE.supabase
+            .from('presupuestos')
+            .select(`
+                *,
+                clientes:cliente_id (*),
+                usuarios:usuario_id (*),
+                items:presupuesto_items (*, productos:producto_id (nombre, codigo_barras))
+            `)
+            .eq('id', presupuestoId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = `Presupuesto: ${presupuesto.numero_presupuesto || presupuesto.id}`;
+        
+        const cliente = presupuesto.clientes;
+        const itemsHtml = presupuesto.items.map(item => {
+            const producto = item.productos;
+            return `
+                <tr>
+                    <td>${producto?.nombre || 'Producto'}</td>
+                    <td>${item.cantidad}</td>
+                    <td>$${item.precio_unitario.toFixed(2)}</td>
+                    <td>$${item.subtotal.toFixed(2)}</td>
+                </tr>
+            `;
+        }).join('');
+        
+        modalBody.innerHTML = `
+            <div class="presupuesto-detail">
+                <div class="presupuesto-info">
+                    <p><strong>Cliente:</strong> ${cliente?.nombre || ''} ${cliente?.apellido || ''}</p>
+                    <p><strong>Fecha:</strong> ${new Date(presupuesto.created_at).toLocaleDateString()}</p>
+                    <p><strong>Válido hasta:</strong> ${new Date(presupuesto.valido_hasta).toLocaleDateString()}</p>
+                    <p><strong>Estado:</strong> ${presupuesto.estado}</p>
+                    <p><strong>Observaciones:</strong> ${presupuesto.observaciones || 'Sin observaciones'}</p>
+                </div>
+                
+                <h4>Productos:</h4>
+                <table class="presupuesto-items">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" align="right"><strong>Subtotal:</strong></td>
+                            <td>$${presupuesto.subtotal.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" align="right"><strong>Descuento:</strong></td>
+                            <td>$${presupuesto.descuento.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" align="right"><strong>Total:</strong></td>
+                            <td><strong>$${presupuesto.total.toFixed(2)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                
+                <div class="presupuesto-actions" style="margin-top: 20px;">
+                    <button class="btn btn-success" onclick="convertirPresupuestoAVenta('${presupuesto.id}')" ${presupuesto.estado !== 'pendiente' ? 'disabled' : ''}>
+                        <i class="fas fa-shopping-cart"></i> Convertir a Venta
+                    </button>
+                    <button class="btn btn-primary" onclick="imprimirPresupuesto('${presupuesto.id}')">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error viendo presupuesto:', error);
+        alert('Error al cargar presupuesto');
+    }
+}
+
+async function convertirPresupuestoAVenta(presupuestoId) {
+    if (!confirm('¿Convertir este presupuesto en una venta?')) return;
+    
+    try {
+        // Obtener el presupuesto con sus items
+        const { data: presupuesto, error: presError } = await APP_STATE.supabase
+            .from('presupuestos')
+            .select(`
+                *,
+                items:presupuesto_items (*)
+            `)
+            .eq('id', presupuestoId)
+            .single();
+        
+        if (presError) throw presError;
+        
+        if (presupuesto.estado !== 'pendiente') {
+            alert('Este presupuesto ya fue convertido o está vencido');
+            return;
+        }
+        
+        // Verificar stock de cada producto
+        for (const item of presupuesto.items) {
+            const { data: producto, error: prodError } = await APP_STATE.supabase
+                .from('productos')
+                .select('stock')
+                .eq('id', item.producto_id)
+                .single();
+            
+            if (prodError) throw prodError;
+            
+            if (producto.stock < item.cantidad) {
+                alert(`Stock insuficiente para el producto. Stock actual: ${producto.stock}, requerido: ${item.cantidad}`);
+                return;
+            }
+        }
+        
+        // Crear venta
+        const ventaData = {
+            local_id: presupuesto.local_id,
+            caja_id: APP_STATE.currentCaja?.id,
+            usuario_id: APP_STATE.currentUser?.id,
+            cliente_id: presupuesto.cliente_id,
+            total: presupuesto.total,
+            descuento: presupuesto.descuento,
+            subtotal: presupuesto.subtotal,
+            estado: 'completada',
+            tipo_venta: 'contado',
+            tipo_comprobante: 'ticket',
+            observaciones: `Convertido desde presupuesto ${presupuesto.numero_presupuesto || presupuesto.id}`,
+            created_at: new Date().toISOString()
+        };
+        
+        const { data: venta, error: ventaError } = await APP_STATE.supabase
+            .from('ventas')
+            .insert([ventaData])
+            .select()
+            .single();
+        
+        if (ventaError) throw ventaError;
+        
+        // Crear items de venta
+        for (const item of presupuesto.items) {
+            const ventaItem = {
+                venta_id: venta.id,
+                producto_id: item.producto_id,
+                cantidad: item.cantidad,
+                precio_unitario: item.precio_unitario,
+                descuento_unitario: 0,
+                subtotal: item.subtotal,
+                created_at: new Date().toISOString()
+            };
+            
+            const { error: itemError } = await APP_STATE.supabase
+                .from('venta_items')
+                .insert([ventaItem]);
+            
+            if (itemError) throw itemError;
+            
+            // Actualizar stock
+            await APP_STATE.supabase.rpc('decrementar_stock', {
+                product_id: item.producto_id,
+                cantidad: item.cantidad
+            });
+        }
+        
+        // Actualizar presupuesto
+        const { error: updateError } = await APP_STATE.supabase
+            .from('presupuestos')
+            .update({ estado: 'convertido', updated_at: new Date().toISOString() })
+            .eq('id', presupuestoId);
+        
+        if (updateError) throw updateError;
+        
+        // Registrar pago
+        const pagoData = {
+            venta_id: venta.id,
+            metodo: 'efectivo',
+            monto: venta.total,
+            referencia: `CONV-${Date.now().toString().slice(-6)}`,
+            estado: 'completado',
+            detalles: JSON.stringify({ origen: 'presupuesto', presupuesto_id: presupuestoId }),
+            created_at: new Date().toISOString()
+        };
+        
+        const { error: pagoError } = await APP_STATE.supabase
+            .from('pagos')
+            .insert([pagoData]);
+        
+        if (pagoError) throw pagoError;
+        
+        // Actualizar cierre de caja
+        await actualizarCierreCaja(venta.total, 'efectivo');
+        
+        alert(`✅ Presupuesto convertido a venta correctamente\nNúmero de venta: ${venta.numero_venta || venta.id}`);
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        await loadPresupuestos();
+        
+    } catch (error) {
+        console.error('Error convirtiendo presupuesto:', error);
+        alert(`❌ Error: ${error.message || 'Error al convertir presupuesto'}`);
+    }
+}
+
+async function editarPresupuesto(presupuestoId) {
+    alert('Edición de presupuestos en desarrollo. Por ahora, puedes crear uno nuevo.');
+}
+
+async function eliminarPresupuesto(presupuestoId) {
+    if (!confirm('¿Estás seguro de eliminar este presupuesto?')) return;
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('presupuestos')
+            .delete()
+            .eq('id', presupuestoId);
+        
+        if (error) throw error;
+        
+        alert('✅ Presupuesto eliminado correctamente');
+        
+        await loadPresupuestos();
+        
+    } catch (error) {
+        console.error('Error eliminando presupuesto:', error);
+        alert(`❌ Error: ${error.message || 'Error al eliminar presupuesto'}`);
+    }
+}
+
+function imprimirPresupuesto(presupuestoId) {
+    alert('Función de impresión de presupuestos en desarrollo.');
+}
+
+// ============================================
+// REPORTES COMPLETOS
+// ============================================
+
+async function loadReportes() {
+    const container = document.getElementById('reportesContent');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Cargando reportes...</div>';
+    
+    try {
+        // Cargar datos para reportes
+        const hoy = new Date().toISOString().split('T')[0];
+        const mesActual = new Date().toISOString().substring(0, 7); // YYYY-MM
+        
+        // Ventas del día
+        const { data: ventasHoy, error: ventasError } = await APP_STATE.supabase
+            .from('ventas')
+            .select('*')
+            .eq('local_id', APP_STATE.currentLocal?.id)
+            .gte('created_at', hoy + 'T00:00:00')
+            .lte('created_at', hoy + 'T23:59:59')
+            .eq('estado', 'completada');
+        
+        if (ventasError) throw ventasError;
+        
+        // Ventas del mes
+        const { data: ventasMes, error: ventasMesError } = await APP_STATE.supabase
+            .from('ventas')
+            .select('*')
+            .eq('local_id', APP_STATE.currentLocal?.id)
+            .gte('created_at', mesActual + '-01T00:00:00')
+            .lte('created_at', hoy + 'T23:59:59')
+            .eq('estado', 'completada');
+        
+        if (ventasMesError) throw ventasMesError;
+        
+        // Productos más vendidos
+        const { data: productosVendidos, error: productosError } = await APP_STATE.supabase
+            .from('venta_items')
+            .select(`
+                cantidad,
+                productos:producto_id (nombre, precio_venta)
+            `)
+            .gte('created_at', mesActual + '-01T00:00:00')
+            .lte('created_at', hoy + 'T23:59:59')
+            .limit(10);
+        
+        if (productosError) throw productosError;
+        
+        // Métodos de pago del mes
+        const { data: metodosPago, error: metodosError } = await APP_STATE.supabase
+            .from('pagos')
+            .select('metodo, monto')
+            .gte('created_at', mesActual + '-01T00:00:00')
+            .lte('created_at', hoy + 'T23:59:59');
+        
+        if (metodosError) throw metodosError;
+        
+        // Calcular totales
+        const totalHoy = ventasHoy.reduce((sum, venta) => sum + (venta.total || 0), 0);
+        const totalMes = ventasMes.reduce((sum, venta) => sum + (venta.total || 0), 0);
+        
+        // Agrupar productos más vendidos
+        const productosMap = {};
+        if (productosVendidos) {
+            productosVendidos.forEach(item => {
+                if (item.productos) {
+                    const nombre = item.productos.nombre;
+                    if (!productosMap[nombre]) {
+                        productosMap[nombre] = { cantidad: 0, total: 0 };
+                    }
+                    productosMap[nombre].cantidad += item.cantidad || 0;
+                    productosMap[nombre].total += (item.cantidad || 0) * (item.productos.precio_venta || 0);
+                }
+            });
+        }
+        
+        const productosTop = Object.entries(productosMap)
+            .map(([nombre, datos]) => ({ nombre, ...datos }))
+            .sort((a, b) => b.cantidad - a.cantidad)
+            .slice(0, 5);
+        
+        // Agrupar métodos de pago
+        const metodosMap = {};
+        if (metodosPago) {
+            metodosPago.forEach(pago => {
+                if (!metodosMap[pago.metodo]) {
+                    metodosMap[pago.metodo] = 0;
+                }
+                metodosMap[pago.metodo] += pago.monto || 0;
+            });
+        }
+        
+        // Generar HTML
+        const reportesHtml = `
+            <div class="reportes-grid">
+                <div class="reporte-card">
+                    <h3>📊 Resumen del Día</h3>
+                    <div class="reporte-content">
+                        <p><strong>Ventas hoy:</strong> ${ventasHoy.length}</p>
+                        <p><strong>Total hoy:</strong> $${totalHoy.toFixed(2)}</p>
+                        <p><strong>Promedio por venta:</strong> $${(totalHoy / (ventasHoy.length || 1)).toFixed(2)}</p>
+                    </div>
+                </div>
+                
+                <div class="reporte-card">
+                    <h3>📈 Resumen del Mes</h3>
+                    <div class="reporte-content">
+                        <p><strong>Ventas este mes:</strong> ${ventasMes.length}</p>
+                        <p><strong>Total mensual:</strong> $${totalMes.toFixed(2)}</p>
+                        <p><strong>Promedio diario:</strong> $${(totalMes / new Date().getDate()).toFixed(2)}</p>
+                    </div>
+                </div>
+                
+                <div class="reporte-card">
+                    <h3>🏆 Productos Más Vendidos</h3>
+                    <div class="reporte-content">
+                        ${productosTop.length > 0 ? `
+                            <table class="reporte-table">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${productosTop.map(prod => `
+                                        <tr>
+                                            <td>${prod.nombre}</td>
+                                            <td>${prod.cantidad.toFixed(0)}</td>
+                                            <td>$${prod.total.toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p>No hay datos de ventas este mes</p>'}
+                    </div>
+                </div>
+                
+                <div class="reporte-card">
+                    <h3>💳 Métodos de Pago</h3>
+                    <div class="reporte-content">
+                        ${Object.keys(metodosMap).length > 0 ? `
+                            <table class="reporte-table">
+                                <thead>
+                                    <tr>
+                                        <th>Método</th>
+                                        <th>Total</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${Object.entries(metodosMap).map(([metodo, total]) => {
+                                        const porcentaje = (total / totalMes * 100).toFixed(1);
+                                        return `
+                                            <tr>
+                                                <td>${metodo}</td>
+                                                <td>$${total.toFixed(2)}</td>
+                                                <td>${porcentaje}%</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p>No hay datos de pagos este mes</p>'}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="reporte-actions">
+                <button class="btn btn-primary" onclick="generarReporteCompleto()">
+                    <i class="fas fa-file-excel"></i> Exportar Reporte Completo
+                </button>
+                <button class="btn btn-secondary" onclick="generarReportePersonalizado()">
+                    <i class="fas fa-filter"></i> Reporte Personalizado
+                </button>
+            </div>
+        `;
+        
+        container.innerHTML = reportesHtml;
+        
+    } catch (error) {
+        console.error('Error cargando reportes:', error);
+        container.innerHTML = '<div class="error">Error cargando reportes</div>';
+    }
+}
+
+function generarReporteCompleto() {
+    alert('Función de exportación completa en desarrollo. Usa la vista actual.');
+}
+
+function generarReportePersonalizado() {
+    const modal = document.getElementById('genericModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    modalTitle.textContent = 'Reporte Personalizado';
+    modalBody.innerHTML = `
+        <div class="form-reporte">
+            <div class="form-group">
+                <label>Tipo de Reporte</label>
+                <select id="tipoReporte" class="form-control">
+                    <option value="ventas">Ventas</option>
+                    <option value="productos">Productos</option>
+                    <option value="clientes">Clientes</option>
+                    <option value="caja">Caja</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Fecha Desde</label>
+                    <input type="date" id="fechaDesde" class="form-control" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+                <div class="form-group">
+                    <label>Fecha Hasta</label>
+                    <input type="date" id="fechaHasta" class="form-control" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Filtros Adicionales</label>
+                <div class="filtros-container">
+                    <label><input type="checkbox" id="filtroLocal"> Solo este local</label>
+                    <label><input type="checkbox" id="filtroUsuario"> Solo mis ventas</label>
+                    <label><input type="checkbox" id="filtroCompletadas"> Solo ventas completadas</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Formato de Salida</label>
+                <select id="formatoReporte" class="form-control">
+                    <option value="pantalla">Ver en pantalla</option>
+                    <option value="excel">Exportar a Excel</option>
+                    <option value="pdf">Exportar a PDF</option>
+                </select>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+    
+    document.getElementById('modalConfirm').textContent = 'Generar Reporte';
+    document.getElementById('modalConfirm').style.display = 'inline-block';
+    document.getElementById('modalCancel').textContent = 'Cancelar';
+    
+    document.getElementById('modalConfirm').onclick = async () => {
+        await generarReporte();
+    };
+}
+
+async function generarReporte() {
+    const tipo = document.getElementById('tipoReporte').value;
+    const fechaDesde = document.getElementById('fechaDesde').value;
+    const fechaHasta = document.getElementById('fechaHasta').value;
+    const formato = document.getElementById('formatoReporte').value;
+    
+    alert(`Generando reporte ${tipo} del ${fechaDesde} al ${fechaHasta} en formato ${formato}. Función en desarrollo.`);
+    
+    const modal = document.getElementById('genericModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// ============================================
+// CAJA Y CIERRES COMPLETOS
 // ============================================
 
 async function loadCajaResumen() {
@@ -1790,7 +3659,7 @@ async function cerrarCaja() {
 }
 
 // ============================================
-// SCANNER Y BÚSQUEDA
+// SCANNER Y BÚSQUEDA COMPLETOS
 // ============================================
 
 async function handleProductSearch(e) {
@@ -1938,7 +3807,7 @@ function activateKeyboardMode() {
 }
 
 // ============================================
-// FUNCIONES AUXILIARES
+// FUNCIONES AUXILIARES COMPLETAS
 // ============================================
 
 function handleModalConfirm() {
@@ -1952,7 +3821,7 @@ function handleModalCancel() {
 }
 
 // ============================================
-// REAL-TIME SUBSCRIPTIONS
+// REAL-TIME SUBSCRIPTIONS COMPLETAS
 // ============================================
 
 async function setupRealtimeSubscriptions() {
@@ -1991,6 +3860,34 @@ async function setupRealtimeSubscriptions() {
             )
             .subscribe();
         
+        // Suscripción a cambios en cierres de caja
+        const cierresChannel = APP_STATE.supabase
+            .channel('cierres-changes')
+            .on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'cierres_caja' }, 
+                (payload) => {
+                    console.log('Cambio en cierre de caja:', payload);
+                    if (APP_STATE.currentPage === 'caja') {
+                        loadCajaResumen();
+                    }
+                }
+            )
+            .subscribe();
+        
+        // Suscripción a cambios en presupuestos
+        const presupuestosChannel = APP_STATE.supabase
+            .channel('presupuestos-changes')
+            .on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'presupuestos' }, 
+                (payload) => {
+                    console.log('Cambio en presupuestos:', payload);
+                    if (APP_STATE.currentPage === 'presupuestos') {
+                        loadPresupuestos();
+                    }
+                }
+            )
+            .subscribe();
+        
         console.log('✅ Suscripciones realtime activadas');
         
     } catch (error) {
@@ -2021,9 +3918,23 @@ window.showNuevoProveedorModal = showNuevoProveedorModal;
 window.toggleScanner = toggleScanner;
 window.stopScanner = stopScanner;
 window.activateKeyboardMode = activateKeyboardMode;
-
-// Nota: Las funciones de importar/exportar Excel, editar/eliminar productos/clientes,
-// verCliente, editarCliente, etc., se pueden agregar según sea necesario.
-// Por ahora mantenemos las funciones básicas para simplificar.
+window.editarProducto = editarProducto;
+window.eliminarProducto = eliminarProducto;
+window.verCliente = verCliente;
+window.editarCliente = editarCliente;
+window.verMovimientosCliente = verMovimientosCliente;
+window.registrarPagoCliente = registrarPagoCliente;
+window.verProveedor = verProveedor;
+window.editarProveedor = editarProveedor;
+window.contactarProveedor = contactarProveedor;
+window.abrirWhatsAppProveedor = abrirWhatsAppProveedor;
+window.abrirWebProveedor = abrirWebProveedor;
+window.verPresupuesto = verPresupuesto;
+window.convertirPresupuestoAVenta = convertirPresupuestoAVenta;
+window.editarPresupuesto = editarPresupuesto;
+window.eliminarPresupuesto = eliminarPresupuesto;
+window.imprimirPresupuesto = imprimirPresupuesto;
+window.generarReporteCompleto = generarReporteCompleto;
+window.generarReportePersonalizado = generarReportePersonalizado;
 
 console.log('✅ app.js cargado completamente - Versión Online');
