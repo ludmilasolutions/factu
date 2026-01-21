@@ -1,5 +1,5 @@
 // ============================================
-// SISTEMA POS - APP.JS - VERSIÓN 100% ONLINE
+// SISTEMA POS - APP.JS - VERSIÓN 100% COMPLETA
 // ============================================
 
 // Configuración global
@@ -585,6 +585,9 @@ function switchPage(pageName) {
         case 'caja':
             loadCajaResumen();
             break;
+        case 'ventas':
+            loadVentas();
+            break;
     }
 }
 
@@ -603,6 +606,7 @@ async function syncData() {
         if (APP_STATE.currentPage === 'presupuestos') await loadPresupuestos();
         if (APP_STATE.currentPage === 'caja') await loadCajaResumen();
         if (APP_STATE.currentPage === 'reportes') await loadReportes();
+        if (APP_STATE.currentPage === 'ventas') await loadVentas();
         
         alert('✅ Datos sincronizados correctamente');
     } catch (error) {
@@ -840,7 +844,8 @@ async function agregarAlCarrito(productoId) {
                 costo: producto.precio_costo || 0,
                 cantidad: 1,
                 subtotal: producto.precio_venta || producto.precio || 0,
-                stock: producto.stock || 0
+                stock: producto.stock || 0,
+                unidad_medida: producto.unidad_medida || 'unidad'
             });
         }
         
@@ -895,6 +900,20 @@ async function changePrice(index) {
     }
 }
 
+function changeUnit(index) {
+    const item = APP_STATE.carrito[index];
+    if (!item) return;
+    
+    const unidades = ['unidad', 'metro', 'kg', 'litro', 'paquete', 'caja'];
+    const unidadActual = item.unidad_medida || 'unidad';
+    const indiceActual = unidades.indexOf(unidadActual);
+    const nuevaUnidad = unidades[(indiceActual + 1) % unidades.length];
+    
+    item.unidad_medida = nuevaUnidad;
+    updateCartDisplay();
+    saveCarrito();
+}
+
 function updateCartDisplay() {
     const container = document.getElementById('cartItems');
     const subtotalElem = document.getElementById('cartSubtotal');
@@ -926,11 +945,13 @@ function updateCartDisplay() {
                 ${item.cantidad || 1}
                 <button onclick="updateCantidad(${index}, 1)">+</button>
             </span>
+            <span>${item.unidad_medida || 'unidad'}</span>
             <span>$${(item.precio || 0).toFixed(2)}</span>
             <span>$${(item.subtotal || 0).toFixed(2)}</span>
             <span class="cart-item-actions">
                 <button onclick="removeFromCart(${index})" class="btn btn-danger btn-sm">🗑️</button>
                 <button onclick="changePrice(${index})" class="btn btn-warning btn-sm">💰</button>
+                <button onclick="changeUnit(${index})" class="btn btn-info btn-sm">📏</button>
             </span>
         `;
         
@@ -1086,6 +1107,29 @@ function showPaymentDetails(method) {
                 `;
             }
             break;
+        case 'combinado':
+            html = `
+                <div class="payment-combined">
+                    <p>Distribuye el total ($${total.toFixed(2)}) entre diferentes métodos:</p>
+                    <div id="combinadoMethods">
+                        <div class="form-group combinado-method">
+                            <select class="combinado-metodo">
+                                <option value="efectivo">Efectivo</option>
+                                <option value="tarjeta">Tarjeta</option>
+                                <option value="transferencia">Transferencia</option>
+                                <option value="qr">QR</option>
+                            </select>
+                            <input type="number" class="combinado-monto" placeholder="0.00" step="0.01" min="0" value="${total}">
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="agregarMetodoCombinado()">➕ Agregar método</button>
+                    <div class="combinado-total">
+                        <p>Total asignado: <span id="combinadoTotalAsignado">$${total.toFixed(2)}</span></p>
+                        <p>Diferencia: <span id="combinadoDiferencia">$0.00</span></p>
+                    </div>
+                </div>
+            `;
+            break;
     }
     
     container.innerHTML = html;
@@ -1115,6 +1159,65 @@ function showPaymentDetails(method) {
             });
         }
     }
+    
+    if (method === 'combinado') {
+        actualizarTotalCombinado();
+    }
+}
+
+function agregarMetodoCombinado() {
+    const container = document.getElementById('combinadoMethods');
+    if (!container) return;
+    
+    const newMethod = document.createElement('div');
+    newMethod.className = 'form-group combinado-method';
+    newMethod.innerHTML = `
+        <select class="combinado-metodo">
+            <option value="efectivo">Efectivo</option>
+            <option value="tarjeta">Tarjeta</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="qr">QR</option>
+        </select>
+        <input type="number" class="combinado-monto" placeholder="0.00" step="0.01" min="0" value="0">
+        <button class="btn btn-danger btn-sm" onclick="eliminarMetodoCombinado(this)">🗑️</button>
+    `;
+    
+    container.appendChild(newMethod);
+    
+    newMethod.querySelector('.combinado-monto').addEventListener('input', actualizarTotalCombinado);
+    newMethod.querySelector('.combinado-metodo').addEventListener('change', actualizarTotalCombinado);
+    
+    actualizarTotalCombinado();
+}
+
+function eliminarMetodoCombinado(button) {
+    const methodDiv = button.parentElement;
+    if (methodDiv) {
+        methodDiv.remove();
+        actualizarTotalCombinado();
+    }
+}
+
+function actualizarTotalCombinado() {
+    const totalElem = document.getElementById('cartTotal');
+    const totalText = totalElem ? totalElem.textContent : '$0.00';
+    const total = parseFloat(totalText.replace('$', '').replace(',', '')) || 0;
+    
+    let totalAsignado = 0;
+    document.querySelectorAll('.combinado-monto').forEach(input => {
+        totalAsignado += parseFloat(input.value) || 0;
+    });
+    
+    const diferencia = total - totalAsignado;
+    
+    const asignadoSpan = document.getElementById('combinadoTotalAsignado');
+    const diferenciaSpan = document.getElementById('combinadoDiferencia');
+    
+    if (asignadoSpan) asignadoSpan.textContent = `$${totalAsignado.toFixed(2)}`;
+    if (diferenciaSpan) {
+        diferenciaSpan.textContent = `$${diferencia.toFixed(2)}`;
+        diferenciaSpan.className = diferencia === 0 ? 'positivo' : diferencia > 0 ? 'negativo' : '';
+    }
 }
 
 async function confirmarPago() {
@@ -1126,7 +1229,7 @@ async function confirmarPago() {
     const subtotal = total + descuento;
     
     let metodo = 'efectivo';
-    let referencia = '';
+    let pagos = [];
     let detalles = {};
     
     const activePaymentBtn = document.querySelector('.payment-btn.active');
@@ -1134,38 +1237,73 @@ async function confirmarPago() {
         metodo = activePaymentBtn.dataset.method || 'efectivo';
     }
     
-    switch (metodo) {
-        case 'efectivo':
-            referencia = `EF-${Date.now().toString().slice(-6)}`;
-            const montoInput = document.getElementById('montoRecibido');
-            const vueltoInput = document.getElementById('vuelto');
-            if (montoInput && vueltoInput) {
-                detalles.monto_recibido = parseFloat(montoInput.value) || total;
-                detalles.vuelto = parseFloat(vueltoInput.value) || 0;
+    if (metodo === 'combinado') {
+        document.querySelectorAll('.combinado-method').forEach(method => {
+            const metodoPago = method.querySelector('.combinado-metodo').value;
+            const monto = parseFloat(method.querySelector('.combinado-monto').value) || 0;
+            if (monto > 0) {
+                const referencia = `${metodoPago.toUpperCase().slice(0,2)}-${Date.now().toString().slice(-6)}${Math.random().toString(36).substr(2, 2)}`;
+                pagos.push({
+                    metodo: metodoPago,
+                    monto: monto,
+                    referencia: referencia,
+                    estado: 'completado',
+                    detalles: JSON.stringify({}),
+                    created_at: new Date().toISOString()
+                });
             }
-            break;
-        case 'tarjeta':
-            referencia = `TJ-${Date.now().toString().slice(-6)}`;
-            const tipoTarjeta = document.getElementById('tipoTarjeta');
-            const autorizacion = document.getElementById('autorizacionTarjeta');
-            const cuotas = document.getElementById('cuotasTarjeta');
-            if (tipoTarjeta) detalles.tipo_tarjeta = tipoTarjeta.value;
-            if (autorizacion) detalles.autorizacion = autorizacion.value;
-            if (cuotas) detalles.cuotas = parseInt(cuotas.value) || 1;
-            break;
-        case 'transferencia':
-            referencia = `TRF-${Date.now().toString().slice(-6)}`;
-            const operacion = document.getElementById('operacionTransferencia');
-            const banco = document.getElementById('bancoTransferencia');
-            if (operacion) detalles.operacion = operacion.value;
-            if (banco) detalles.banco = banco.value;
-            break;
-        case 'qr':
-            referencia = `QR-${Date.now().toString().slice(-6)}`;
-            break;
-        case 'cuenta':
-            referencia = `CC-${Date.now().toString().slice(-6)}`;
-            break;
+        });
+        
+        const totalAsignado = pagos.reduce((sum, pago) => sum + pago.monto, 0);
+        if (Math.abs(totalAsignado - total) > 0.01) {
+            alert(`La suma de los pagos ($${totalAsignado.toFixed(2)}) no coincide con el total ($${total.toFixed(2)})`);
+            return;
+        }
+    } else {
+        let referencia = '';
+        
+        switch (metodo) {
+            case 'efectivo':
+                referencia = `EF-${Date.now().toString().slice(-6)}`;
+                const montoInput = document.getElementById('montoRecibido');
+                const vueltoInput = document.getElementById('vuelto');
+                if (montoInput && vueltoInput) {
+                    detalles.monto_recibido = parseFloat(montoInput.value) || total;
+                    detalles.vuelto = parseFloat(vueltoInput.value) || 0;
+                }
+                break;
+            case 'tarjeta':
+                referencia = `TJ-${Date.now().toString().slice(-6)}`;
+                const tipoTarjeta = document.getElementById('tipoTarjeta');
+                const autorizacion = document.getElementById('autorizacionTarjeta');
+                const cuotas = document.getElementById('cuotasTarjeta');
+                if (tipoTarjeta) detalles.tipo_tarjeta = tipoTarjeta.value;
+                if (autorizacion) detalles.autorizacion = autorizacion.value;
+                if (cuotas) detalles.cuotas = parseInt(cuotas.value) || 1;
+                break;
+            case 'transferencia':
+                referencia = `TRF-${Date.now().toString().slice(-6)}`;
+                const operacion = document.getElementById('operacionTransferencia');
+                const banco = document.getElementById('bancoTransferencia');
+                if (operacion) detalles.operacion = operacion.value;
+                if (banco) detalles.banco = banco.value;
+                break;
+            case 'qr':
+                referencia = `QR-${Date.now().toString().slice(-6)}`;
+                break;
+            case 'cuenta':
+                referencia = `CC-${Date.now().toString().slice(-6)}`;
+                break;
+        }
+        
+        pagos.push({
+            metodo: metodo,
+            monto: total,
+            referencia: referencia,
+            estado: 'completado',
+            detalles: JSON.stringify(detalles),
+            created_at: new Date().toISOString()
+        });
     }
     
     const clienteSelect = document.getElementById('selectCliente');
@@ -1223,21 +1361,14 @@ async function confirmarPago() {
             });
         }
         
-        const pagoData = {
-            venta_id: venta.id,
-            metodo: metodo,
-            monto: total,
-            referencia: referencia,
-            estado: 'completado',
-            detalles: JSON.stringify(detalles),
-            created_at: new Date().toISOString()
-        };
-        
-        const { error: pagoError } = await APP_STATE.supabase
-            .from('pagos')
-            .insert([pagoData]);
-        
-        if (pagoError) throw pagoError;
+        for (const pagoData of pagos) {
+            pagoData.venta_id = venta.id;
+            const { error: pagoError } = await APP_STATE.supabase
+                .from('pagos')
+                .insert([pagoData]);
+            
+            if (pagoError) throw pagoError;
+        }
         
         if (metodo === 'cuenta' && clienteId) {
             const movimientoCC = {
@@ -1263,9 +1394,11 @@ async function confirmarPago() {
             });
         }
         
-        await actualizarCierreCaja(total, metodo);
+        for (const pago of pagos) {
+            await actualizarCierreCaja(pago.monto, pago.metodo);
+        }
         
-        mostrarTicket(venta, items, pagoData, metodo);
+        mostrarTicket(venta, items, pagos, metodo);
         
         APP_STATE.carrito = [];
         updateCartDisplay();
@@ -1334,7 +1467,7 @@ async function actualizarCierreCaja(total, metodo) {
     }
 }
 
-function mostrarTicket(venta, items, pago, metodo) {
+function mostrarTicket(venta, items, pagos, metodo) {
     const modal = document.getElementById('genericModal');
     const modalBody = document.getElementById('modalBody');
     const modalTitle = document.getElementById('modalTitle');
@@ -1342,6 +1475,10 @@ function mostrarTicket(venta, items, pago, metodo) {
     if (!modal || !modalBody || !modalTitle) return;
     
     const configEmpresa = JSON.parse(localStorage.getItem('config_empresa') || '{"nombre":"Mi Local","direccion":"","telefono":""}');
+    
+    const pagosHTML = Array.isArray(pagos) ? 
+        pagos.map(p => `<p>${p.metodo.toUpperCase()}: $${p.monto.toFixed(2)} (REF: ${p.referencia})</p>`).join('') :
+        `<p>${pagos.metodo.toUpperCase()}: $${pagos.monto.toFixed(2)} (REF: ${pagos.referencia})</p>`;
     
     const ticketContent = `
         <div class="ticket" id="ticketContent">
@@ -1362,11 +1499,11 @@ function mostrarTicket(venta, items, pago, metodo) {
             ${venta.descuento > 0 ? `<p>Descuento: -$${venta.descuento.toFixed(2)}</p>` : ''}
             <p><strong>TOTAL: $${venta.total.toFixed(2)}</strong></p>
             <hr>
-            <p>MÉTODO: ${pago.metodo.toUpperCase()}</p>
-            <p>REF: ${pago.referencia}</p>
-            ${metodo === 'efectivo' && pago.monto_recibido > 0 ? `
-                <p>Recibido: $${pago.monto_recibido.toFixed(2)}</p>
-                <p>Vuelto: $${pago.vuelto.toFixed(2)}</p>
+            <p>PAGOS:</p>
+            ${pagosHTML}
+            ${metodo === 'efectivo' && pagos.detalles && JSON.parse(pagos.detalles).monto_recibido > 0 ? `
+                <p>Recibido: $${JSON.parse(pagos.detalles).monto_recibido.toFixed(2)}</p>
+                <p>Vuelto: $${JSON.parse(pagos.detalles).vuelto.toFixed(2)}</p>
             ` : ''}
             <hr>
             <p>¡Gracias por su compra!</p>
@@ -1558,6 +1695,137 @@ async function loadPresupuestos() {
     }
 }
 
+async function verPresupuesto(presupuestoId) {
+    try {
+        const { data: presupuesto, error } = await APP_STATE.supabase
+            .from('presupuestos')
+            .select('*, clientes(nombre, apellido), presupuesto_items(*, productos(nombre, precio_venta))')
+            .eq('id', presupuestoId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        const cliente = presupuesto.clientes ? `${presupuesto.clientes.nombre} ${presupuesto.clientes.apellido || ''}` : 'Sin cliente';
+        
+        let itemsHTML = '';
+        if (presupuesto.presupuesto_items && presupuesto.presupuesto_items.length > 0) {
+            itemsHTML = `
+                <h4>Items:</h4>
+                <ul>
+                    ${presupuesto.presupuesto_items.map(item => `
+                        <li>${item.productos?.nombre || 'Producto'}: ${item.cantidad} x $${item.precio_unitario.toFixed(2)} = $${item.subtotal.toFixed(2)}</li>
+                    `).join('')}
+                </ul>
+            `;
+        }
+        
+        modalTitle.textContent = `Presupuesto: ${presupuesto.numero_presupuesto}`;
+        modalBody.innerHTML = `
+            <div class="presupuesto-detalle">
+                <p><strong>Cliente:</strong> ${cliente}</p>
+                <p><strong>Fecha:</strong> ${new Date(presupuesto.created_at).toLocaleDateString('es-AR')}</p>
+                <p><strong>Válido hasta:</strong> ${new Date(presupuesto.valido_hasta).toLocaleDateString('es-AR')}</p>
+                <p><strong>Estado:</strong> ${presupuesto.estado}</p>
+                <p><strong>Subtotal:</strong> $${presupuesto.subtotal.toFixed(2)}</p>
+                <p><strong>Descuento:</strong> $${presupuesto.descuento.toFixed(2)}</p>
+                <p><strong>Total:</strong> $${presupuesto.total.toFixed(2)}</p>
+                ${itemsHTML}
+            </div>
+        `;
+        modal.style.display = 'flex';
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error cargando presupuesto:', error);
+        alert('Error al cargar presupuesto');
+    }
+}
+
+async function editarPresupuesto(presupuestoId) {
+    try {
+        const { data: presupuesto, error } = await APP_STATE.supabase
+            .from('presupuestos')
+            .select('*, clientes(id, nombre, apellido)')
+            .eq('id', presupuestoId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = 'Editar Presupuesto';
+        modalBody.innerHTML = `
+            <div class="form-presupuesto">
+                <div class="form-group">
+                    <label>Estado:</label>
+                    <select id="presupuestoEstado" class="form-control">
+                        <option value="pendiente" ${presupuesto.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                        <option value="aprobado" ${presupuesto.estado === 'aprobado' ? 'selected' : ''}>Aprobado</option>
+                        <option value="rechazado" ${presupuesto.estado === 'rechazado' ? 'selected' : ''}>Rechazado</option>
+                        <option value="vencido" ${presupuesto.estado === 'vencido' ? 'selected' : ''}>Vencido</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Válido hasta:</label>
+                    <input type="date" id="presupuestoValidoHasta" class="form-control" value="${presupuesto.valido_hasta}">
+                </div>
+                <div class="form-group">
+                    <label>Observaciones:</label>
+                    <textarea id="presupuestoObservaciones" class="form-control" rows="3">${presupuesto.observaciones || ''}</textarea>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        document.getElementById('modalConfirm').textContent = 'Actualizar';
+        document.getElementById('modalConfirm').style.display = 'inline-block';
+        document.getElementById('modalCancel').textContent = 'Cancelar';
+        
+        document.getElementById('modalConfirm').onclick = async () => {
+            await actualizarPresupuesto(presupuestoId);
+        };
+        
+    } catch (error) {
+        console.error('Error cargando presupuesto para editar:', error);
+        alert('Error al cargar presupuesto');
+    }
+}
+
+async function actualizarPresupuesto(presupuestoId) {
+    const presupuestoData = {
+        estado: document.getElementById('presupuestoEstado').value,
+        valido_hasta: document.getElementById('presupuestoValidoHasta').value,
+        observaciones: document.getElementById('presupuestoObservaciones').value,
+        updated_at: new Date().toISOString()
+    };
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('presupuestos')
+            .update(presupuestoData)
+            .eq('id', presupuestoId);
+        
+        if (error) throw error;
+        
+        alert('✅ Presupuesto actualizado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        await loadPresupuestos();
+        
+    } catch (error) {
+        console.error('Error actualizando presupuesto:', error);
+        alert(`❌ Error: ${error.message || 'Error al actualizar presupuesto'}`);
+    }
+}
+
 async function convertirPresupuestoAVenta(presupuestoId) {
     try {
         const { data: presupuesto, error: presupuestoError } = await APP_STATE.supabase
@@ -1584,7 +1852,8 @@ async function convertirPresupuestoAVenta(presupuestoId) {
                 costo: producto.precio_costo || 0,
                 cantidad: item.cantidad,
                 subtotal: item.subtotal,
-                stock: producto.stock || 0
+                stock: producto.stock || 0,
+                unidad_medida: producto.unidad_medida || 'unidad'
             });
         }
         
@@ -2273,6 +2542,159 @@ async function guardarProveedor() {
     } catch (error) {
         console.error('Error guardando proveedor:', error);
         alert(`❌ Error: ${error.message || 'Error al guardar proveedor'}`);
+    }
+}
+
+async function verProveedor(proveedorId) {
+    try {
+        const { data: proveedor, error } = await APP_STATE.supabase
+            .from('proveedores')
+            .select('*')
+            .eq('id', proveedorId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = `Proveedor: ${proveedor.nombre}`;
+        modalBody.innerHTML = `
+            <div class="proveedor-detalle">
+                <p><strong>Razón Social:</strong> ${proveedor.razon_social || 'No especificado'}</p>
+                <p><strong>Contacto:</strong> ${proveedor.contacto || 'No especificado'}</p>
+                <p><strong>Teléfono:</strong> ${proveedor.telefono || 'No especificado'}</p>
+                <p><strong>Email:</strong> ${proveedor.email || 'No especificado'}</p>
+                <p><strong>Dirección:</strong> ${proveedor.direccion || 'No especificado'}</p>
+                <p><strong>CUIT:</strong> ${proveedor.cuit || 'No especificado'}</p>
+                <p><strong>Productos que vende:</strong> ${proveedor.productos_que_vende || 'No especificado'}</p>
+                <p><strong>Plazo de entrega:</strong> ${proveedor.plazo_entrega || 'No especificado'}</p>
+                <p><strong>Observaciones:</strong> ${proveedor.observaciones || 'Ninguna'}</p>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error cargando proveedor:', error);
+        alert('Error al cargar proveedor');
+    }
+}
+
+async function editarProveedor(proveedorId) {
+    try {
+        const { data: proveedor, error } = await APP_STATE.supabase
+            .from('proveedores')
+            .select('*')
+            .eq('id', proveedorId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = 'Editar Proveedor';
+        modalBody.innerHTML = `
+            <div class="form-proveedor">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="proveedorNombre" class="form-control" value="${proveedor.nombre}" required>
+                </div>
+                <div class="form-group">
+                    <label>Razón Social</label>
+                    <input type="text" id="proveedorRazonSocial" class="form-control" value="${proveedor.razon_social || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Contacto</label>
+                    <input type="text" id="proveedorContacto" class="form-control" value="${proveedor.contacto || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="proveedorTelefono" class="form-control" value="${proveedor.telefono || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="proveedorEmail" class="form-control" value="${proveedor.email || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <textarea id="proveedorDireccion" class="form-control" rows="2">${proveedor.direccion || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>CUIT</label>
+                    <input type="text" id="proveedorCuit" class="form-control" value="${proveedor.cuit || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Productos que vende</label>
+                    <textarea id="proveedorProductos" class="form-control" rows="3">${proveedor.productos_que_vende || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Plazo de entrega</label>
+                    <input type="text" id="proveedorPlazoEntrega" class="form-control" value="${proveedor.plazo_entrega || ''}" placeholder="Ej: 48hs">
+                </div>
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="proveedorObservaciones" class="form-control" rows="3">${proveedor.observaciones || ''}</textarea>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        document.getElementById('modalConfirm').textContent = 'Actualizar';
+        document.getElementById('modalConfirm').style.display = 'inline-block';
+        document.getElementById('modalCancel').textContent = 'Cancelar';
+        
+        document.getElementById('modalConfirm').onclick = async () => {
+            await actualizarProveedor(proveedorId);
+        };
+        
+    } catch (error) {
+        console.error('Error cargando proveedor para editar:', error);
+        alert('Error al cargar proveedor');
+    }
+}
+
+async function actualizarProveedor(proveedorId) {
+    const proveedorData = {
+        nombre: document.getElementById('proveedorNombre').value.trim(),
+        razon_social: document.getElementById('proveedorRazonSocial').value.trim(),
+        contacto: document.getElementById('proveedorContacto').value.trim(),
+        telefono: document.getElementById('proveedorTelefono').value.trim(),
+        email: document.getElementById('proveedorEmail').value.trim(),
+        direccion: document.getElementById('proveedorDireccion').value.trim(),
+        cuit: document.getElementById('proveedorCuit').value.trim(),
+        productos_que_vende: document.getElementById('proveedorProductos').value.trim(),
+        plazo_entrega: document.getElementById('proveedorPlazoEntrega').value.trim(),
+        observaciones: document.getElementById('proveedorObservaciones').value.trim(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!proveedorData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    
+    try {
+        const { error } = await APP_STATE.supabase
+            .from('proveedores')
+            .update(proveedorData)
+            .eq('id', proveedorId);
+        
+        if (error) throw error;
+        
+        alert('✅ Proveedor actualizado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        await loadProveedores();
+        
+    } catch (error) {
+        console.error('Error actualizando proveedor:', error);
+        alert(`❌ Error: ${error.message || 'Error al actualizar proveedor'}`);
     }
 }
 
@@ -3007,6 +3429,213 @@ async function exportarReporteMensual() {
 }
 
 // ============================================
+// VENTAS - VER Y CANCELAR
+// ============================================
+
+async function loadVentas() {
+    const container = document.getElementById('ventasList');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading">Cargando ventas...</div>';
+    
+    try {
+        const { data: ventas, error } = await APP_STATE.supabase
+            .from('ventas')
+            .select('*, clientes(nombre, apellido)')
+            .eq('local_id', APP_STATE.currentLocal?.id)
+            .order('created_at', { ascending: false })
+            .limit(50);
+        
+        if (error) throw error;
+        
+        if (ventas.length === 0) {
+            container.innerHTML = '<div class="no-data">No hay ventas registradas</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        ventas.forEach(venta => {
+            const cliente = venta.clientes ? `${venta.clientes.nombre} ${venta.clientes.apellido || ''}` : 'Contado';
+            const fecha = new Date(venta.created_at).toLocaleString('es-AR');
+            const estadoClass = venta.estado === 'anulada' ? 'anulada' : 'completada';
+            
+            const row = document.createElement('div');
+            row.className = 'venta-row';
+            row.innerHTML = `
+                <div class="venta-info">
+                    <span><strong>${venta.numero_venta}</strong></span>
+                    <span>${fecha}</span>
+                    <span>Cliente: ${cliente}</span>
+                    <span>Total: $${venta.total.toFixed(2)}</span>
+                    <span class="venta-estado ${estadoClass}">${venta.estado}</span>
+                </div>
+                <div class="venta-actions">
+                    <button class="btn btn-sm btn-info" onclick="verVentaDetalle('${venta.id}')">Ver</button>
+                    ${venta.estado === 'completada' ? 
+                        `<button class="btn btn-sm btn-danger" onclick="anularVenta('${venta.id}')">Anular</button>` : 
+                        ''
+                    }
+                </div>
+            `;
+            container.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando ventas:', error);
+        container.innerHTML = '<div class="error">Error cargando ventas</div>';
+    }
+}
+
+async function verVentaDetalle(ventaId) {
+    try {
+        const { data: venta, error } = await APP_STATE.supabase
+            .from('ventas')
+            .select('*, clientes(nombre, apellido), venta_items(*, productos(nombre, precio_venta)), pagos(*)')
+            .eq('id', ventaId)
+            .single();
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        const cliente = venta.clientes ? `${venta.clientes.nombre} ${venta.clientes.apellido || ''}` : 'Contado';
+        
+        let itemsHTML = '';
+        if (venta.venta_items && venta.venta_items.length > 0) {
+            itemsHTML = `
+                <h4>Productos:</h4>
+                <ul>
+                    ${venta.venta_items.map(item => `
+                        <li>${item.productos?.nombre || 'Producto'}: ${item.cantidad} x $${item.precio_unitario.toFixed(2)} = $${item.subtotal.toFixed(2)}</li>
+                    `).join('')}
+                </ul>
+            `;
+        }
+        
+        let pagosHTML = '';
+        if (venta.pagos && venta.pagos.length > 0) {
+            pagosHTML = `
+                <h4>Pagos:</h4>
+                <ul>
+                    ${venta.pagos.map(pago => `
+                        <li>${pago.metodo}: $${pago.monto.toFixed(2)} (${pago.referencia})</li>
+                    `).join('')}
+                </ul>
+            `;
+        }
+        
+        modalTitle.textContent = `Venta: ${venta.numero_venta}`;
+        modalBody.innerHTML = `
+            <div class="venta-detalle">
+                <p><strong>Cliente:</strong> ${cliente}</p>
+                <p><strong>Fecha:</strong> ${new Date(venta.created_at).toLocaleString('es-AR')}</p>
+                <p><strong>Estado:</strong> ${venta.estado}</p>
+                <p><strong>Tipo:</strong> ${venta.tipo_venta}</p>
+                <p><strong>Subtotal:</strong> $${venta.subtotal.toFixed(2)}</p>
+                <p><strong>Descuento:</strong> $${venta.descuento.toFixed(2)}</p>
+                <p><strong>Total:</strong> $${venta.total.toFixed(2)}</p>
+                ${itemsHTML}
+                ${pagosHTML}
+            </div>
+        `;
+        modal.style.display = 'flex';
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error cargando venta:', error);
+        alert('Error al cargar venta');
+    }
+}
+
+async function anularVenta(ventaId) {
+    if (!confirm('¿Estás seguro de anular esta venta? Se revertirá el stock y se anularán los pagos.')) {
+        return;
+    }
+    
+    try {
+        // Obtener la venta con items
+        const { data: venta, error: ventaError } = await APP_STATE.supabase
+            .from('ventas')
+            .select('*, venta_items(*), pagos(*)')
+            .eq('id', ventaId)
+            .single();
+        
+        if (ventaError) throw ventaError;
+        
+        // Revertir stock
+        for (const item of venta.venta_items) {
+            await APP_STATE.supabase.rpc('incrementar_stock', {
+                product_id: item.producto_id,
+                cantidad: item.cantidad
+            });
+        }
+        
+        // Revertir pagos en cierre de caja
+        if (venta.pagos && venta.pagos.length > 0) {
+            const hoy = new Date().toISOString().split('T')[0];
+            const { data: cierre, error: cierreError } = await APP_STATE.supabase
+                .from('cierres_caja')
+                .select('*')
+                .eq('fecha', hoy)
+                .eq('local_id', APP_STATE.currentLocal?.id)
+                .eq('caja_id', APP_STATE.currentCaja?.id)
+                .eq('turno', APP_STATE.currentTurno)
+                .eq('estado', 'abierto')
+                .single();
+            
+            if (!cierreError && cierre) {
+                const updateData = {};
+                venta.pagos.forEach(pago => {
+                    switch (pago.metodo) {
+                        case 'efectivo':
+                            updateData.ventas_efectivo = (cierre.ventas_efectivo || 0) - pago.monto;
+                            break;
+                        case 'tarjeta':
+                            updateData.ventas_tarjeta = (cierre.ventas_tarjeta || 0) - pago.monto;
+                            break;
+                        case 'transferencia':
+                            updateData.ventas_transferencia = (cierre.ventas_transferencia || 0) - pago.monto;
+                            break;
+                        case 'qr':
+                            updateData.ventas_qr = (cierre.ventas_qr || 0) - pago.monto;
+                            break;
+                        case 'cuenta':
+                            updateData.ventas_cuenta_corriente = (cierre.ventas_cuenta_corriente || 0) - pago.monto;
+                            break;
+                    }
+                    updateData.total_ventas = (cierre.total_ventas || 0) - pago.monto;
+                });
+                
+                await APP_STATE.supabase
+                    .from('cierres_caja')
+                    .update(updateData)
+                    .eq('id', cierre.id);
+            }
+        }
+        
+        // Actualizar estado de la venta
+        const { error: updateError } = await APP_STATE.supabase
+            .from('ventas')
+            .update({ estado: 'anulada', updated_at: new Date().toISOString() })
+            .eq('id', ventaId);
+        
+        if (updateError) throw updateError;
+        
+        alert('✅ Venta anulada correctamente');
+        
+        await loadVentas();
+        
+    } catch (error) {
+        console.error('Error anulando venta:', error);
+        alert('Error al anular venta');
+    }
+}
+
+// ============================================
 // SCANNER Y BÚSQUEDA
 // ============================================
 
@@ -3258,6 +3887,7 @@ window.agregarAlCarrito = agregarAlCarrito;
 window.updateCantidad = updateCantidad;
 window.removeFromCart = removeFromCart;
 window.changePrice = changePrice;
+window.changeUnit = changeUnit;
 window.handleProductSearch = handleProductSearch;
 window.finalizarVenta = finalizarVenta;
 window.crearPresupuesto = crearPresupuesto;
@@ -3278,7 +3908,15 @@ window.verCliente = verCliente;
 window.editarCliente = editarCliente;
 window.verMovimientosCliente = verMovimientosCliente;
 window.registrarPagoCliente = registrarPagoCliente;
+window.verProveedor = verProveedor;
+window.editarProveedor = editarProveedor;
 window.contactarProveedor = contactarProveedor;
+window.verPresupuesto = verPresupuesto;
+window.editarPresupuesto = editarPresupuesto;
+window.convertirPresupuestoAVenta = convertirPresupuestoAVenta;
 window.exportarReporteMensual = exportarReporteMensual;
+window.loadVentas = loadVentas;
+window.verVentaDetalle = verVentaDetalle;
+window.anularVenta = anularVenta;
 
-console.log('✅ app.js cargado completamente - Versión Online');
+console.log('✅ app.js cargado completamente - Versión 100% Completada');
