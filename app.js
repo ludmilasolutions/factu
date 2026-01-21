@@ -233,37 +233,35 @@ async function savePendingOperation(operation) {
 // ============================================
 
 async function initSupabase() {
-    const supabaseUrl = localStorage.getItem('https://manccbrodsboxtkrgpvm.supabase.co');
-    const supabaseKey = localStorage.getItem('sb_publishable_uFJcZUlmh3htTha0wX7knQ_4h8Z3FH3');
+    const supabaseUrl = localStorage.getItem('supabase_url') || 'https://manccbrodsboxtkrgpvm.supabase.co';
+    const supabaseKey = localStorage.getItem('supabase_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hbmNjYnJvZHNib3h0a3JncHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE2Mzk4OTUsImV4cCI6MjA0NzIxNTg5NX0.FJcZUlmh3htTha0wX7knQ_4h8Z3FH3QeE8ZcJ-4i8yM';
     
-    if (supabaseUrl && supabaseKey) {
-        try {
-            if (!window.supabase) {
-                await loadSupabase();
-            }
-            
-            APP_STATE.supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
-                auth: {
-                    persistSession: true,
-                    autoRefreshToken: true
-                },
-                realtime: {
-                    params: {
-                        eventsPerSecond: 10
-                    }
-                }
-            });
-            
-            console.log('✅ Supabase configurado');
-            
-            const { data: { session } } = await APP_STATE.supabase.auth.getSession();
-            if (session) {
-                APP_STATE.currentUser = session.user;
-                await loadUserData(session.user.email);
-            }
-        } catch (error) {
-            console.warn('⚠️ Error configurando Supabase:', error);
+    try {
+        if (!window.supabase) {
+            await loadSupabase();
         }
+        
+        APP_STATE.supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true
+            },
+            realtime: {
+                params: {
+                    eventsPerSecond: 10
+                }
+            }
+        });
+        
+        console.log('✅ Supabase configurado');
+        
+        const { data: { session } } = await APP_STATE.supabase.auth.getSession();
+        if (session) {
+            APP_STATE.currentUser = session.user;
+            await loadUserData(session.user.email);
+        }
+    } catch (error) {
+        console.warn('⚠️ Error configurando Supabase:', error);
     }
 }
 
@@ -385,13 +383,11 @@ function showAppScreen() {
     if (loginScreen) loginScreen.style.display = 'none';
     if (appScreen) appScreen.style.display = 'block';
     
-    // CARGAR LOCALES Y CAJAS SIEMPRE QUE SE MUESTRE LA APP
     loadLocalesYCajas();
     
     if (!APP_STATE.currentLocal || !APP_STATE.currentCaja) {
         if (initialConfig) initialConfig.style.display = 'block';
         if (mainApp) mainApp.style.display = 'none';
-        // Cargar datos de ejemplo si estamos offline
         if (!APP_STATE.isOnline) {
             loadEjemploLocalesYCajas();
         }
@@ -539,14 +535,12 @@ async function loadLocalesYCajas() {
     if (!localSelect || !cajaSelect) return;
     
     try {
-        // Limpiar selects primero
         localSelect.innerHTML = '<option value="">Seleccionar local...</option>';
         cajaSelect.innerHTML = '<option value="">Seleccionar caja...</option>';
         
         if (APP_STATE.supabase && APP_STATE.isOnline) {
             console.log('🌐 Intentando cargar locales y cajas desde Supabase...');
             
-            // Cargar locales - con manejo de error específico
             let locales = [];
             try {
                 const { data, error } = await APP_STATE.supabase
@@ -555,16 +549,12 @@ async function loadLocalesYCajas() {
                     .eq('activo', true)
                     .order('nombre');
                 
-                if (error) {
-                    console.error('Error cargando locales:', error);
-                    throw error;
-                }
+                if (error) throw error;
                 locales = data || [];
             } catch (error) {
                 console.warn('No se pudieron cargar locales:', error);
             }
             
-            // Cargar cajas - con manejo de error específico
             let cajas = [];
             try {
                 const { data, error } = await APP_STATE.supabase
@@ -573,16 +563,12 @@ async function loadLocalesYCajas() {
                     .eq('activo', true)
                     .order('numero');
                 
-                if (error) {
-                    console.error('Error cargando cajas:', error);
-                    throw error;
-                }
+                if (error) throw error;
                 cajas = data || [];
             } catch (error) {
                 console.warn('No se pudieron cargar cajas:', error);
             }
             
-            // Poblar select de locales
             if (locales.length > 0) {
                 locales.forEach(local => {
                     const option = document.createElement('option');
@@ -592,14 +578,12 @@ async function loadLocalesYCajas() {
                 });
                 console.log(`✅ ${locales.length} locales cargados`);
             } else {
-                // Si no hay locales, agregar opción predeterminada
                 const option = document.createElement('option');
                 option.value = 'local_default';
                 option.textContent = 'Local Principal';
                 localSelect.appendChild(option);
             }
             
-            // Poblar select de cajas
             if (cajas.length > 0) {
                 cajas.forEach(caja => {
                     const option = document.createElement('option');
@@ -609,7 +593,6 @@ async function loadLocalesYCajas() {
                 });
                 console.log(`✅ ${cajas.length} cajas cargadas`);
             } else {
-                // Si no hay cajas, agregar opción predeterminada
                 const option = document.createElement('option');
                 option.value = 'caja_default';
                 option.textContent = 'Caja 1';
@@ -617,14 +600,12 @@ async function loadLocalesYCajas() {
             }
             
         } else {
-            // Modo offline - cargar datos de ejemplo
             console.log('📴 Modo offline - cargando datos de ejemplo');
             loadEjemploLocalesYCajas();
         }
         
     } catch (error) {
         console.error('❌ Error general cargando locales y cajas:', error);
-        // En caso de error, cargar datos de ejemplo
         loadEjemploLocalesYCajas();
     }
 }
@@ -635,11 +616,9 @@ function loadEjemploLocalesYCajas() {
     
     if (!localSelect || !cajaSelect) return;
     
-    // Limpiar selects
     localSelect.innerHTML = '<option value="">Seleccionar local...</option>';
     cajaSelect.innerHTML = '<option value="">Seleccionar caja...</option>';
     
-    // Datos de ejemplo para modo offline
     const localesEjemplo = [
         { id: 'local_offline_1', nombre: 'Local Central (Offline)' },
         { id: 'local_offline_2', nombre: 'Sucursal Norte (Offline)' }
@@ -650,7 +629,6 @@ function loadEjemploLocalesYCajas() {
         { id: 'caja_offline_2', numero: 'Caja 2', nombre: 'Caja Secundaria' }
     ];
     
-    // Agregar locales de ejemplo
     localesEjemplo.forEach(local => {
         const option = document.createElement('option');
         option.value = local.id;
@@ -658,7 +636,6 @@ function loadEjemploLocalesYCajas() {
         localSelect.appendChild(option);
     });
     
-    // Agregar cajas de ejemplo
     cajasEjemplo.forEach(caja => {
         const option = document.createElement('option');
         option.value = caja.id;
@@ -754,7 +731,7 @@ async function abrirCaja(saldoInicial) {
 }
 
 // ============================================
-// CONFIGURACIÓN DE EVENTOS - CORREGIDA
+// CONFIGURACIÓN DE EVENTOS - COMPLETADA
 // ============================================
 
 function setupEventListeners() {
@@ -775,11 +752,9 @@ function setupEventListeners() {
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             let target = e.target;
-            
             while (target && !target.classList.contains('nav-btn')) {
                 target = target.parentElement;
             }
-            
             if (target && target.dataset.page) {
                 const page = target.dataset.page;
                 console.log('Navegando a:', page);
@@ -871,6 +846,24 @@ function setupEventListeners() {
     // Scanner
     const stopScanner = document.getElementById('stopScanner');
     if (stopScanner) stopScanner.addEventListener('click', stopScanner);
+    
+    // Clientes select
+    const selectCliente = document.getElementById('selectCliente');
+    if (selectCliente) {
+        selectCliente.addEventListener('change', (e) => {
+            if (e.target.value === 'nuevo') {
+                showNuevoClienteModal();
+            }
+        });
+    }
+    
+    // Impresora
+    const configImpresora = document.getElementById('configImpresora');
+    if (configImpresora) configImpresora.addEventListener('click', configurarImpresora);
+    
+    // Sincronización manual
+    const syncManual = document.getElementById('syncManual');
+    if (syncManual) syncManual.addEventListener('click', syncOfflineOperations);
 }
 
 function setupNetworkListeners() {
@@ -888,7 +881,7 @@ function setupNetworkListeners() {
 }
 
 // ============================================
-// NAVEGACIÓN Y PÁGINAS - VERSIÓN CORREGIDA
+// NAVEGACIÓN Y PÁGINAS
 // ============================================
 
 function switchPage(pageName) {
@@ -920,6 +913,7 @@ function switchPage(pageName) {
     switch(pageName) {
         case 'pos':
             loadProductosParaVenta();
+            loadClientesParaVenta();
             break;
         case 'productos':
             loadProductos();
@@ -943,7 +937,7 @@ function switchPage(pageName) {
 }
 
 // ============================================
-// SINCRONIZACIÓN OFFLINE/SYNC
+// SINCRONIZACIÓN OFFLINE/SYNC - COMPLETA
 // ============================================
 
 async function syncOfflineOperations() {
@@ -1441,6 +1435,9 @@ function displayProductos(productos) {
                 <button class="btn btn-secondary btn-sm" onclick="editarProducto('${producto.id}')">
                     ✏️ Editar
                 </button>
+                <button class="btn btn-danger btn-sm" onclick="eliminarProducto('${producto.id}')">
+                    🗑️ Eliminar
+                </button>
             </div>
         `;
         
@@ -1652,7 +1649,7 @@ function cancelarVenta() {
 }
 
 // ============================================
-// VENTAS Y PAGOS COMPLETOS - SIMPLIFICADOS
+// VENTAS Y PAGOS COMPLETOS
 // ============================================
 
 function finalizarVenta() {
@@ -1698,23 +1695,36 @@ function showPaymentDetails(method) {
             break;
         case 'tarjeta':
             html = `
-                <div class="payment-simple">
-                    <div class="payment-icon">
-                        <i class="fas fa-credit-card fa-3x"></i>
+                <div class="form-group">
+                    <label>Tarjeta:</label>
+                    <select id="tipoTarjeta">
+                        <option value="debito">Débito</option>
+                        <option value="credito">Crédito</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Número de autorización:</label>
+                    <input type="text" id="autorizacionTarjeta" placeholder="Ej: 123456">
+                </div>
+                <div id="cuotasContainer" style="display: none;">
+                    <div class="form-group">
+                        <label>Cuotas:</label>
+                        <select id="cuotasTarjeta">
+                            ${[1,2,3,4,5,6,12].map(n => `<option value="${n}">${n} cuota${n > 1 ? 's' : ''}</option>`).join('')}
+                        </select>
                     </div>
-                    <p>Se registrará como pago con tarjeta</p>
-                    <p><strong>Referencia automática generada</strong></p>
                 </div>
             `;
             break;
         case 'transferencia':
             html = `
-                <div class="payment-simple">
-                    <div class="payment-icon">
-                        <i class="fas fa-university fa-3x"></i>
-                    </div>
-                    <p>Se registrará como transferencia bancaria</p>
-                    <p><strong>Referencia automática generada</strong></p>
+                <div class="form-group">
+                    <label>Número de operación:</label>
+                    <input type="text" id="operacionTransferencia" placeholder="Ej: TRF-123456">
+                </div>
+                <div class="form-group">
+                    <label>Banco:</label>
+                    <input type="text" id="bancoTransferencia" placeholder="Nombre del banco">
                 </div>
             `;
             break;
@@ -1730,15 +1740,25 @@ function showPaymentDetails(method) {
             `;
             break;
         case 'cuenta':
-            html = `
-                <div class="payment-simple">
-                    <div class="payment-icon">
-                        <i class="fas fa-file-invoice-dollar fa-3x"></i>
+            const clienteSelect = document.getElementById('selectCliente');
+            if (clienteSelect && clienteSelect.value && clienteSelect.value !== '') {
+                html = `
+                    <div class="payment-simple">
+                        <div class="payment-icon">
+                            <i class="fas fa-file-invoice-dollar fa-3x"></i>
+                        </div>
+                        <p>Se registrará en cuenta corriente del cliente</p>
+                        <p><strong>Total a cargar: $${total.toFixed(2)}</strong></p>
                     </div>
-                    <p>Se registrará en cuenta corriente del cliente</p>
-                    <p><strong>Referencia automática generada</strong></p>
-                </div>
-            `;
+                `;
+            } else {
+                html = `
+                    <div class="alert alert-warning">
+                        <p>⚠️ No hay cliente seleccionado</p>
+                        <p>Selecciona un cliente con cuenta corriente primero</p>
+                    </div>
+                `;
+            }
             break;
     }
     
@@ -1758,6 +1778,17 @@ function showPaymentDetails(method) {
             montoInput.dispatchEvent(new Event('input'));
         }
     }
+    
+    if (method === 'tarjeta') {
+        const tipoTarjeta = document.getElementById('tipoTarjeta');
+        const cuotasContainer = document.getElementById('cuotasContainer');
+        
+        if (tipoTarjeta && cuotasContainer) {
+            tipoTarjeta.addEventListener('change', () => {
+                cuotasContainer.style.display = tipoTarjeta.value === 'credito' ? 'block' : 'none';
+            });
+        }
+    }
 }
 
 async function confirmarPago() {
@@ -1770,6 +1801,7 @@ async function confirmarPago() {
     
     let metodo = 'efectivo';
     let referencia = '';
+    let detalles = {};
     
     const activePaymentBtn = document.querySelector('.payment-btn.active');
     if (activePaymentBtn) {
@@ -1779,12 +1811,28 @@ async function confirmarPago() {
     switch (metodo) {
         case 'efectivo':
             referencia = `EF-${Date.now().toString().slice(-6)}`;
+            const montoInput = document.getElementById('montoRecibido');
+            const vueltoInput = document.getElementById('vuelto');
+            if (montoInput && vueltoInput) {
+                detalles.monto_recibido = parseFloat(montoInput.value) || total;
+                detalles.vuelto = parseFloat(vueltoInput.value) || 0;
+            }
             break;
         case 'tarjeta':
             referencia = `TJ-${Date.now().toString().slice(-6)}`;
+            const tipoTarjeta = document.getElementById('tipoTarjeta');
+            const autorizacion = document.getElementById('autorizacionTarjeta');
+            const cuotas = document.getElementById('cuotasTarjeta');
+            if (tipoTarjeta) detalles.tipo_tarjeta = tipoTarjeta.value;
+            if (autorizacion) detalles.autorizacion = autorizacion.value;
+            if (cuotas) detalles.cuotas = parseInt(cuotas.value) || 1;
             break;
         case 'transferencia':
             referencia = `TRF-${Date.now().toString().slice(-6)}`;
+            const operacion = document.getElementById('operacionTransferencia');
+            const banco = document.getElementById('bancoTransferencia');
+            if (operacion) detalles.operacion = operacion.value;
+            if (banco) detalles.banco = banco.value;
             break;
         case 'qr':
             referencia = `QR-${Date.now().toString().slice(-6)}`;
@@ -1794,19 +1842,13 @@ async function confirmarPago() {
             break;
     }
     
-    let montoRecibido = total;
-    let vuelto = 0;
-    if (metodo === 'efectivo') {
-        const montoInput = document.getElementById('montoRecibido');
-        if (montoInput) {
-            montoRecibido = parseFloat(montoInput.value) || total;
-            vuelto = montoRecibido - total;
-            if (vuelto < 0) vuelto = 0;
-        }
-    }
-    
     const clienteSelect = document.getElementById('selectCliente');
-    const clienteId = clienteSelect && clienteSelect.value === 'cuenta' ? 'cliente_cc' : null;
+    const clienteId = clienteSelect && clienteSelect.value && clienteSelect.value !== '' ? clienteSelect.value : null;
+    
+    if (metodo === 'cuenta' && !clienteId) {
+        alert('Selecciona un cliente para venta a cuenta corriente');
+        return;
+    }
     
     const ventaId = 'venta_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
@@ -1841,10 +1883,7 @@ async function confirmarPago() {
         monto: total,
         referencia: referencia,
         estado: 'completado',
-        ...(metodo === 'efectivo' && {
-            monto_recibido: montoRecibido,
-            vuelto: vuelto
-        }),
+        detalles: JSON.stringify(detalles),
         offline_id: 'pago_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         sync_status: APP_STATE.isOnline ? 'synced' : 'pending',
         created_at: new Date().toISOString()
@@ -2008,7 +2047,7 @@ function mostrarTicket(venta, items, pago, metodo) {
             <hr>
             <p>MÉTODO: ${pago.metodo.toUpperCase()}</p>
             <p>REF: ${pago.referencia}</p>
-            ${metodo === 'efectivo' && pago.vuelto > 0 ? `
+            ${metodo === 'efectivo' && pago.monto_recibido > 0 ? `
                 <p>Recibido: $${pago.monto_recibido.toFixed(2)}</p>
                 <p>Vuelto: $${pago.vuelto.toFixed(2)}</p>
             ` : ''}
@@ -2033,28 +2072,32 @@ function imprimirTicket() {
     const ticketContent = document.getElementById('ticketContent');
     if (!ticketContent) return;
     
-    const ventana = window.open('', '_blank');
-    ventana.document.write(`
-        <html>
-        <head>
-            <title>Ticket de Venta</title>
-            <style>
-                body { font-family: 'Courier New', monospace; padding: 10px; }
-                h3 { text-align: center; }
-                hr { border-top: 1px dashed #000; margin: 5px 0; }
-                p { margin: 2px 0; }
-                @media print {
-                    body { font-size: 12px; }
-                }
-            </style>
-        </head>
-        <body>
-            ${ticketContent.innerHTML}
-        </body>
-        </html>
-    `);
-    ventana.document.close();
-    ventana.print();
+    if (typeof window.printTicket === 'function') {
+        window.printTicket(ticketContent.innerHTML);
+    } else {
+        const ventana = window.open('', '_blank');
+        ventana.document.write(`
+            <html>
+            <head>
+                <title>Ticket de Venta</title>
+                <style>
+                    body { font-family: 'Courier New', monospace; padding: 10px; }
+                    h3 { text-align: center; }
+                    hr { border-top: 1px dashed #000; margin: 5px 0; }
+                    p { margin: 2px 0; }
+                    @media print {
+                        body { font-size: 12px; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${ticketContent.innerHTML}
+            </body>
+            </html>
+        `);
+        ventana.document.close();
+        ventana.print();
+    }
 }
 
 function enviarTicketWhatsapp() {
@@ -2067,6 +2110,26 @@ function enviarTicketWhatsapp() {
     if (telefono) {
         const url = `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`;
         window.open(url, '_blank');
+    }
+}
+
+function configurarImpresora() {
+    if (navigator.usb) {
+        navigator.usb.requestDevice({ filters: [] })
+            .then(device => {
+                console.log('Impresora conectada:', device);
+                alert(`Impresora conectada: ${device.productName}`);
+                localStorage.setItem('impresora_config', JSON.stringify({
+                    dispositivo: device.productName,
+                    conectada: true
+                }));
+            })
+            .catch(error => {
+                console.error('Error conectando impresora:', error);
+                alert('No se pudo conectar la impresora. Se usará impresión por navegador.');
+            });
+    } else {
+        alert('Tu navegador no soporta conexión USB. Se usará impresión por navegador.');
     }
 }
 
@@ -2203,13 +2266,16 @@ async function loadPresupuestos() {
                     <span class="presupuesto-estado ${presupuesto.estado}">${presupuesto.estado}</span>
                 </div>
                 <p>Cliente: ${presupuesto.clientes?.nombre || 'Sin cliente'}</p>
+                <p>Fecha: ${new Date(presupuesto.created_at).toLocaleDateString('es-AR')}</p>
                 <p>Valido hasta: ${new Date(presupuesto.valido_hasta).toLocaleDateString('es-AR')}</p>
                 <p>Total: $${presupuesto.total.toFixed(2)}</p>
                 <div class="presupuesto-actions">
                     <button class="btn btn-sm btn-primary" onclick="verPresupuesto('${presupuesto.id}')">Ver</button>
+                    <button class="btn btn-sm btn-info" onclick="enviarPresupuestoWhatsapp('${presupuesto.id}')">📱 WhatsApp</button>
                     ${presupuesto.estado === 'pendiente' ? 
                         `<button class="btn btn-sm btn-success" onclick="convertirPresupuestoAVenta('${presupuesto.id}')">Vender</button>` : 
                         ''}
+                    <button class="btn btn-sm btn-danger" onclick="eliminarPresupuesto('${presupuesto.id}')">Eliminar</button>
                 </div>
             `;
             container.appendChild(card);
@@ -2221,18 +2287,209 @@ async function loadPresupuestos() {
     }
 }
 
-function verPresupuesto(presupuestoId) {
-    alert(`Ver presupuesto ${presupuestoId}. Implementación pendiente.`);
+async function verPresupuesto(presupuestoId) {
+    try {
+        let presupuesto = null;
+        let items = [];
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data: presupuestoData, error } = await APP_STATE.supabase
+                .from('presupuestos')
+                .select('*, clientes(*)')
+                .eq('id', presupuestoId)
+                .single();
+            
+            if (!error) presupuesto = presupuestoData;
+            
+            const { data: itemsData } = await APP_STATE.supabase
+                .from('presupuesto_items')
+                .select('*, productos(*)')
+                .eq('presupuesto_id', presupuestoId);
+            
+            if (itemsData) items = itemsData;
+        } else {
+            const presupuestos = await indexedDBOperation('presupuestos_offline', 'getAll') || [];
+            presupuesto = presupuestos.find(p => p.id === presupuestoId || p.offline_id === presupuestoId);
+        }
+        
+        if (!presupuesto) {
+            alert('Presupuesto no encontrado');
+            return;
+        }
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        let itemsHTML = '';
+        if (items.length > 0) {
+            itemsHTML = items.map(item => `
+                <tr>
+                    <td>${item.productos?.nombre || 'Producto'}</td>
+                    <td>${item.cantidad}</td>
+                    <td>$${item.precio_unitario.toFixed(2)}</td>
+                    <td>$${item.subtotal.toFixed(2)}</td>
+                </tr>
+            `).join('');
+        }
+        
+        modalTitle.textContent = `Presupuesto ${presupuesto.numero_presupuesto || ''}`;
+        modalBody.innerHTML = `
+            <div class="presupuesto-detalle">
+                <p><strong>Cliente:</strong> ${presupuesto.clientes?.nombre || 'Sin cliente'}</p>
+                <p><strong>Fecha:</strong> ${new Date(presupuesto.created_at).toLocaleDateString('es-AR')}</p>
+                <p><strong>Válido hasta:</strong> ${new Date(presupuesto.valido_hasta).toLocaleDateString('es-AR')}</p>
+                <p><strong>Estado:</strong> ${presupuesto.estado}</p>
+                <hr>
+                <h4>Productos:</h4>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHTML}
+                    </tbody>
+                </table>
+                <hr>
+                <p><strong>Subtotal:</strong> $${presupuesto.subtotal.toFixed(2)}</p>
+                <p><strong>Descuento:</strong> $${presupuesto.descuento.toFixed(2)}</p>
+                <p><strong>Total:</strong> $${presupuesto.total.toFixed(2)}</p>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error viendo presupuesto:', error);
+        alert('Error al cargar el presupuesto');
+    }
 }
 
-function convertirPresupuestoAVenta(presupuestoId) {
-    if (confirm('¿Convertir este presupuesto en una venta?')) {
-        alert(`Presupuesto ${presupuestoId} convertido a venta. Implementación pendiente.`);
+async function convertirPresupuestoAVenta(presupuestoId) {
+    if (!confirm('¿Convertir este presupuesto en una venta?')) return;
+    
+    try {
+        let presupuesto = null;
+        let items = [];
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data: presupuestoData, error } = await APP_STATE.supabase
+                .from('presupuestos')
+                .select('*')
+                .eq('id', presupuestoId)
+                .single();
+            
+            if (error) throw error;
+            presupuesto = presupuestoData;
+            
+            const { data: itemsData } = await APP_STATE.supabase
+                .from('presupuesto_items')
+                .select('*')
+                .eq('presupuesto_id', presupuestoId);
+            
+            if (itemsData) items = itemsData;
+        }
+        
+        if (!presupuesto) {
+            alert('Presupuesto no encontrado');
+            return;
+        }
+        
+        APP_STATE.carrito = items.map(item => ({
+            id: item.producto_id,
+            nombre: 'Producto del presupuesto',
+            precio: item.precio_unitario,
+            cantidad: item.cantidad,
+            subtotal: item.subtotal
+        }));
+        
+        updateCartDisplay();
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            await APP_STATE.supabase
+                .from('presupuestos')
+                .update({ estado: 'convertido' })
+                .eq('id', presupuestoId);
+        }
+        
+        switchPage('pos');
+        alert('Presupuesto convertido a venta. Completa el pago.');
+        
+    } catch (error) {
+        console.error('Error convirtiendo presupuesto:', error);
+        alert('Error al convertir el presupuesto');
+    }
+}
+
+async function eliminarPresupuesto(presupuestoId) {
+    if (!confirm('¿Eliminar este presupuesto?')) return;
+    
+    try {
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            await APP_STATE.supabase
+                .from('presupuestos')
+                .delete()
+                .eq('id', presupuestoId);
+        } else {
+            await indexedDBOperation('presupuestos_offline', 'delete', presupuestoId);
+        }
+        
+        loadPresupuestos();
+        alert('Presupuesto eliminado');
+    } catch (error) {
+        console.error('Error eliminando presupuesto:', error);
+        alert('Error al eliminar el presupuesto');
+    }
+}
+
+async function enviarPresupuestoWhatsapp(presupuestoId) {
+    try {
+        let presupuesto = null;
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('presupuestos')
+                .select('*, clientes(*)')
+                .eq('id', presupuestoId)
+                .single();
+            
+            if (error) throw error;
+            presupuesto = data;
+        }
+        
+        if (!presupuesto) {
+            alert('Presupuesto no encontrado');
+            return;
+        }
+        
+        const texto = `📋 Presupuesto ${presupuesto.numero_presupuesto}\n` +
+                     `Cliente: ${presupuesto.clientes?.nombre || ''}\n` +
+                     `Total: $${presupuesto.total.toFixed(2)}\n` +
+                     `Válido hasta: ${new Date(presupuesto.valido_hasta).toLocaleDateString('es-AR')}\n\n` +
+                     `¡Gracias por su confianza!`;
+        
+        const telefono = prompt('Ingrese el número de WhatsApp (sin + ni 0):', 
+                              presupuesto.clientes?.telefono ? presupuesto.clientes.telefono.replace(/\D/g, '') : '');
+        
+        if (telefono) {
+            const url = `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`;
+            window.open(url, '_blank');
+        }
+    } catch (error) {
+        console.error('Error enviando presupuesto:', error);
+        alert('Error al enviar el presupuesto');
     }
 }
 
 // ============================================
-// CLIENTES Y CUENTA CORRIENTE
+// CLIENTES Y CUENTA CORRIENTE - COMPLETOS
 // ============================================
 
 async function loadClientes() {
@@ -2270,6 +2527,8 @@ async function loadClientes() {
                 <div class="cliente-actions">
                     <button class="btn btn-sm btn-primary" onclick="verCliente('${cliente.id}')">Ver</button>
                     <button class="btn btn-sm btn-warning" onclick="editarCliente('${cliente.id}')">Editar</button>
+                    <button class="btn btn-sm btn-info" onclick="verMovimientosCliente('${cliente.id}')">Movimientos</button>
+                    <button class="btn btn-sm btn-success" onclick="registrarPagoCliente('${cliente.id}')">Pago</button>
                 </div>
             `;
             container.appendChild(row);
@@ -2293,15 +2552,16 @@ async function loadClientesParaVenta() {
             clientes = await indexedDBOperation('clientes_cache', 'getAll') || [];
         }
         
-        select.innerHTML = '<option value="">Cliente Contado</option>';
+        select.innerHTML = `
+            <option value="">Cliente Contado</option>
+            <option value="nuevo">➕ Nuevo Cliente</option>
+        `;
         
         clientes.forEach(cliente => {
-            if (cliente.tipo_cliente === 'cuenta_corriente') {
-                const option = document.createElement('option');
-                option.value = cliente.id;
-                option.textContent = `${cliente.nombre} (CC) - Saldo: $${cliente.saldo.toFixed(2)}`;
-                select.appendChild(option);
-            }
+            const option = document.createElement('option');
+            option.value = cliente.id;
+            option.textContent = `${cliente.nombre} ${cliente.apellido || ''} - ${cliente.tipo_cliente === 'cuenta_corriente' ? 'CC' : 'Contado'}`;
+            select.appendChild(option);
         });
         
     } catch (error) {
@@ -2309,24 +2569,499 @@ async function loadClientesParaVenta() {
     }
 }
 
-function verCliente(clienteId) {
-    alert(`Ver cliente ${clienteId}. Implementación pendiente.`);
+async function verCliente(clienteId) {
+    try {
+        let cliente = await indexedDBOperation('clientes_cache', 'get', clienteId);
+        
+        if (!cliente && APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('clientes')
+                .select('*')
+                .eq('id', clienteId)
+                .single();
+            
+            if (error) throw error;
+            cliente = data;
+        }
+        
+        if (!cliente) {
+            alert('Cliente no encontrado');
+            return;
+        }
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = `Cliente: ${cliente.nombre} ${cliente.apellido || ''}`;
+        modalBody.innerHTML = `
+            <div class="cliente-detalle">
+                <p><strong>Documento:</strong> ${cliente.numero_documento || 'No especificado'}</p>
+                <p><strong>Teléfono:</strong> ${cliente.telefono || 'No especificado'}</p>
+                <p><strong>Email:</strong> ${cliente.email || 'No especificado'}</p>
+                <p><strong>Dirección:</strong> ${cliente.direccion || 'No especificado'}</p>
+                <p><strong>Tipo Cliente:</strong> ${cliente.tipo_cliente || 'consumidor_final'}</p>
+                <p><strong>Límite Crédito:</strong> $${cliente.limite_credito.toFixed(2)}</p>
+                <p><strong>Saldo Actual:</strong> $${cliente.saldo.toFixed(2)}</p>
+                <p><strong>Estado:</strong> ${cliente.activo ? 'Activo' : 'Inactivo'}</p>
+                <hr>
+                <p><strong>Observaciones:</strong></p>
+                <p>${cliente.observaciones || 'Sin observaciones'}</p>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error viendo cliente:', error);
+        alert('Error al cargar el cliente');
+    }
 }
 
-function editarCliente(clienteId) {
-    alert(`Editar cliente ${clienteId}. Implementación pendiente.`);
+function showNuevoClienteModal() {
+    const modal = document.getElementById('genericModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    modalTitle.textContent = 'Nuevo Cliente';
+    modalBody.innerHTML = `
+        <div class="form-cliente">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" id="clienteNombre" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Apellido</label>
+                <input type="text" id="clienteApellido" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Documento</label>
+                <input type="text" id="clienteDocumento" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="tel" id="clienteTelefono" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="clienteEmail" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Dirección</label>
+                <textarea id="clienteDireccion" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Tipo de Cliente</label>
+                <select id="clienteTipo" class="form-control">
+                    <option value="consumidor_final">Consumidor Final</option>
+                    <option value="cuenta_corriente">Cuenta Corriente</option>
+                    <option value="mayorista">Mayorista</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Límite de Crédito</label>
+                <input type="number" id="clienteLimite" class="form-control" value="10000" step="100">
+            </div>
+            <div class="form-group">
+                <label>Observaciones</label>
+                <textarea id="clienteObservaciones" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+    
+    document.getElementById('modalConfirm').textContent = 'Guardar';
+    document.getElementById('modalConfirm').style.display = 'inline-block';
+    document.getElementById('modalCancel').textContent = 'Cancelar';
+    
+    document.getElementById('modalConfirm').onclick = async () => {
+        await guardarCliente();
+    };
+}
+
+async function guardarCliente() {
+    const clienteData = {
+        nombre: document.getElementById('clienteNombre').value.trim(),
+        apellido: document.getElementById('clienteApellido').value.trim(),
+        numero_documento: document.getElementById('clienteDocumento').value.trim(),
+        telefono: document.getElementById('clienteTelefono').value.trim(),
+        email: document.getElementById('clienteEmail').value.trim(),
+        direccion: document.getElementById('clienteDireccion').value.trim(),
+        tipo_cliente: document.getElementById('clienteTipo').value,
+        limite_credito: parseFloat(document.getElementById('clienteLimite').value) || 0,
+        saldo: 0,
+        observaciones: document.getElementById('clienteObservaciones').value.trim(),
+        activo: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!clienteData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    
+    try {
+        if (APP_STATE.isOnline && APP_STATE.supabase) {
+            const { data, error } = await APP_STATE.supabase
+                .from('clientes')
+                .insert([clienteData])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            
+            await indexedDBOperation('clientes_cache', 'put', data);
+        } else {
+            clienteData.id = 'cliente_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            clienteData.offline_id = clienteData.id;
+            clienteData.sync_status = 'pending';
+            
+            await indexedDBOperation('clientes_cache', 'put', clienteData);
+            
+            await savePendingOperation({
+                type: 'cliente',
+                data: clienteData,
+                priority: 5
+            });
+        }
+        
+        alert('✅ Cliente guardado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        loadClientes();
+        loadClientesParaVenta();
+        
+    } catch (error) {
+        console.error('Error guardando cliente:', error);
+        alert(`❌ Error: ${error.message || 'Error desconocido'}`);
+    }
+}
+
+async function editarCliente(clienteId) {
+    try {
+        let cliente = await indexedDBOperation('clientes_cache', 'get', clienteId);
+        
+        if (!cliente && APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('clientes')
+                .select('*')
+                .eq('id', clienteId)
+                .single();
+            
+            if (error) throw error;
+            cliente = data;
+        }
+        
+        if (!cliente) {
+            alert('Cliente no encontrado');
+            return;
+        }
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = 'Editar Cliente';
+        modalBody.innerHTML = `
+            <div class="form-cliente">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="clienteNombre" class="form-control" value="${cliente.nombre || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido</label>
+                    <input type="text" id="clienteApellido" class="form-control" value="${cliente.apellido || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Documento</label>
+                    <input type="text" id="clienteDocumento" class="form-control" value="${cliente.numero_documento || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="clienteTelefono" class="form-control" value="${cliente.telefono || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="clienteEmail" class="form-control" value="${cliente.email || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <textarea id="clienteDireccion" class="form-control" rows="2">${cliente.direccion || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Cliente</label>
+                    <select id="clienteTipo" class="form-control">
+                        <option value="consumidor_final" ${cliente.tipo_cliente === 'consumidor_final' ? 'selected' : ''}>Consumidor Final</option>
+                        <option value="cuenta_corriente" ${cliente.tipo_cliente === 'cuenta_corriente' ? 'selected' : ''}>Cuenta Corriente</option>
+                        <option value="mayorista" ${cliente.tipo_cliente === 'mayorista' ? 'selected' : ''}>Mayorista</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Límite de Crédito</label>
+                    <input type="number" id="clienteLimite" class="form-control" value="${cliente.limite_credito || 0}" step="100">
+                </div>
+                <div class="form-group">
+                    <label>Saldo Actual</label>
+                    <input type="number" id="clienteSaldo" class="form-control" value="${cliente.saldo || 0}" step="0.01" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Activo</label>
+                    <select id="clienteActivo" class="form-control">
+                        <option value="true" ${cliente.activo ? 'selected' : ''}>Sí</option>
+                        <option value="false" ${!cliente.activo ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="clienteObservaciones" class="form-control" rows="3">${cliente.observaciones || ''}</textarea>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').textContent = 'Actualizar';
+        document.getElementById('modalConfirm').style.display = 'inline-block';
+        document.getElementById('modalCancel').textContent = 'Cancelar';
+        
+        document.getElementById('modalConfirm').onclick = async () => {
+            await actualizarCliente(clienteId);
+        };
+        
+    } catch (error) {
+        console.error('Error cargando cliente para editar:', error);
+        alert('Error al cargar el cliente');
+    }
+}
+
+async function actualizarCliente(clienteId) {
+    const clienteData = {
+        nombre: document.getElementById('clienteNombre').value.trim(),
+        apellido: document.getElementById('clienteApellido').value.trim(),
+        numero_documento: document.getElementById('clienteDocumento').value.trim(),
+        telefono: document.getElementById('clienteTelefono').value.trim(),
+        email: document.getElementById('clienteEmail').value.trim(),
+        direccion: document.getElementById('clienteDireccion').value.trim(),
+        tipo_cliente: document.getElementById('clienteTipo').value,
+        limite_credito: parseFloat(document.getElementById('clienteLimite').value) || 0,
+        saldo: parseFloat(document.getElementById('clienteSaldo').value) || 0,
+        activo: document.getElementById('clienteActivo').value === 'true',
+        observaciones: document.getElementById('clienteObservaciones').value.trim(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!clienteData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    
+    try {
+        if (APP_STATE.isOnline && APP_STATE.supabase) {
+            const { error } = await APP_STATE.supabase
+                .from('clientes')
+                .update(clienteData)
+                .eq('id', clienteId);
+            
+            if (error) throw error;
+            
+            clienteData.id = clienteId;
+            await indexedDBOperation('clientes_cache', 'put', clienteData);
+        } else {
+            clienteData.id = clienteId;
+            clienteData.sync_status = 'pending';
+            
+            await indexedDBOperation('clientes_cache', 'put', clienteData);
+            
+            await savePendingOperation({
+                type: 'cliente',
+                data: clienteData,
+                operation: 'update',
+                priority: 5
+            });
+        }
+        
+        alert('✅ Cliente actualizado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        loadClientes();
+        loadClientesParaVenta();
+        
+    } catch (error) {
+        console.error('Error actualizando cliente:', error);
+        alert(`❌ Error: ${error.message || 'Error desconocido'}`);
+    }
+}
+
+async function verMovimientosCliente(clienteId) {
+    try {
+        let movimientos = [];
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('cuentas_corrientes')
+                .select('*')
+                .eq('cliente_id', clienteId)
+                .order('created_at', { ascending: false })
+                .limit(50);
+            
+            if (!error) movimientos = data;
+        }
+        
+        let cliente = await indexedDBOperation('clientes_cache', 'get', clienteId);
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        let movimientosHTML = '';
+        if (movimientos.length > 0) {
+            movimientosHTML = movimientos.map(mov => `
+                <tr>
+                    <td>${new Date(mov.created_at).toLocaleDateString('es-AR')}</td>
+                    <td>${mov.tipo_movimiento}</td>
+                    <td>$${mov.monto.toFixed(2)}</td>
+                    <td>$${mov.saldo_anterior.toFixed(2)}</td>
+                    <td>$${mov.saldo_nuevo.toFixed(2)}</td>
+                    <td>${mov.observaciones || ''}</td>
+                </tr>
+            `).join('');
+        } else {
+            movimientosHTML = '<tr><td colspan="6">No hay movimientos</td></tr>';
+        }
+        
+        modalTitle.textContent = `Movimientos de ${cliente?.nombre || 'Cliente'}`;
+        modalBody.innerHTML = `
+            <div class="movimientos-cliente">
+                <p><strong>Saldo Actual:</strong> $${cliente?.saldo?.toFixed(2) || '0.00'}</p>
+                <p><strong>Límite de Crédito:</strong> $${cliente?.limite_credito?.toFixed(2) || '0.00'}</p>
+                <hr>
+                <h4>Historial de Movimientos:</h4>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Saldo Anterior</th>
+                                <th>Saldo Nuevo</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${movimientosHTML}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error viendo movimientos:', error);
+        alert('Error al cargar los movimientos');
+    }
+}
+
+async function registrarPagoCliente(clienteId) {
+    try {
+        let cliente = await indexedDBOperation('clientes_cache', 'get', clienteId);
+        
+        if (!cliente) {
+            alert('Cliente no encontrado');
+            return;
+        }
+        
+        const montoPago = prompt(`Ingrese el monto del pago (Saldo actual: $${cliente.saldo.toFixed(2)}):`, cliente.saldo.toFixed(2));
+        
+        if (!montoPago || isNaN(montoPago) || parseFloat(montoPago) <= 0) {
+            alert('Monto inválido');
+            return;
+        }
+        
+        const monto = parseFloat(montoPago);
+        const saldoAnterior = cliente.saldo;
+        const saldoNuevo = saldoAnterior - monto;
+        
+        if (saldoNuevo < -cliente.limite_credito) {
+            alert(`El pago excede el límite de crédito. Límite: $${cliente.limite_credito.toFixed(2)}`);
+            return;
+        }
+        
+        const observaciones = prompt('Observaciones:', 'Pago recibido');
+        
+        const movimientoCC = {
+            cliente_id: clienteId,
+            tipo_movimiento: 'pago',
+            monto: monto,
+            saldo_anterior: saldoAnterior,
+            saldo_nuevo: saldoNuevo,
+            observaciones: observaciones || 'Pago recibido',
+            created_at: new Date().toISOString()
+        };
+        
+        if (APP_STATE.isOnline && APP_STATE.supabase) {
+            const { error } = await APP_STATE.supabase
+                .from('cuentas_corrientes')
+                .insert([movimientoCC]);
+            
+            if (error) throw error;
+            
+            cliente.saldo = saldoNuevo;
+            await APP_STATE.supabase
+                .from('clientes')
+                .update({ saldo: saldoNuevo })
+                .eq('id', clienteId);
+        } else {
+            movimientoCC.offline_id = 'cc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            movimientoCC.sync_status = 'pending';
+            
+            cliente.saldo = saldoNuevo;
+            cliente.sync_status = 'pending';
+            
+            await indexedDBOperation('clientes_cache', 'put', cliente);
+            
+            await savePendingOperation({
+                type: 'cuenta_corriente',
+                data: movimientoCC,
+                priority: 8
+            });
+        }
+        
+        alert(`✅ Pago registrado correctamente. Nuevo saldo: $${saldoNuevo.toFixed(2)}`);
+        
+        loadClientes();
+        loadClientesParaVenta();
+        
+    } catch (error) {
+        console.error('Error registrando pago:', error);
+        alert('Error al registrar el pago');
+    }
 }
 
 // ============================================
-// CAJA Y CIERRES
+// CAJA Y CIERRES - COMPLETOS
 // ============================================
 
 async function loadCajaResumen() {
     const saldoInicialElem = document.getElementById('saldoInicialResumen');
     const ventasEfectivoElem = document.getElementById('ventasEfectivo');
     const ventasTarjetaElem = document.getElementById('ventasTarjeta');
+    const ventasTransferenciaElem = document.getElementById('ventasTransferencia');
+    const ventasQrElem = document.getElementById('ventasQr');
+    const ventasCuentaElem = document.getElementById('ventasCuenta');
     const totalVentasElem = document.getElementById('totalVentas');
     const saldoFinalElem = document.getElementById('saldoFinal');
+    const diferenciaElem = document.getElementById('diferenciaResumen');
     
     if (!saldoInicialElem) return;
     
@@ -2360,9 +3095,12 @@ async function loadCajaResumen() {
         if (cierreActual) {
             saldoInicialElem.textContent = `$${cierreActual.saldo_inicial.toFixed(2)}`;
             
-            let ventasEfectivo = 0;
-            let ventasTarjeta = 0;
-            let totalVentas = 0;
+            let ventasEfectivo = cierreActual.ventas_efectivo || 0;
+            let ventasTarjeta = cierreActual.ventas_tarjeta || 0;
+            let ventasTransferencia = cierreActual.ventas_transferencia || 0;
+            let ventasQr = cierreActual.ventas_qr || 0;
+            let ventasCuenta = cierreActual.ventas_cuenta_corriente || 0;
+            let totalVentas = cierreActual.total_ventas || 0;
             
             if (APP_STATE.supabase && APP_STATE.isOnline) {
                 const { data: ventasHoy, error } = await APP_STATE.supabase
@@ -2376,8 +3114,12 @@ async function loadCajaResumen() {
                     ventasHoy.forEach(venta => {
                         totalVentas += venta.total;
                         if (venta.pagos && venta.pagos[0]) {
-                            if (venta.pagos[0].metodo === 'efectivo') ventasEfectivo += venta.total;
-                            if (venta.pagos[0].metodo === 'tarjeta') ventasTarjeta += venta.total;
+                            const metodo = venta.pagos[0].metodo;
+                            if (metodo === 'efectivo') ventasEfectivo += venta.total;
+                            else if (metodo === 'tarjeta') ventasTarjeta += venta.total;
+                            else if (metodo === 'transferencia') ventasTransferencia += venta.total;
+                            else if (metodo === 'qr') ventasQr += venta.total;
+                            else if (metodo === 'cuenta') ventasCuenta += venta.total;
                         }
                     });
                 }
@@ -2385,16 +3127,28 @@ async function loadCajaResumen() {
             
             ventasEfectivoElem.textContent = `$${ventasEfectivo.toFixed(2)}`;
             ventasTarjetaElem.textContent = `$${ventasTarjeta.toFixed(2)}`;
+            ventasTransferenciaElem.textContent = `$${ventasTransferencia.toFixed(2)}`;
+            ventasQrElem.textContent = `$${ventasQr.toFixed(2)}`;
+            ventasCuentaElem.textContent = `$${ventasCuenta.toFixed(2)}`;
             totalVentasElem.textContent = `$${totalVentas.toFixed(2)}`;
             
             const saldoFinal = cierreActual.saldo_inicial + ventasEfectivo;
+            const diferencia = cierreActual.diferencia || 0;
+            
             saldoFinalElem.textContent = `$${saldoFinal.toFixed(2)}`;
+            diferenciaElem.textContent = `$${diferencia.toFixed(2)}`;
+            
+            diferenciaElem.className = diferencia >= 0 ? 'positivo' : 'negativo';
         } else {
             saldoInicialElem.textContent = '$0.00';
             ventasEfectivoElem.textContent = '$0.00';
             ventasTarjetaElem.textContent = '$0.00';
+            ventasTransferenciaElem.textContent = '$0.00';
+            ventasQrElem.textContent = '$0.00';
+            ventasCuentaElem.textContent = '$0.00';
             totalVentasElem.textContent = '$0.00';
             saldoFinalElem.textContent = '$0.00';
+            diferenciaElem.textContent = '$0.00';
         }
         
     } catch (error) {
@@ -2403,6 +3157,11 @@ async function loadCajaResumen() {
 }
 
 async function cerrarCaja() {
+    if (!APP_STATE.currentLocal || !APP_STATE.currentCaja || !APP_STATE.currentTurno) {
+        alert('Primero debes iniciar una sesión de trabajo');
+        return;
+    }
+    
     if (!confirm('¿Estás seguro de cerrar la caja?')) return;
     
     try {
@@ -2437,15 +3196,19 @@ async function cerrarCaja() {
             return;
         }
         
-        const saldoFinalInput = prompt('Ingrese el saldo final en caja:', '0.00');
+        const saldoFinalInput = prompt('Ingrese el saldo final en caja:', 
+                                      (cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0)).toFixed(2));
         if (!saldoFinalInput) return;
         
         const saldoFinal = parseFloat(saldoFinalInput) || 0;
         const diferencia = saldoFinal - (cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0));
         
+        const observaciones = prompt('Observaciones del cierre:', 'Cierre normal');
+        
         cierreActual.saldo_final = saldoFinal;
         cierreActual.diferencia = diferencia;
         cierreActual.estado = 'cerrado';
+        cierreActual.observaciones = observaciones;
         cierreActual.updated_at = new Date().toISOString();
         
         if (APP_STATE.isOnline && APP_STATE.supabase) {
@@ -2467,7 +3230,12 @@ async function cerrarCaja() {
             });
         }
         
-        alert(`✅ Caja cerrada correctamente\nDiferencia: $${diferencia.toFixed(2)}`);
+        alert(`✅ Caja cerrada correctamente\n` +
+              `Saldo Inicial: $${cierreActual.saldo_inicial.toFixed(2)}\n` +
+              `Ventas Efectivo: $${(cierreActual.ventas_efectivo || 0).toFixed(2)}\n` +
+              `Saldo Esperado: $${(cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0)).toFixed(2)}\n` +
+              `Saldo Final: $${saldoFinal.toFixed(2)}\n` +
+              `Diferencia: $${diferencia.toFixed(2)}`);
         
         APP_STATE.currentLocal = null;
         APP_STATE.currentCaja = null;
@@ -2486,7 +3254,7 @@ async function cerrarCaja() {
 }
 
 // ============================================
-// PROVEEDORES
+// PROVEEDORES - COMPLETOS
 // ============================================
 
 async function loadProveedores() {
@@ -2521,9 +3289,12 @@ async function loadProveedores() {
                 <p>Contacto: ${proveedor.contacto || 'Sin contacto'}</p>
                 <p>Tel: ${proveedor.telefono || 'Sin teléfono'}</p>
                 <p>Email: ${proveedor.email || 'Sin email'}</p>
+                <p>Productos: ${proveedor.productos_que_vende || 'No especificado'}</p>
                 <div class="proveedor-actions">
                     <button class="btn btn-sm btn-primary" onclick="contactarProveedor('${proveedor.telefono}', '${proveedor.nombre}')">📞 Contactar</button>
                     <button class="btn btn-sm btn-secondary" onclick="verProveedor('${proveedor.id}')">Ver</button>
+                    <button class="btn btn-sm btn-warning" onclick="editarProveedor('${proveedor.id}')">Editar</button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarProveedor('${proveedor.id}')">Eliminar</button>
                 </div>
             `;
             container.appendChild(card);
@@ -2535,11 +3306,385 @@ async function loadProveedores() {
     }
 }
 
-function verProveedor(proveedorId) {
-    alert(`Ver proveedor ${proveedorId}. Implementación pendiente.`);
+function showNuevoProveedorModal() {
+    const modal = document.getElementById('genericModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    modalTitle.textContent = 'Nuevo Proveedor';
+    modalBody.innerHTML = `
+        <div class="form-proveedor">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" id="proveedorNombre" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Razón Social</label>
+                <input type="text" id="proveedorRazonSocial" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Contacto</label>
+                <input type="text" id="proveedorContacto" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="tel" id="proveedorTelefono" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="proveedorEmail" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Dirección</label>
+                <textarea id="proveedorDireccion" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>CUIT</label>
+                <input type="text" id="proveedorCuit" class="form-control" placeholder="XX-XXXXXXXX-X">
+            </div>
+            <div class="form-group">
+                <label>Condición IVA</label>
+                <select id="proveedorCondicionIva" class="form-control">
+                    <option value="responsable_inscripto">Responsable Inscripto</option>
+                    <option value="monotributista">Monotributista</option>
+                    <option value="exento">Exento</option>
+                    <option value="consumidor_final">Consumidor Final</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Productos que vende</label>
+                <textarea id="proveedorProductos" class="form-control" rows="3" placeholder="Lista de productos principales"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Plazo de entrega</label>
+                <input type="text" id="proveedorPlazo" class="form-control" placeholder="Ej: 48hs, 1 semana">
+            </div>
+            <div class="form-group">
+                <label>Observaciones</label>
+                <textarea id="proveedorObservaciones" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+    
+    document.getElementById('modalConfirm').textContent = 'Guardar';
+    document.getElementById('modalConfirm').style.display = 'inline-block';
+    document.getElementById('modalCancel').textContent = 'Cancelar';
+    
+    document.getElementById('modalConfirm').onclick = async () => {
+        await guardarProveedor();
+    };
 }
 
-function contactarProveedor(telefono, nombre) {
+async function guardarProveedor() {
+    const proveedorData = {
+        nombre: document.getElementById('proveedorNombre').value.trim(),
+        razon_social: document.getElementById('proveedorRazonSocial').value.trim(),
+        contacto: document.getElementById('proveedorContacto').value.trim(),
+        telefono: document.getElementById('proveedorTelefono').value.trim(),
+        email: document.getElementById('proveedorEmail').value.trim(),
+        direccion: document.getElementById('proveedorDireccion').value.trim(),
+        cuit: document.getElementById('proveedorCuit').value.trim(),
+        condicion_iva: document.getElementById('proveedorCondicionIva').value,
+        productos_que_vende: document.getElementById('proveedorProductos').value.trim(),
+        plazo_entrega: document.getElementById('proveedorPlazo').value.trim(),
+        observaciones: document.getElementById('proveedorObservaciones').value.trim(),
+        activo: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!proveedorData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    
+    try {
+        if (APP_STATE.isOnline && APP_STATE.supabase) {
+            const { data, error } = await APP_STATE.supabase
+                .from('proveedores')
+                .insert([proveedorData])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            
+            await indexedDBOperation('proveedores_cache', 'put', data);
+        } else {
+            proveedorData.id = 'proveedor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            proveedorData.offline_id = proveedorData.id;
+            proveedorData.sync_status = 'pending';
+            
+            await indexedDBOperation('proveedores_cache', 'put', proveedorData);
+            
+            await savePendingOperation({
+                type: 'proveedor',
+                data: proveedorData,
+                priority: 5
+            });
+        }
+        
+        alert('✅ Proveedor guardado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        loadProveedores();
+        
+    } catch (error) {
+        console.error('Error guardando proveedor:', error);
+        alert(`❌ Error: ${error.message || 'Error desconocido'}`);
+    }
+}
+
+async function verProveedor(proveedorId) {
+    try {
+        let proveedor = await indexedDBOperation('proveedores_cache', 'get', proveedorId);
+        
+        if (!proveedor && APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('proveedores')
+                .select('*')
+                .eq('id', proveedorId)
+                .single();
+            
+            if (error) throw error;
+            proveedor = data;
+        }
+        
+        if (!proveedor) {
+            alert('Proveedor no encontrado');
+            return;
+        }
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = `Proveedor: ${proveedor.nombre}`;
+        modalBody.innerHTML = `
+            <div class="proveedor-detalle">
+                <p><strong>Razón Social:</strong> ${proveedor.razon_social || 'No especificado'}</p>
+                <p><strong>Contacto:</strong> ${proveedor.contacto || 'No especificado'}</p>
+                <p><strong>Teléfono:</strong> ${proveedor.telefono || 'No especificado'}</p>
+                <p><strong>Email:</strong> ${proveedor.email || 'No especificado'}</p>
+                <p><strong>Dirección:</strong> ${proveedor.direccion || 'No especificado'}</p>
+                <p><strong>CUIT:</strong> ${proveedor.cuit || 'No especificado'}</p>
+                <p><strong>Condición IVA:</strong> ${proveedor.condicion_iva || 'No especificado'}</p>
+                <p><strong>Productos que vende:</strong></p>
+                <p>${proveedor.productos_que_vende || 'No especificado'}</p>
+                <p><strong>Plazo de entrega:</strong> ${proveedor.plazo_entrega || 'No especificado'}</p>
+                <hr>
+                <p><strong>Observaciones:</strong></p>
+                <p>${proveedor.observaciones || 'Sin observaciones'}</p>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error viendo proveedor:', error);
+        alert('Error al cargar el proveedor');
+    }
+}
+
+async function editarProveedor(proveedorId) {
+    try {
+        let proveedor = await indexedDBOperation('proveedores_cache', 'get', proveedorId);
+        
+        if (!proveedor && APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('proveedores')
+                .select('*')
+                .eq('id', proveedorId)
+                .single();
+            
+            if (error) throw error;
+            proveedor = data;
+        }
+        
+        if (!proveedor) {
+            alert('Proveedor no encontrado');
+            return;
+        }
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = 'Editar Proveedor';
+        modalBody.innerHTML = `
+            <div class="form-proveedor">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" id="proveedorNombre" class="form-control" value="${proveedor.nombre || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>Razón Social</label>
+                    <input type="text" id="proveedorRazonSocial" class="form-control" value="${proveedor.razon_social || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Contacto</label>
+                    <input type="text" id="proveedorContacto" class="form-control" value="${proveedor.contacto || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="tel" id="proveedorTelefono" class="form-control" value="${proveedor.telefono || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="proveedorEmail" class="form-control" value="${proveedor.email || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <textarea id="proveedorDireccion" class="form-control" rows="2">${proveedor.direccion || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>CUIT</label>
+                    <input type="text" id="proveedorCuit" class="form-control" value="${proveedor.cuit || ''}" placeholder="XX-XXXXXXXX-X">
+                </div>
+                <div class="form-group">
+                    <label>Condición IVA</label>
+                    <select id="proveedorCondicionIva" class="form-control">
+                        <option value="responsable_inscripto" ${proveedor.condicion_iva === 'responsable_inscripto' ? 'selected' : ''}>Responsable Inscripto</option>
+                        <option value="monotributista" ${proveedor.condicion_iva === 'monotributista' ? 'selected' : ''}>Monotributista</option>
+                        <option value="exento" ${proveedor.condicion_iva === 'exento' ? 'selected' : ''}>Exento</option>
+                        <option value="consumidor_final" ${proveedor.condicion_iva === 'consumidor_final' ? 'selected' : ''}>Consumidor Final</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Productos que vende</label>
+                    <textarea id="proveedorProductos" class="form-control" rows="3">${proveedor.productos_que_vende || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Plazo de entrega</label>
+                    <input type="text" id="proveedorPlazo" class="form-control" value="${proveedor.plazo_entrega || ''}">
+                </div>
+                <div class="form-group">
+                    <label>Activo</label>
+                    <select id="proveedorActivo" class="form-control">
+                        <option value="true" ${proveedor.activo ? 'selected' : ''}>Sí</option>
+                        <option value="false" ${!proveedor.activo ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="proveedorObservaciones" class="form-control" rows="3">${proveedor.observaciones || ''}</textarea>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').textContent = 'Actualizar';
+        document.getElementById('modalConfirm').style.display = 'inline-block';
+        document.getElementById('modalCancel').textContent = 'Cancelar';
+        
+        document.getElementById('modalConfirm').onclick = async () => {
+            await actualizarProveedor(proveedorId);
+        };
+        
+    } catch (error) {
+        console.error('Error cargando proveedor para editar:', error);
+        alert('Error al cargar el proveedor');
+    }
+}
+
+async function actualizarProveedor(proveedorId) {
+    const proveedorData = {
+        nombre: document.getElementById('proveedorNombre').value.trim(),
+        razon_social: document.getElementById('proveedorRazonSocial').value.trim(),
+        contacto: document.getElementById('proveedorContacto').value.trim(),
+        telefono: document.getElementById('proveedorTelefono').value.trim(),
+        email: document.getElementById('proveedorEmail').value.trim(),
+        direccion: document.getElementById('proveedorDireccion').value.trim(),
+        cuit: document.getElementById('proveedorCuit').value.trim(),
+        condicion_iva: document.getElementById('proveedorCondicionIva').value,
+        productos_que_vende: document.getElementById('proveedorProductos').value.trim(),
+        plazo_entrega: document.getElementById('proveedorPlazo').value.trim(),
+        activo: document.getElementById('proveedorActivo').value === 'true',
+        observaciones: document.getElementById('proveedorObservaciones').value.trim(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!proveedorData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    
+    try {
+        if (APP_STATE.isOnline && APP_STATE.supabase) {
+            const { error } = await APP_STATE.supabase
+                .from('proveedores')
+                .update(proveedorData)
+                .eq('id', proveedorId);
+            
+            if (error) throw error;
+            
+            proveedorData.id = proveedorId;
+            await indexedDBOperation('proveedores_cache', 'put', proveedorData);
+        } else {
+            proveedorData.id = proveedorId;
+            proveedorData.sync_status = 'pending';
+            
+            await indexedDBOperation('proveedores_cache', 'put', proveedorData);
+            
+            await savePendingOperation({
+                type: 'proveedor',
+                data: proveedorData,
+                operation: 'update',
+                priority: 5
+            });
+        }
+        
+        alert('✅ Proveedor actualizado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        loadProveedores();
+        
+    } catch (error) {
+        console.error('Error actualizando proveedor:', error);
+        alert(`❌ Error: ${error.message || 'Error desconocido'}`);
+    }
+}
+
+async function eliminarProveedor(proveedorId) {
+    if (!confirm('¿Eliminar este proveedor?')) return;
+    
+    try {
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            await APP_STATE.supabase
+                .from('proveedores')
+                .update({ activo: false })
+                .eq('id', proveedorId);
+        } else {
+            const proveedor = await indexedDBOperation('proveedores_cache', 'get', proveedorId);
+            if (proveedor) {
+                proveedor.activo = false;
+                proveedor.sync_status = 'pending';
+                await indexedDBOperation('proveedores_cache', 'put', proveedor);
+                
+                await savePendingOperation({
+                    type: 'proveedor',
+                    data: proveedor,
+                    operation: 'update',
+                    priority: 5
+                });
+            }
+        }
+        
+        loadProveedores();
+        alert('Proveedor eliminado');
+    } catch (error) {
+        console.error('Error eliminando proveedor:', error);
+        alert('Error al eliminar el proveedor');
+    }
+}
+
+async function contactarProveedor(telefono, nombre) {
     if (!telefono || telefono === 'Sin teléfono') {
         alert('No hay teléfono registrado');
         return;
@@ -2551,7 +3696,580 @@ function contactarProveedor(telefono, nombre) {
 }
 
 // ============================================
-// REPORTES
+// PRODUCTOS CRUD COMPLETO
+// ============================================
+
+function showNuevoProductoModal() {
+    const modal = document.getElementById('genericModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    modalTitle.textContent = 'Nuevo Producto';
+    modalBody.innerHTML = `
+        <div class="form-producto">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label>Nombre *</label>
+                    <input type="text" id="productoNombre" class="form-control" required>
+                </div>
+                <div class="form-group col-md-6">
+                    <label>Código de Barras</label>
+                    <input type="text" id="productoCodigoBarras" class="form-control">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label>Código Interno</label>
+                    <input type="text" id="productoCodigoInterno" class="form-control">
+                </div>
+                <div class="form-group col-md-6">
+                    <label>Categoría</label>
+                    <input type="text" id="productoCategoria" class="form-control" list="categoriasList">
+                    <datalist id="categoriasList"></datalist>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="productoDescripcion" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label>Precio Costo</label>
+                    <input type="number" id="productoPrecioCosto" class="form-control" step="0.01" min="0" value="0">
+                </div>
+                <div class="form-group col-md-4">
+                    <label>% Ganancia</label>
+                    <input type="number" id="productoPorcentajeGanancia" class="form-control" min="0" max="500" value="40">
+                </div>
+                <div class="form-group col-md-4">
+                    <label>Precio Venta</label>
+                    <input type="number" id="productoPrecioVenta" class="form-control" step="0.01" min="0" value="0">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label>Stock</label>
+                    <input type="number" id="productoStock" class="form-control" step="0.001" min="0" value="0">
+                </div>
+                <div class="form-group col-md-4">
+                    <label>Stock Mínimo</label>
+                    <input type="number" id="productoStockMinimo" class="form-control" step="0.001" min="0" value="5">
+                </div>
+                <div class="form-group col-md-4">
+                    <label>Stock Máximo</label>
+                    <input type="number" id="productoStockMaximo" class="form-control" step="0.001" min="0" value="100">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label>Unidad de Medida</label>
+                    <select id="productoUnidadMedida" class="form-control">
+                        <option value="unidad">Unidad</option>
+                        <option value="metro">Metro</option>
+                        <option value="litro">Litro</option>
+                        <option value="kilogramo">Kilogramo</option>
+                        <option value="par">Par</option>
+                        <option value="juego">Juego</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-6">
+                    <label>Ubicación</label>
+                    <input type="text" id="productoUbicacion" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Observaciones</label>
+                <textarea id="productoObservaciones" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'flex';
+    
+    document.getElementById('modalConfirm').textContent = 'Guardar';
+    document.getElementById('modalConfirm').style.display = 'inline-block';
+    document.getElementById('modalCancel').textContent = 'Cancelar';
+    
+    document.getElementById('modalConfirm').onclick = async () => {
+        await guardarProducto();
+    };
+    
+    cargarCategoriasParaSelect();
+    configurarCalculoPrecioVenta();
+}
+
+function configurarCalculoPrecioVenta() {
+    const precioCosto = document.getElementById('productoPrecioCosto');
+    const porcentajeGanancia = document.getElementById('productoPorcentajeGanancia');
+    const precioVenta = document.getElementById('productoPrecioVenta');
+    
+    if (precioCosto && porcentajeGanancia && precioVenta) {
+        const calcularPrecioVenta = () => {
+            const costo = parseFloat(precioCosto.value) || 0;
+            const porcentaje = parseFloat(porcentajeGanancia.value) || 0;
+            const ventaCalculado = costo * (1 + porcentaje / 100);
+            precioVenta.value = ventaCalculado.toFixed(2);
+        };
+        
+        precioCosto.addEventListener('input', calcularPrecioVenta);
+        porcentajeGanancia.addEventListener('input', calcularPrecioVenta);
+        
+        calcularPrecioVenta();
+    }
+}
+
+async function cargarCategoriasParaSelect() {
+    try {
+        const categorias = await indexedDBOperation('categorias_cache', 'getAll') || [];
+        const datalist = document.getElementById('categoriasList');
+        
+        if (datalist && categorias.length > 0) {
+            datalist.innerHTML = categorias.map(cat => 
+                `<option value="${cat.nombre}">${cat.nombre}</option>`
+            ).join('');
+        }
+    } catch (error) {
+        console.warn('Error cargando categorías:', error);
+    }
+}
+
+async function guardarProducto() {
+    const productoData = {
+        nombre: document.getElementById('productoNombre').value.trim(),
+        codigo_barras: document.getElementById('productoCodigoBarras').value.trim(),
+        codigo_interno: document.getElementById('productoCodigoInterno').value.trim(),
+        descripcion: document.getElementById('productoDescripcion').value.trim(),
+        categoria: document.getElementById('productoCategoria').value.trim(),
+        precio_costo: parseFloat(document.getElementById('productoPrecioCosto').value) || 0,
+        porcentaje_ganancia: parseFloat(document.getElementById('productoPorcentajeGanancia').value) || 0,
+        precio_venta: parseFloat(document.getElementById('productoPrecioVenta').value) || 0,
+        stock: parseFloat(document.getElementById('productoStock').value) || 0,
+        stock_minimo: parseFloat(document.getElementById('productoStockMinimo').value) || 5,
+        stock_maximo: parseFloat(document.getElementById('productoStockMaximo').value) || 100,
+        unidad_medida: document.getElementById('productoUnidadMedida').value,
+        ubicacion: document.getElementById('productoUbicacion').value.trim(),
+        observaciones: document.getElementById('productoObservaciones').value.trim(),
+        activo: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!productoData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    
+    if (productoData.precio_venta <= 0) {
+        alert('El precio de venta debe ser mayor a 0');
+        return;
+    }
+    
+    try {
+        if (APP_STATE.isOnline && APP_STATE.supabase) {
+            const { data, error } = await APP_STATE.supabase
+                .from('productos')
+                .insert([productoData])
+                .select()
+                .single();
+            
+            if (error) throw error;
+            
+            await indexedDBOperation('productos_cache', 'put', data);
+        } else {
+            productoData.id = 'producto_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            productoData.offline_id = productoData.id;
+            productoData.sync_status = 'pending';
+            
+            await indexedDBOperation('productos_cache', 'put', productoData);
+            
+            await savePendingOperation({
+                type: 'producto',
+                data: productoData,
+                priority: 5
+            });
+        }
+        
+        alert('✅ Producto guardado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        loadProductos();
+        loadProductosParaVenta();
+        
+    } catch (error) {
+        console.error('Error guardando producto:', error);
+        alert(`❌ Error: ${error.message || 'Error desconocido'}`);
+    }
+}
+
+async function editarProducto(productoId) {
+    try {
+        let producto = await indexedDBOperation('productos_cache', 'get', productoId);
+        
+        if (!producto && APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('productos')
+                .select('*')
+                .eq('id', productoId)
+                .single();
+            
+            if (error) throw error;
+            producto = data;
+        }
+        
+        if (!producto) {
+            alert('Producto no encontrado');
+            return;
+        }
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = 'Editar Producto';
+        modalBody.innerHTML = `
+            <div class="form-producto">
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Nombre *</label>
+                        <input type="text" id="productoNombre" class="form-control" value="${producto.nombre || ''}" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>Código de Barras</label>
+                        <input type="text" id="productoCodigoBarras" class="form-control" value="${producto.codigo_barras || ''}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Código Interno</label>
+                        <input type="text" id="productoCodigoInterno" class="form-control" value="${producto.codigo_interno || ''}">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>Categoría</label>
+                        <input type="text" id="productoCategoria" class="form-control" value="${producto.categoria || ''}" list="categoriasList">
+                        <datalist id="categoriasList"></datalist>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="productoDescripcion" class="form-control" rows="2">${producto.descripcion || ''}</textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Precio Costo</label>
+                        <input type="number" id="productoPrecioCosto" class="form-control" step="0.01" min="0" value="${producto.precio_costo || 0}">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>% Ganancia</label>
+                        <input type="number" id="productoPorcentajeGanancia" class="form-control" min="0" max="500" value="${producto.porcentaje_ganancia || 40}">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Precio Venta</label>
+                        <input type="number" id="productoPrecioVenta" class="form-control" step="0.01" min="0" value="${producto.precio_venta || 0}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Stock</label>
+                        <input type="number" id="productoStock" class="form-control" step="0.001" min="0" value="${producto.stock || 0}">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Stock Mínimo</label>
+                        <input type="number" id="productoStockMinimo" class="form-control" step="0.001" min="0" value="${producto.stock_minimo || 5}">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Stock Máximo</label>
+                        <input type="number" id="productoStockMaximo" class="form-control" step="0.001" min="0" value="${producto.stock_maximo || 100}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Unidad de Medida</label>
+                        <select id="productoUnidadMedida" class="form-control">
+                            <option value="unidad" ${producto.unidad_medida === 'unidad' ? 'selected' : ''}>Unidad</option>
+                            <option value="metro" ${producto.unidad_medida === 'metro' ? 'selected' : ''}>Metro</option>
+                            <option value="litro" ${producto.unidad_medida === 'litro' ? 'selected' : ''}>Litro</option>
+                            <option value="kilogramo" ${producto.unidad_medida === 'kilogramo' ? 'selected' : ''}>Kilogramo</option>
+                            <option value="par" ${producto.unidad_medida === 'par' ? 'selected' : ''}>Par</option>
+                            <option value="juego" ${producto.unidad_medida === 'juego' ? 'selected' : ''}>Juego</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>Ubicación</label>
+                        <input type="text" id="productoUbicacion" class="form-control" value="${producto.ubicacion || ''}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Activo</label>
+                    <select id="productoActivo" class="form-control">
+                        <option value="true" ${producto.activo ? 'selected' : ''}>Sí</option>
+                        <option value="false" ${!producto.activo ? 'selected' : ''}>No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="productoObservaciones" class="form-control" rows="2">${producto.observaciones || ''}</textarea>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').textContent = 'Actualizar';
+        document.getElementById('modalConfirm').style.display = 'inline-block';
+        document.getElementById('modalCancel').textContent = 'Cancelar';
+        
+        document.getElementById('modalConfirm').onclick = async () => {
+            await actualizarProducto(productoId);
+        };
+        
+        cargarCategoriasParaSelect();
+        configurarCalculoPrecioVenta();
+        
+    } catch (error) {
+        console.error('Error cargando producto para editar:', error);
+        alert('Error al cargar el producto');
+    }
+}
+
+async function actualizarProducto(productoId) {
+    const productoData = {
+        nombre: document.getElementById('productoNombre').value.trim(),
+        codigo_barras: document.getElementById('productoCodigoBarras').value.trim(),
+        codigo_interno: document.getElementById('productoCodigoInterno').value.trim(),
+        descripcion: document.getElementById('productoDescripcion').value.trim(),
+        categoria: document.getElementById('productoCategoria').value.trim(),
+        precio_costo: parseFloat(document.getElementById('productoPrecioCosto').value) || 0,
+        porcentaje_ganancia: parseFloat(document.getElementById('productoPorcentajeGanancia').value) || 0,
+        precio_venta: parseFloat(document.getElementById('productoPrecioVenta').value) || 0,
+        stock: parseFloat(document.getElementById('productoStock').value) || 0,
+        stock_minimo: parseFloat(document.getElementById('productoStockMinimo').value) || 5,
+        stock_maximo: parseFloat(document.getElementById('productoStockMaximo').value) || 100,
+        unidad_medida: document.getElementById('productoUnidadMedida').value,
+        ubicacion: document.getElementById('productoUbicacion').value.trim(),
+        activo: document.getElementById('productoActivo').value === 'true',
+        observaciones: document.getElementById('productoObservaciones').value.trim(),
+        updated_at: new Date().toISOString()
+    };
+    
+    if (!productoData.nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    
+    if (productoData.precio_venta <= 0) {
+        alert('El precio de venta debe ser mayor a 0');
+        return;
+    }
+    
+    try {
+        if (APP_STATE.isOnline && APP_STATE.supabase) {
+            const { error } = await APP_STATE.supabase
+                .from('productos')
+                .update(productoData)
+                .eq('id', productoId);
+            
+            if (error) throw error;
+            
+            productoData.id = productoId;
+            await indexedDBOperation('productos_cache', 'put', productoData);
+        } else {
+            productoData.id = productoId;
+            productoData.sync_status = 'pending';
+            
+            await indexedDBOperation('productos_cache', 'put', productoData);
+            
+            await savePendingOperation({
+                type: 'producto',
+                data: productoData,
+                operation: 'update',
+                priority: 5
+            });
+        }
+        
+        alert('✅ Producto actualizado correctamente');
+        
+        const modal = document.getElementById('genericModal');
+        if (modal) modal.style.display = 'none';
+        
+        loadProductos();
+        loadProductosParaVenta();
+        
+    } catch (error) {
+        console.error('Error actualizando producto:', error);
+        alert(`❌ Error: ${error.message || 'Error desconocido'}`);
+    }
+}
+
+async function eliminarProducto(productoId) {
+    if (!confirm('¿Eliminar este producto?')) return;
+    
+    try {
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            await APP_STATE.supabase
+                .from('productos')
+                .update({ activo: false })
+                .eq('id', productoId);
+        } else {
+            const producto = await indexedDBOperation('productos_cache', 'get', productoId);
+            if (producto) {
+                producto.activo = false;
+                producto.sync_status = 'pending';
+                await indexedDBOperation('productos_cache', 'put', producto);
+                
+                await savePendingOperation({
+                    type: 'producto',
+                    data: producto,
+                    operation: 'update',
+                    priority: 5
+                });
+            }
+        }
+        
+        loadProductos();
+        loadProductosParaVenta();
+        alert('Producto eliminado');
+    } catch (error) {
+        console.error('Error eliminando producto:', error);
+        alert('Error al eliminar el producto');
+    }
+}
+
+// ============================================
+// IMPORTAR/EXPORTAR EXCEL
+// ============================================
+
+async function importarExcelProductos() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.xlsx,.xls';
+    
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        
+        reader.onload = async (event) => {
+            try {
+                const data = event.target.result;
+                const productos = parseCSV(data);
+                
+                let count = 0;
+                for (const producto of productos) {
+                    if (producto.nombre && producto.precio_venta) {
+                        const productoData = {
+                            ...producto,
+                            activo: true,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        };
+                        
+                        if (APP_STATE.isOnline && APP_STATE.supabase) {
+                            const { error } = await APP_STATE.supabase
+                                .from('productos')
+                                .insert([productoData]);
+                            
+                            if (!error) count++;
+                        } else {
+                            productoData.id = 'producto_imp_' + Date.now() + '_' + count;
+                            productoData.offline_id = productoData.id;
+                            productoData.sync_status = 'pending';
+                            
+                            await indexedDBOperation('productos_cache', 'put', productoData);
+                            
+                            await savePendingOperation({
+                                type: 'producto',
+                                data: productoData,
+                                priority: 3
+                            });
+                            
+                            count++;
+                        }
+                    }
+                }
+                
+                alert(`✅ ${count} productos importados correctamente`);
+                loadProductos();
+                loadProductosParaVenta();
+                
+            } catch (error) {
+                console.error('Error importando productos:', error);
+                alert('Error al importar productos');
+            }
+        };
+        
+        if (file.name.endsWith('.csv')) {
+            reader.readAsText(file);
+        } else {
+            alert('Formato no soportado. Usa CSV.');
+        }
+    };
+    
+    input.click();
+}
+
+function parseCSV(csvText) {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    const productos = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        
+        const values = lines[i].split(',').map(v => v.trim());
+        const producto = {};
+        
+        headers.forEach((header, index) => {
+            if (values[index]) {
+                producto[header] = values[index];
+            }
+        });
+        
+        if (producto.nombre) {
+            productos.push(producto);
+        }
+    }
+    
+    return productos;
+}
+
+async function exportarExcelProductos() {
+    try {
+        const productos = await indexedDBOperation('productos_cache', 'getAll') || [];
+        
+        if (productos.length === 0) {
+            alert('No hay productos para exportar');
+            return;
+        }
+        
+        const headers = ['nombre', 'codigo_barras', 'codigo_interno', 'categoria', 'precio_costo', 'precio_venta', 'stock', 'stock_minimo', 'unidad_medida', 'ubicacion'];
+        const csvContent = [
+            headers.join(','),
+            ...productos.map(p => headers.map(h => p[h] || '').join(','))
+        ].join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `productos_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert(`✅ ${productos.length} productos exportados`);
+        
+    } catch (error) {
+        console.error('Error exportando productos:', error);
+        alert('Error al exportar productos');
+    }
+}
+
+// ============================================
+// REPORTES - COMPLETOS
 // ============================================
 
 async function loadReportes() {
@@ -2576,6 +4294,18 @@ async function loadReportes() {
                 <h3>💰 Cierre de Caja</h3>
                 <div class="reporte-data" id="reporteCierreCaja">Cargando...</div>
             </div>
+            <div class="reporte-card">
+                <h3>📈 Productos Más Vendidos</h3>
+                <div class="reporte-data" id="reporteProductosVendidos">Cargando...</div>
+            </div>
+            <div class="reporte-card">
+                <h3>💳 Métodos de Pago</h3>
+                <div class="reporte-data" id="reporteMetodosPago">Cargando...</div>
+            </div>
+        </div>
+        <div class="reporte-actions" style="margin-top: 20px;">
+            <button class="btn btn-primary" onclick="generarReporteMensual()">📅 Reporte Mensual</button>
+            <button class="btn btn-secondary" onclick="exportarReporteExcel()">📊 Exportar Excel</button>
         </div>
     `;
     
@@ -2585,24 +4315,25 @@ async function loadReportes() {
 async function cargarDatosReportes() {
     try {
         const hoy = new Date().toISOString().split('T')[0];
-        let ventasHoy = 0;
+        let ventasHoy = [];
         let totalVentasHoy = 0;
         
         if (APP_STATE.supabase && APP_STATE.isOnline) {
             const { data, error } = await APP_STATE.supabase
                 .from('ventas')
-                .select('total')
+                .select('total, created_at, pagos(metodo)')
                 .eq('DATE(created_at)', hoy);
             
             if (!error && data) {
-                ventasHoy = data.length;
+                ventasHoy = data;
                 totalVentasHoy = data.reduce((sum, v) => sum + v.total, 0);
             }
         }
         
         document.getElementById('reporteVentasHoy').innerHTML = `
-            <p>Ventas: ${ventasHoy}</p>
+            <p>Ventas: ${ventasHoy.length}</p>
             <p>Total: $${totalVentasHoy.toFixed(2)}</p>
+            <p>Promedio: $${ventasHoy.length > 0 ? (totalVentasHoy / ventasHoy.length).toFixed(2) : '0.00'}</p>
         `;
         
         const productos = await indexedDBOperation('productos_cache', 'getAll') || [];
@@ -2610,22 +4341,80 @@ async function cargarDatosReportes() {
         
         document.getElementById('reporteStockBajo').innerHTML = `
             <p>Productos: ${stockBajo.length}</p>
-            ${stockBajo.slice(0, 3).map(p => `<p>${p.nombre}: ${p.stock}</p>`).join('')}
+            ${stockBajo.slice(0, 3).map(p => `<p>${p.nombre}: ${p.stock} (mín: ${p.stock_minimo})</p>`).join('')}
             ${stockBajo.length > 3 ? `<p>... y ${stockBajo.length - 3} más</p>` : ''}
         `;
         
         const clientes = await indexedDBOperation('clientes_cache', 'getAll') || [];
         const clientesDeuda = clientes.filter(c => c.saldo > 0);
+        const totalDeuda = clientesDeuda.reduce((sum, c) => sum + c.saldo, 0);
         
         document.getElementById('reporteClientesDeuda').innerHTML = `
             <p>Clientes: ${clientesDeuda.length}</p>
-            <p>Deuda total: $${clientesDeuda.reduce((sum, c) => sum + c.saldo, 0).toFixed(2)}</p>
+            <p>Deuda total: $${totalDeuda.toFixed(2)}</p>
+            <p>Promedio: $${clientesDeuda.length > 0 ? (totalDeuda / clientesDeuda.length).toFixed(2) : '0.00'}</p>
         `;
         
+        const cierreActual = await obtenerCierreActual();
+        
         document.getElementById('reporteCierreCaja').innerHTML = `
-            <p>Turno: ${APP_STATE.currentTurno || 'No iniciado'}</p>
-            <p>Caja: ${APP_STATE.currentCaja?.numero || 'No seleccionada'}</p>
-            <p>Local: ${APP_STATE.currentLocal?.nombre || 'No seleccionado'}</p>
+            <p>Estado: ${cierreActual ? 'Abierta' : 'Cerrada'}</p>
+            ${cierreActual ? `
+                <p>Saldo Inicial: $${cierreActual.saldo_inicial.toFixed(2)}</p>
+                <p>Ventas Efectivo: $${(cierreActual.ventas_efectivo || 0).toFixed(2)}</p>
+                <p>Saldo Esperado: $${(cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0)).toFixed(2)}</p>
+            ` : '<p>No hay caja abierta</p>'}
+        `;
+        
+        let productosVendidos = [];
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('venta_items')
+                .select('producto_id, cantidad, productos(nombre)')
+                .order('cantidad', { ascending: false })
+                .limit(5);
+            
+            if (!error && data) {
+                productosVendidos = data;
+            }
+        }
+        
+        document.getElementById('reporteProductosVendidos').innerHTML = `
+            ${productosVendidos.length > 0 ? 
+                productosVendidos.map(item => 
+                    `<p>${item.productos?.nombre || 'Producto'}: ${item.cantidad} unidades</p>`
+                ).join('') : 
+                '<p>No hay datos de ventas</p>'
+            }
+        `;
+        
+        const metodosPago = {
+            efectivo: 0,
+            tarjeta: 0,
+            transferencia: 0,
+            qr: 0,
+            cuenta: 0
+        };
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('pagos')
+                .select('metodo, monto')
+                .eq('DATE(created_at)', hoy);
+            
+            if (!error && data) {
+                data.forEach(pago => {
+                    if (metodosPago.hasOwnProperty(pago.metodo)) {
+                        metodosPago[pago.metodo] += pago.monto;
+                    }
+                });
+            }
+        }
+        
+        document.getElementById('reporteMetodosPago').innerHTML = `
+            ${Object.entries(metodosPago).map(([metodo, monto]) => 
+                `<p>${metodo.toUpperCase()}: $${monto.toFixed(2)}</p>`
+            ).join('')}
         `;
         
     } catch (error) {
@@ -2633,8 +4422,216 @@ async function cargarDatosReportes() {
     }
 }
 
+async function obtenerCierreActual() {
+    try {
+        const hoy = new Date().toISOString().split('T')[0];
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('cierres_caja')
+                .select('*')
+                .eq('fecha', hoy)
+                .eq('local_id', APP_STATE.currentLocal?.id)
+                .eq('caja_id', APP_STATE.currentCaja?.id)
+                .eq('turno', APP_STATE.currentTurno)
+                .eq('estado', 'abierto')
+                .single();
+            
+            if (!error) return data;
+        } else {
+            const cierres = await indexedDBOperation('cierres_offline', 'getAll') || [];
+            return cierres.find(c => 
+                c.fecha === hoy && 
+                c.local_id === APP_STATE.currentLocal?.id &&
+                c.caja_id === APP_STATE.currentCaja?.id &&
+                c.turno === APP_STATE.currentTurno &&
+                c.estado === 'abierto'
+            );
+        }
+    } catch (error) {
+        console.error('Error obteniendo cierre actual:', error);
+        return null;
+    }
+}
+
+async function generarReporteMensual() {
+    const mesActual = new Date().getMonth() + 1;
+    const añoActual = new Date().getFullYear();
+    
+    try {
+        let ventasMes = [];
+        let totalMes = 0;
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('ventas')
+                .select('*, pagos(metodo)')
+                .gte('created_at', `${añoActual}-${mesActual.toString().padStart(2, '0')}-01`)
+                .lt('created_at', `${añoActual}-${(mesActual + 1).toString().padStart(2, '0')}-01`);
+            
+            if (!error && data) {
+                ventasMes = data;
+                totalMes = data.reduce((sum, v) => sum + v.total, 0);
+            }
+        }
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        modalTitle.textContent = `Reporte Mensual ${mesActual}/${añoActual}`;
+        modalBody.innerHTML = `
+            <div class="reporte-mensual">
+                <h4>Resumen del Mes</h4>
+                <p><strong>Total de Ventas:</strong> ${ventasMes.length}</p>
+                <p><strong>Total Recaudado:</strong> $${totalMes.toFixed(2)}</p>
+                <p><strong>Promedio por Venta:</strong> $${ventasMes.length > 0 ? (totalMes / ventasMes.length).toFixed(2) : '0.00'}</p>
+                <hr>
+                <h4>Distribución por Día</h4>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    ${generarResumenPorDia(ventasMes)}
+                </div>
+                <hr>
+                <h4>Top 5 Productos</h4>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    ${await generarTopProductos()}
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+        
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+        
+    } catch (error) {
+        console.error('Error generando reporte mensual:', error);
+        alert('Error al generar el reporte');
+    }
+}
+
+function generarResumenPorDia(ventas) {
+    const ventasPorDia = {};
+    
+    ventas.forEach(venta => {
+        const fecha = new Date(venta.created_at).toLocaleDateString('es-AR');
+        if (!ventasPorDia[fecha]) {
+            ventasPorDia[fecha] = {
+                cantidad: 0,
+                total: 0
+            };
+        }
+        ventasPorDia[fecha].cantidad++;
+        ventasPorDia[fecha].total += venta.total;
+    });
+    
+    const dias = Object.entries(ventasPorDia).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+    
+    if (dias.length === 0) {
+        return '<p>No hay ventas este mes</p>';
+    }
+    
+    return dias.map(([fecha, datos]) => `
+        <div class="dia-resumen">
+            <p><strong>${fecha}:</strong> ${datos.cantidad} ventas - $${datos.total.toFixed(2)}</p>
+        </div>
+    `).join('');
+}
+
+async function generarTopProductos() {
+    try {
+        let topProductos = [];
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('venta_items')
+                .select('producto_id, SUM(cantidad) as total_vendido, productos(nombre)')
+                .group('producto_id, productos(nombre)')
+                .order('total_vendido', { ascending: false })
+                .limit(5);
+            
+            if (!error && data) {
+                topProductos = data;
+            }
+        }
+        
+        if (topProductos.length === 0) {
+            return '<p>No hay datos de productos vendidos</p>';
+        }
+        
+        return topProductos.map(item => `
+            <div class="top-producto">
+                <p>${item.productos?.nombre || 'Producto'}: ${item.total_vendido} unidades</p>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error generando top productos:', error);
+        return '<p>Error al cargar productos</p>';
+    }
+}
+
+async function exportarReporteExcel() {
+    try {
+        const hoy = new Date().toISOString().split('T')[0];
+        let ventasHoy = [];
+        
+        if (APP_STATE.supabase && APP_STATE.isOnline) {
+            const { data, error } = await APP_STATE.supabase
+                .from('ventas')
+                .select('*, pagos(metodo), venta_items(*, productos(nombre))')
+                .eq('DATE(created_at)', hoy);
+            
+            if (!error) ventasHoy = data;
+        }
+        
+        if (ventasHoy.length === 0) {
+            alert('No hay ventas para exportar hoy');
+            return;
+        }
+        
+        const reporteData = [];
+        ventasHoy.forEach(venta => {
+            venta.venta_items?.forEach(item => {
+                reporteData.push({
+                    fecha: new Date(venta.created_at).toLocaleString('es-AR'),
+                    numero_venta: venta.numero_venta,
+                    producto: item.productos?.nombre || 'Producto',
+                    cantidad: item.cantidad,
+                    precio: item.precio_unitario,
+                    subtotal: item.subtotal,
+                    metodo_pago: venta.pagos?.[0]?.metodo || 'desconocido',
+                    total_venta: venta.total
+                });
+            });
+        });
+        
+        const headers = ['fecha', 'numero_venta', 'producto', 'cantidad', 'precio', 'subtotal', 'metodo_pago', 'total_venta'];
+        const csvContent = [
+            headers.join(','),
+            ...reporteData.map(row => headers.map(h => row[h] || '').join(','))
+        ].join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `reporte_ventas_${hoy}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert(`✅ Reporte exportado: ${reporteData.length} items`);
+        
+    } catch (error) {
+        console.error('Error exportando reporte:', error);
+        alert('Error al exportar el reporte');
+    }
+}
+
 // ============================================
-// SCANNER Y BÚSQUEDA
+// SCANNER Y BÚSQUEDA - COMPLETOS
 // ============================================
 
 async function handleProductSearch(e) {
@@ -2685,6 +4682,7 @@ async function handleProductSearch(e) {
 }
 
 let scannerStream = null;
+let barcodeDetector = null;
 
 async function toggleScanner() {
     const scannerContainer = document.getElementById('scannerContainer');
@@ -2711,12 +4709,51 @@ async function toggleScanner() {
         scannerContainer.style.display = 'block';
         APP_STATE.scannerActive = true;
         
-        simulateBarcodeDetection();
+        if ('BarcodeDetector' in window) {
+            barcodeDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'code_93', 'codabar', 'itf', 'qr_code'] });
+            startBarcodeDetection();
+        } else {
+            simulateBarcodeDetection();
+        }
         
     } catch (error) {
         console.error('Error accediendo a la cámara:', error);
         alert('No se pudo acceder a la cámara. Asegúrate de conceder los permisos necesarios.');
     }
+}
+
+async function startBarcodeDetection() {
+    const scannerVideo = document.getElementById('scannerVideo');
+    if (!scannerVideo || !barcodeDetector) return;
+    
+    const detectBarcode = async () => {
+        if (!APP_STATE.scannerActive) return;
+        
+        try {
+            const barcodes = await barcodeDetector.detect(scannerVideo);
+            
+            if (barcodes.length > 0) {
+                const barcode = barcodes[0];
+                const productSearch = document.getElementById('productSearch');
+                if (productSearch) {
+                    productSearch.value = barcode.rawValue;
+                    const event = new KeyboardEvent('keyup', { key: 'Enter' });
+                    productSearch.dispatchEvent(event);
+                }
+                stopScanner();
+            }
+        } catch (error) {
+            console.error('Error detectando código de barras:', error);
+        }
+        
+        if (APP_STATE.scannerActive) {
+            requestAnimationFrame(detectBarcode);
+        }
+    };
+    
+    scannerVideo.addEventListener('loadeddata', () => {
+        detectBarcode();
+    });
 }
 
 function stopScanner() {
@@ -2729,23 +4766,26 @@ function stopScanner() {
     if (scannerContainer) scannerContainer.style.display = 'none';
     
     APP_STATE.scannerActive = false;
+    barcodeDetector = null;
 }
 
 function simulateBarcodeDetection() {
     console.log('Simulando detección de código de barras...');
     
-    setTimeout(() => {
-        if (APP_STATE.scannerActive) {
-            const fakeBarcode = '779123456789' + Math.floor(Math.random() * 10);
-            const productSearch = document.getElementById('productSearch');
-            if (productSearch) {
-                productSearch.value = fakeBarcode;
-                const event = new KeyboardEvent('keyup', { key: 'Enter' });
-                productSearch.dispatchEvent(event);
-            }
+    const checkForManualInput = () => {
+        if (!APP_STATE.scannerActive) return;
+        
+        const productSearch = document.getElementById('productSearch');
+        if (productSearch && productSearch.value.length >= 8) {
+            const event = new KeyboardEvent('keyup', { key: 'Enter' });
+            productSearch.dispatchEvent(event);
             stopScanner();
+        } else {
+            setTimeout(checkForManualInput, 500);
         }
-    }, 2000);
+    };
+    
+    checkForManualInput();
 }
 
 function activateKeyboardMode() {
@@ -2786,31 +4826,6 @@ function handleModalConfirm() {
 function handleModalCancel() {
     const modal = document.getElementById('genericModal');
     if (modal) modal.style.display = 'none';
-}
-
-// Funciones de modales (stubs para evitar errores)
-function showNuevoProductoModal() {
-    alert('Funcionalidad de nuevo producto - Implementación pendiente');
-}
-
-function showNuevoClienteModal() {
-    alert('Funcionalidad de nuevo cliente - Implementación pendiente');
-}
-
-function showNuevoProveedorModal() {
-    alert('Funcionalidad de nuevo proveedor - Implementación pendiente');
-}
-
-function importarExcelProductos() {
-    alert('Funcionalidad de importar Excel - Implementación pendiente');
-}
-
-function exportarExcelProductos() {
-    alert('Funcionalidad de exportar Excel - Implementación pendiente');
-}
-
-function editarProducto(productoId) {
-    alert(`Editar producto ${productoId} - Implementación pendiente`);
 }
 
 function generarProductosEjemplo() {
@@ -2882,15 +4897,25 @@ window.showNuevoProveedorModal = showNuevoProveedorModal;
 window.importarExcelProductos = importarExcelProductos;
 window.exportarExcelProductos = exportarExcelProductos;
 window.editarProducto = editarProducto;
+window.eliminarProducto = eliminarProducto;
 window.verCliente = verCliente;
 window.editarCliente = editarCliente;
 window.verProveedor = verProveedor;
 window.contactarProveedor = contactarProveedor;
 window.verPresupuesto = verPresupuesto;
 window.convertirPresupuestoAVenta = convertirPresupuestoAVenta;
+window.enviarPresupuestoWhatsapp = enviarPresupuestoWhatsapp;
+window.eliminarPresupuesto = eliminarPresupuesto;
+window.verMovimientosCliente = verMovimientosCliente;
+window.registrarPagoCliente = registrarPagoCliente;
+window.editarProveedor = editarProveedor;
+window.eliminarProveedor = eliminarProveedor;
 window.toggleScanner = toggleScanner;
 window.stopScanner = stopScanner;
 window.activateKeyboardMode = activateKeyboardMode;
+window.configurarImpresora = configurarImpresora;
+window.generarReporteMensual = generarReporteMensual;
+window.exportarReporteExcel = exportarReporteExcel;
 
 // ============================================
 // REAL-TIME SUBSCRIPTIONS
@@ -2928,6 +4953,24 @@ async function setupRealtimeSubscriptions() {
                     console.log('Nueva venta:', payload);
                     if (payload.new.local_id === APP_STATE.currentLocal?.id) {
                         APP_STATE.ventasHoy++;
+                    }
+                }
+            )
+            .subscribe();
+        
+        const clientesChannel = APP_STATE.supabase
+            .channel('clientes-changes')
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'clientes' },
+                async (payload) => {
+                    console.log('Cambio en clientes:', payload);
+                    
+                    if (payload.new) {
+                        await indexedDBOperation('clientes_cache', 'put', payload.new);
+                    }
+                    
+                    if (APP_STATE.currentPage === 'clientes') {
+                        await loadClientes();
                     }
                 }
             )
