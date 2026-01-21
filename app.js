@@ -233,8 +233,8 @@ async function savePendingOperation(operation) {
 // ============================================
 
 async function initSupabase() {
-    const supabaseUrl = localStorage.getItem('supabase_url') || 'https://manccbrodsboxtkrgpvm.supabase.co';
-    const supabaseKey = localStorage.getItem('supabase_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hbmNjYnJvZHNib3h0a3JncHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NzgzNzcsImV4cCI6MjA4NDQ1NDM3N30.rtmunxjtbj2KbruHNt-ul5o3CQLcyZ6eKGi3s3okDlY';
+    const supabaseUrl = localStorage.getItem('supabase_url') || 'https://cnspoegifxkzdpkcyguj.supabase.co';
+    const supabaseKey = localStorage.getItem('supabase_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3BvZWdpZnhremRwa2N5Z3VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5NjQzODMsImV4cCI6MjA4NDU0MDM4M30.IVoJZAFNzVAlDZx4Ppwz8_P0x1QTXQyWBF3FjUVOYYQ';
     
     try {
         if (!window.supabase) {
