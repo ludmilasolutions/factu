@@ -530,6 +530,24 @@ function setupEventListeners() {
     
     const syncManual = document.getElementById('syncManual');
     if (syncManual) syncManual.addEventListener('click', syncData);
+    
+    const aplicarPromocionBtn = document.getElementById('aplicarPromocion');
+    if (aplicarPromocionBtn) aplicarPromocionBtn.addEventListener('click', () => {
+        const codigo = prompt('Ingrese código de promoción:');
+        if (codigo) aplicarPromocion(codigo);
+    });
+    
+    const retirarEfectivoBtn = document.getElementById('retirarEfectivo');
+    if (retirarEfectivoBtn) retirarEfectivoBtn.addEventListener('click', retirarEfectivo);
+    
+    const verCajasBtn = document.getElementById('verCajasBtn');
+    if (verCajasBtn) verCajasBtn.addEventListener('click', verCajasPorDia);
+    
+    const webProveedorBtn = document.getElementById('webProveedorBtn');
+    if (webProveedorBtn) webProveedorBtn.addEventListener('click', () => {
+        const url = prompt('Ingrese URL del proveedor:', 'https://');
+        if (url) abrirWebProveedor(url);
+    });
 }
 
 // ============================================
@@ -3097,7 +3115,62 @@ async function eliminarProducto(productoId) {
 }
 
 async function importarExcelProductos() {
-    alert('Función de importación de Excel. En una implementación real, se usaría una librería como SheetJS para procesar archivos Excel.');
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.xlsx,.xls';
+    input.onchange = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const text = e.target.result;
+            const lines = text.split('\n');
+            const headers = lines[0].split(',');
+            
+            let productos = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+                const values = lines[i].split(',');
+                let producto = {};
+                headers.forEach((header, index) => {
+                    producto[header.trim()] = values[index] ? values[index].trim() : '';
+                });
+                productos.push(producto);
+            }
+            
+            for (const prod of productos) {
+                const productoData = {
+                    codigo_barras: prod.codigo_barras || '',
+                    codigo_interno: prod.codigo_interno || '',
+                    nombre: prod.nombre || '',
+                    descripcion: prod.descripcion || '',
+                    categoria: prod.categoria || 'General',
+                    unidad_medida: prod.unidad_medida || 'unidad',
+                    precio_costo: parseFloat(prod.precio_costo) || 0,
+                    porcentaje_ganancia: parseFloat(prod.porcentaje_ganancia) || 40,
+                    precio_venta: parseFloat(prod.precio_venta) || 0,
+                    stock: parseFloat(prod.stock) || 0,
+                    stock_minimo: parseFloat(prod.stock_minimo) || 5,
+                    activo: true
+                };
+                
+                try {
+                    await APP_STATE.supabase
+                        .from('productos')
+                        .insert([productoData]);
+                } catch (error) {
+                    console.error('Error insertando producto:', error);
+                }
+            }
+            
+            alert(`Se importaron ${productos.length} productos.`);
+            await loadProductos();
+            await loadProductosParaVenta();
+        };
+        reader.readAsText(file);
+    };
+    input.click();
 }
 
 async function exportarExcelProductos() {
@@ -3918,5 +3991,167 @@ window.exportarReporteMensual = exportarReporteMensual;
 window.loadVentas = loadVentas;
 window.verVentaDetalle = verVentaDetalle;
 window.anularVenta = anularVenta;
+
+// ============================================
+// FUNCIONES AÑADIDAS PARA COMPLETAR EL SISTEMA
+// ============================================
+
+async function aplicarPromocion(codigo) {
+    try {
+        const { data: promocion, error } = await APP_STATE.supabase
+            .from('promociones')
+            .select('*')
+            .eq('codigo', codigo)
+            .eq('activo', true)
+            .single();
+        
+        if (error || !promocion) {
+            alert('Promoción no válida');
+            return;
+        }
+        
+        const descuento = promocion.tipo === 'porcentaje' ? 
+            APP_STATE.carrito.reduce((sum, item) => sum + item.subtotal, 0) * (promocion.valor / 100) :
+            promocion.valor;
+        
+        const discountInput = document.getElementById('cartDiscount');
+        if (discountInput) {
+            discountInput.value = descuento.toFixed(2);
+            updateCartTotal();
+            alert(`Promoción "${promocion.nombre}" aplicada: $${descuento.toFixed(2)} de descuento`);
+        }
+    } catch (error) {
+        console.error('Error aplicando promoción:', error);
+        alert('Error al aplicar promoción');
+    }
+}
+
+async function retirarEfectivo() {
+    const monto = prompt('Ingrese el monto a retirar:');
+    if (!monto || isNaN(monto) || parseFloat(monto) <= 0) {
+        alert('Monto inválido');
+        return;
+    }
+    
+    try {
+        const hoy = new Date().toISOString().split('T')[0];
+        const { data: cierre, error } = await APP_STATE.supabase
+            .from('cierres_caja')
+            .select('*')
+            .eq('fecha', hoy)
+            .eq('local_id', APP_STATE.currentLocal?.id)
+            .eq('caja_id', APP_STATE.currentCaja?.id)
+            .eq('turno', APP_STATE.currentTurno)
+            .eq('estado', 'abierto')
+            .single();
+        
+        if (error) throw error;
+        
+        const { error: updateError } = await APP_STATE.supabase
+            .from('cierres_caja')
+            .update({
+                retiros_efectivo: (cierre.retiros_efectivo || 0) + parseFloat(monto),
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', cierre.id);
+        
+        if (updateError) throw updateError;
+        
+        alert(`Retiro de $${parseFloat(monto).toFixed(2)} registrado`);
+        await loadCajaResumen();
+    } catch (error) {
+        console.error('Error registrando retiro:', error);
+        alert('Error al registrar retiro');
+    }
+}
+
+async function verCajasPorDia() {
+    try {
+        const { data: cierres, error } = await APP_STATE.supabase
+            .from('cierres_caja')
+            .select('*, locales(nombre), cajas(numero), usuarios(nombre)')
+            .order('fecha', { ascending: false })
+            .limit(30);
+        
+        if (error) throw error;
+        
+        const modal = document.getElementById('genericModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        
+        let html = '<table class="table"><thead><tr><th>Fecha</th><th>Local</th><th>Caja</th><th>Turno</th><th>Saldo Inicial</th><th>Total Ventas</th><th>Estado</th></tr></thead><tbody>';
+        cierres.forEach(cierre => {
+            html += `
+                <tr>
+                    <td>${cierre.fecha}</td>
+                    <td>${cierre.locales.nombre}</td>
+                    <td>${cierre.cajas.numero}</td>
+                    <td>${cierre.turno}</td>
+                    <td>$${cierre.saldo_inicial.toFixed(2)}</td>
+                    <td>$${cierre.total_ventas.toFixed(2)}</td>
+                    <td>${cierre.estado}</td>
+                </tr>
+            `;
+        });
+        html += '</tbody></table>';
+        
+        modalTitle.textContent = 'Cierres de Caja (Últimos 30 días)';
+        modalBody.innerHTML = html;
+        modal.style.display = 'flex';
+        document.getElementById('modalConfirm').style.display = 'none';
+        document.getElementById('modalCancel').textContent = 'Cerrar';
+    } catch (error) {
+        console.error('Error cargando cierres:', error);
+        alert('Error al cargar cierres');
+    }
+}
+
+function abrirWebProveedor(url) {
+    if (!url) {
+        alert('El proveedor no tiene web registrada');
+        return;
+    }
+    window.open(url, '_blank');
+}
+
+async function recalcularDeudaPresupuesto(presupuestoId) {
+    try {
+        const { data: presupuesto, error } = await APP_STATE.supabase
+            .from('presupuestos')
+            .select('*, presupuesto_items(*, productos(precio_venta))')
+            .eq('id', presupuestoId)
+            .single();
+        
+        if (error) throw error;
+        
+        let nuevoTotal = 0;
+        presupuesto.presupuesto_items.forEach(item => {
+            nuevoTotal += item.cantidad * item.productos.precio_venta;
+        });
+        
+        const { error: updateError } = await APP_STATE.supabase
+            .from('presupuestos')
+            .update({
+                subtotal: nuevoTotal,
+                total: nuevoTotal - (presupuesto.descuento || 0),
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', presupuestoId);
+        
+        if (updateError) throw updateError;
+        
+        alert('Deuda recalculada a precios actuales');
+        await loadPresupuestos();
+    } catch (error) {
+        console.error('Error recalculando deuda:', error);
+        alert('Error al recalcular deuda');
+    }
+}
+
+window.aplicarPromocion = aplicarPromocion;
+window.retirarEfectivo = retirarEfectivo;
+window.verCajasPorDia = verCajasPorDia;
+window.abrirWebProveedor = abrirWebProveedor;
+window.recalcularDeudaPresupuesto = recalcularDeudaPresupuesto;
 
 console.log('✅ app.js cargado completamente - Versión 100% Completada');
