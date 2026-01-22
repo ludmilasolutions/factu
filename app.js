@@ -1,5 +1,5 @@
 // ============================================
-// SISTEMA POS - APP.JS - VERSIÓN CORREGIDA
+// SISTEMA POS - APP.JS - VERSIÓN COMPLETA
 // ============================================
 
 // Configuración global
@@ -921,7 +921,7 @@ async function agregarAlCarrito(productoId) {
             return;
         }
         
-        if (producto.stock <= 0) {
+        if (producto.stock <= 0 && !producto.permite_stock_negativo) {
             alert('Producto sin stock disponible');
             return;
         }
@@ -929,7 +929,7 @@ async function agregarAlCarrito(productoId) {
         const existingItem = APP_STATE.carrito.find(item => item.id === producto.id);
         
         if (existingItem) {
-            if (existingItem.cantidad >= producto.stock) {
+            if (existingItem.cantidad >= producto.stock && !producto.permite_stock_negativo) {
                 alert('Stock insuficiente');
                 return;
             }
@@ -968,7 +968,7 @@ function updateCantidad(index, delta) {
         return;
     }
     
-    if (nuevaCantidad > item.stock) {
+    if (nuevaCantidad > item.stock && !item.permite_stock_negativo) {
         alert('Stock insuficiente');
         return;
     }
@@ -2841,16 +2841,6 @@ function showNuevoProductoModal() {
                 <label>Categoría *</label>
                 <select id="productoCategoria" class="form-control" required>
                     <option value="">Seleccionar categoría...</option>
-                    <option value="Herramientas Manuales">Herramientas Manuales</option>
-                    <option value="Herramientas Eléctricas">Herramientas Eléctricas</option>
-                    <option value="Materiales de Construcción">Materiales de Construcción</option>
-                    <option value="Fontanería">Fontanería</option>
-                    <option value="Electricidad">Electricidad</option>
-                    <option value="Pinturas">Pinturas</option>
-                    <option value="Fijaciones">Fijaciones</option>
-                    <option value="Jardinería">Jardinería</option>
-                    <option value="Seguridad">Seguridad</option>
-                    <option value="Ferretería General">Ferretería General</option>
                 </select>
             </div>
             <div class="form-group">
@@ -2902,12 +2892,38 @@ function showNuevoProductoModal() {
     document.getElementById('modalConfirm').style.display = 'inline-block';
     document.getElementById('modalCancel').textContent = 'Cancelar';
     
+    cargarCategoriasSelect();
     cargarProveedoresSelect();
     calcularPrecioVentaDesdeCosto();
     
     document.getElementById('modalConfirm').onclick = async () => {
         await guardarProducto();
     };
+}
+
+async function cargarCategoriasSelect() {
+    const select = document.getElementById('productoCategoria');
+    if (!select) return;
+    
+    try {
+        const { data: categorias, error } = await APP_STATE.supabase
+            .from('categorias_productos')
+            .select('*')
+            .eq('activo', true)
+            .order('nombre');
+        
+        if (error) throw error;
+        
+        select.innerHTML = '<option value="">Seleccionar categoría...</option>';
+        categorias.forEach(categoria => {
+            const option = document.createElement('option');
+            option.value = categoria.nombre;
+            option.textContent = categoria.nombre;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error cargando categorías:', error);
+    }
 }
 
 async function cargarProveedoresSelect() {
@@ -2923,6 +2939,7 @@ async function cargarProveedoresSelect() {
         
         if (error) throw error;
         
+        select.innerHTML = '<option value="">Sin proveedor</option>';
         proveedores.forEach(proveedor => {
             const option = document.createElement('option');
             option.value = proveedor.id;
@@ -3044,16 +3061,6 @@ async function editarProducto(productoId) {
                     <label>Categoría *</label>
                     <select id="productoCategoria" class="form-control" required>
                         <option value="">Seleccionar categoría...</option>
-                        <option value="Herramientas Manuales" ${producto.categoria === 'Herramientas Manuales' ? 'selected' : ''}>Herramientas Manuales</option>
-                        <option value="Herramientas Eléctricas" ${producto.categoria === 'Herramientas Eléctricas' ? 'selected' : ''}>Herramientas Eléctricas</option>
-                        <option value="Materiales de Construcción" ${producto.categoria === 'Materiales de Construcción' ? 'selected' : ''}>Materiales de Construcción</option>
-                        <option value="Fontanería" ${producto.categoria === 'Fontanería' ? 'selected' : ''}>Fontanería</option>
-                        <option value="Electricidad" ${producto.categoria === 'Electricidad' ? 'selected' : ''}>Electricidad</option>
-                        <option value="Pinturas" ${producto.categoria === 'Pinturas' ? 'selected' : ''}>Pinturas</option>
-                        <option value="Fijaciones" ${producto.categoria === 'Fijaciones' ? 'selected' : ''}>Fijaciones</option>
-                        <option value="Jardinería" ${producto.categoria === 'Jardinería' ? 'selected' : ''}>Jardinería</option>
-                        <option value="Seguridad" ${producto.categoria === 'Seguridad' ? 'selected' : ''}>Seguridad</option>
-                        <option value="Ferretería General" ${producto.categoria === 'Ferretería General' ? 'selected' : ''}>Ferretería General</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -3103,6 +3110,9 @@ async function editarProducto(productoId) {
         document.getElementById('modalConfirm').textContent = 'Actualizar';
         document.getElementById('modalConfirm').style.display = 'inline-block';
         document.getElementById('modalCancel').textContent = 'Cancelar';
+        
+        await cargarCategoriasSelect();
+        document.getElementById('productoCategoria').value = producto.categoria;
         
         await cargarProveedoresSelect();
         if (producto.proveedor_id) {
@@ -3329,7 +3339,7 @@ async function loadCajaResumen() {
             ventasCuentaElem.textContent = `$${(cierreActual.ventas_cuenta_corriente || 0).toFixed(2)}`;
             totalVentasElem.textContent = `$${(cierreActual.total_ventas || 0).toFixed(2)}`;
             
-            const saldoFinal = cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0);
+            const saldoFinal = cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0) - (cierreActual.retiros_efectivo || 0);
             const diferencia = cierreActual.diferencia || 0;
             
             saldoFinalElem.textContent = `$${saldoFinal.toFixed(2)}`;
@@ -3386,11 +3396,11 @@ async function cerrarCaja() {
         }
         
         const saldoFinalInput = prompt('Ingrese el saldo final en caja:', 
-                                      (cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0)).toFixed(2));
+                                      (cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0) - (cierreActual.retiros_efectivo || 0)).toFixed(2));
         if (!saldoFinalInput) return;
         
         const saldoFinal = parseFloat(saldoFinalInput) || 0;
-        const diferencia = saldoFinal - (cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0));
+        const diferencia = saldoFinal - (cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0) - (cierreActual.retiros_efectivo || 0));
         
         const observaciones = prompt('Observaciones del cierre:', 'Cierre normal');
         
@@ -3412,7 +3422,8 @@ async function cerrarCaja() {
         alert(`✅ Caja cerrada correctamente\n` +
               `Saldo Inicial: $${cierreActual.saldo_inicial.toFixed(2)}\n` +
               `Ventas Efectivo: $${(cierreActual.ventas_efectivo || 0).toFixed(2)}\n` +
-              `Saldo Esperado: $${(cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0)).toFixed(2)}\n` +
+              `Retiros Efectivo: $${(cierreActual.retiros_efectivo || 0).toFixed(2)}\n` +
+              `Saldo Esperado: $${(cierreActual.saldo_inicial + (cierreActual.ventas_efectivo || 0) - (cierreActual.retiros_efectivo || 0)).toFixed(2)}\n` +
               `Saldo Final: $${saldoFinal.toFixed(2)}\n` +
               `Diferencia: $${diferencia.toFixed(2)}`);
         
@@ -4085,6 +4096,8 @@ async function retirarEfectivo() {
         return;
     }
     
+    const motivo = prompt('Motivo del retiro (opcional):');
+    
     try {
         const hoy = new Date().toISOString().split('T')[0];
         const { data: cierre, error } = await APP_STATE.supabase
@@ -4099,6 +4112,23 @@ async function retirarEfectivo() {
         
         if (error) throw error;
         
+        // Registrar retiro en tabla retiros_efectivo
+        const retiroData = {
+            cierre_caja_id: cierre.id,
+            usuario_id: APP_STATE.currentUser?.id,
+            monto: parseFloat(monto),
+            motivo: motivo || 'Retiro de efectivo',
+            observaciones: `Retiro registrado por ${APP_STATE.currentUser?.nombre}`,
+            created_at: new Date().toISOString()
+        };
+        
+        const { error: retiroError } = await APP_STATE.supabase
+            .from('retiros_efectivo')
+            .insert([retiroData]);
+        
+        if (retiroError) throw retiroError;
+        
+        // Actualizar cierre de caja
         const { error: updateError } = await APP_STATE.supabase
             .from('cierres_caja')
             .update({
