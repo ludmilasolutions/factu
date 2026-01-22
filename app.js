@@ -1,10 +1,10 @@
 // ============================================
-// SISTEMA POS - APP.JS - VERSIÓN 100% COMPLETA
+// SISTEMA POS - APP.JS - VERSIÓN CORREGIDA
 // ============================================
 
 // Configuración global
 const CONFIG = {
-    VERSION: '3.0.0',
+    VERSION: '3.0.1',
     SYNC_INTERVAL: 10000,
     STOCK_ALERT_THRESHOLD: 5
 };
@@ -450,16 +450,19 @@ function setupEventListeners() {
     const crearPresupuestoBtn = document.getElementById('crearPresupuesto');
     const cancelarVentaBtn = document.getElementById('cancelarVenta');
     const cartDiscount = document.getElementById('cartDiscount');
+    const buscarProductoBtn = document.getElementById('buscarProductoBtn');
     
     if (productSearch) {
         productSearch.addEventListener('keyup', handleProductSearch);
         productSearch.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleProductSearch(e);
+                buscarYAgregarProducto();
             }
         });
     }
+    
+    if (buscarProductoBtn) buscarProductoBtn.addEventListener('click', buscarYAgregarProducto);
     
     if (scanBarcode) scanBarcode.addEventListener('click', toggleScanner);
     if (keyboardMode) keyboardMode.addEventListener('click', activateKeyboardMode);
@@ -682,11 +685,32 @@ function actualizarBuscadorProductos(productos) {
     
     datalist.innerHTML = '';
     
+    // Agregar opciones por nombre
     productos.slice(0, 50).forEach(producto => {
         const option = document.createElement('option');
-        option.value = `${producto.nombre} (${producto.codigo_barras || producto.codigo_interno || ''})`;
+        option.value = producto.nombre;
         option.dataset.id = producto.id;
         datalist.appendChild(option);
+    });
+    
+    // Agregar opciones por código de barras
+    productos.slice(0, 50).forEach(producto => {
+        if (producto.codigo_barras) {
+            const option = document.createElement('option');
+            option.value = producto.codigo_barras;
+            option.dataset.id = producto.id;
+            datalist.appendChild(option);
+        }
+    });
+    
+    // Agregar opciones por código interno
+    productos.slice(0, 50).forEach(producto => {
+        if (producto.codigo_interno) {
+            const option = document.createElement('option');
+            option.value = producto.codigo_interno;
+            option.dataset.id = producto.id;
+            datalist.appendChild(option);
+        }
     });
 }
 
@@ -791,6 +815,63 @@ function displayProductos(productos) {
         
         container.appendChild(card);
     });
+}
+
+async function buscarYAgregarProducto() {
+    const searchInput = document.getElementById('productSearch');
+    if (!searchInput) return;
+    
+    const searchTerm = searchInput.value.trim();
+    if (!searchTerm) {
+        alert('Ingresa un nombre o código de producto');
+        return;
+    }
+    
+    try {
+        // Buscar por código exacto (barras o interno)
+        const { data: productos, error } = await APP_STATE.supabase
+            .from('productos')
+            .select('*')
+            .or(`codigo_barras.eq.${searchTerm},codigo_interno.eq.${searchTerm}`)
+            .eq('activo', true)
+            .limit(1);
+        
+        let producto = null;
+        
+        if (!error && productos && productos.length > 0) {
+            producto = productos[0];
+        } else {
+            // Si no encuentra por código, buscar por nombre (insensible a mayúsculas)
+            const { data: productosNombre, error: errorNombre } = await APP_STATE.supabase
+                .from('productos')
+                .select('*')
+                .ilike('nombre', `%${searchTerm}%`)
+                .eq('activo', true)
+                .limit(1);
+            
+            if (!errorNombre && productosNombre && productosNombre.length > 0) {
+                producto = productosNombre[0];
+            }
+        }
+        
+        if (producto) {
+            await agregarAlCarrito(producto.id);
+            searchInput.value = '';
+            searchInput.focus();
+        } else {
+            alert(`Producto "${searchTerm}" no encontrado. Verifica el código o nombre.`);
+        }
+    } catch (error) {
+        console.error('Error en búsqueda:', error);
+        alert('Error al buscar producto');
+    }
+}
+
+async function handleProductSearch(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        await buscarYAgregarProducto();
+    }
 }
 
 function handleFilterProductos() {
@@ -3712,35 +3793,6 @@ async function anularVenta(ventaId) {
 // SCANNER Y BÚSQUEDA
 // ============================================
 
-async function handleProductSearch(e) {
-    if (e.key === 'Enter') {
-        const searchTerm = e.target.value.trim();
-        if (!searchTerm) return;
-        
-        try {
-            const { data: productos, error } = await APP_STATE.supabase
-                .from('productos')
-                .select('*')
-                .or(`codigo_barras.eq.${searchTerm},codigo_interno.eq.${searchTerm},nombre.ilike.%${searchTerm}%`)
-                .eq('activo', true)
-                .limit(1);
-            
-            if (error) throw error;
-            
-            if (productos && productos.length > 0) {
-                await agregarAlCarrito(productos[0].id);
-                e.target.value = '';
-                e.target.focus();
-            } else {
-                alert('Producto no encontrado');
-            }
-        } catch (error) {
-            console.error('Error buscando producto:', error);
-            alert('Error al buscar producto');
-        }
-    }
-}
-
 let scannerStream = null;
 
 async function toggleScanner() {
@@ -3797,8 +3849,7 @@ async function startBarcodeDetection() {
                 const productSearch = document.getElementById('productSearch');
                 if (productSearch) {
                     productSearch.value = barcode.rawValue;
-                    const event = new KeyboardEvent('keyup', { key: 'Enter' });
-                    productSearch.dispatchEvent(event);
+                    await buscarYAgregarProducto();
                 }
                 stopScanner();
             }
@@ -3991,6 +4042,7 @@ window.exportarReporteMensual = exportarReporteMensual;
 window.loadVentas = loadVentas;
 window.verVentaDetalle = verVentaDetalle;
 window.anularVenta = anularVenta;
+window.buscarYAgregarProducto = buscarYAgregarProducto;
 
 // ============================================
 // FUNCIONES AÑADIDAS PARA COMPLETAR EL SISTEMA
@@ -4154,4 +4206,4 @@ window.verCajasPorDia = verCajasPorDia;
 window.abrirWebProveedor = abrirWebProveedor;
 window.recalcularDeudaPresupuesto = recalcularDeudaPresupuesto;
 
-console.log('✅ app.js cargado completamente - Versión 100% Completada');
+console.log('✅ app.js cargado completamente - Versión 3.0.1 Corregida');
