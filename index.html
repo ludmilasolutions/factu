@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema POS - Ferretería</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <style>
+        :root {
+            /* Variables modo claro */
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --success-color: #10b981;
+            
+            --bg-color: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            
+            --border-color: #e2e8f0;
+            --border-radius: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            
+            --header-height: 64px;
+            --sidebar-width: 240px;
+            --transition: all 0.2s ease;
+        }
+        
+        /* Variables modo oscuro */
+        .dark-mode {
+            --primary-color: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --success-color: #10b981;
+            
+            --bg-color: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            
+            --border-color: #475569;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Pantalla de Login */
+        #loginScreen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            padding: 20px;
+        }
+        
+        .login-container {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .login-container h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+        
+        .login-container p {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            transition: var(--transition);
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        /* Pantalla de la App */
+        #appScreen {
+            display: none;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Configuración inicial */
+        #initialConfig {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 20px;
+            background-color: var(--bg-color);
+        }
+        
+        .config-container {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 500px;
+            padding: 30px;
+        }
+        
+        .config-container h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* Main App Layout */
+        #mainApp {
+            display: none;
+            height: 100%;
+        }
+        
+        /* Header */
+        .app-header {
+            height: var(--header-height);
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            position: relative;
+            z-index: 100;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--primary-color);
+        }
+        
+        .session-info {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .session-info span {
+            padding: 4px 10px;
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+        
+        /* Botón modo oscuro/claro */
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .theme-toggle:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        /* Contenedor principal */
+        .app-container {
+            display: flex;
+            height: calc(100vh - var(--header-height));
+        }
+        
+        /* Sidebar/Navegación */
+        .app-sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 20px 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .nav-section {
+            margin-bottom: 30px;
+        }
+        
+        .nav-section h3 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: 0 20px;
+            margin-bottom: 10px;
+        }
+        
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 15px;
+            text-align: left;
+            width: 100%;
+            cursor: pointer;
+            border-radius: 0;
+            transition: var(--transition);
+        }
+        
+        .nav-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .nav-btn.active {
+            background-color: rgba(37, 99, 235, 0.1);
+            color: var(--primary-color);
+            border-right: 3px solid var(--primary-color);
+        }
+        
+        .nav-btn i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Contenido principal */
+        .app-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: var(--bg-color);
+        }
+        
+        .page {
+            display: none;
+            height: 100%;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        /* Página POS - Enfoque en carrito */
+        .pos-container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 20px;
+            height: calc(100vh - var(--header-height) - 60px);
+        }
+        
+        /* Sección izquierda: Búsqueda e info */
+        .pos-left {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .search-section {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .search-box input {
+            flex: 1;
+        }
+        
+        .btn-icon {
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: var(--bg-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .product-card {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .product-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .product-card .price {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .product-card .stock {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: inline-block;
+            width: fit-content;
+        }
+        
+        .product-card .stock.normal {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+        
+        .product-card .stock.critico {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .product-card .stock.bajo {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .cliente-section {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .cliente-section h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        /* Sección derecha: Carrito */
+        .pos-right {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .cart-header h2 {
+            font-size: 20px;
+        }
+        
+        .cart-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+        }
+        
+        .btn-success:hover {
+            background-color: #0da271;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+        }
+        
+        .btn-warning:hover {
+            background-color: #e5940a;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        
+        .btn-info {
+            background-color: var(--info-color);
+        }
+        
+        .btn-info:hover {
+            background-color: #2563eb;
+        }
+        
+        .btn-secondary {
+            background-color: var(--text-secondary);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+        
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border-radius: var(--border-radius);
+            background-color: var(--bg-color);
+            padding: 10px;
+        }
+        
+        .cart-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+        }
+        
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+        
+        .cantidad-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .cantidad-controls button {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: var(--bg-tertiary);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        
+        .cart-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 14px;
+        }
+        
+        .cart-summary {
+            background-color: var(--bg-tertiary);
+            border-radius: var(--border-radius);
+            padding: 20px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .summary-row.total {
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .cart-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .cart-footer .btn {
+            flex: 1;
+        }
+        
+        /* Modal de pago */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        /* Métodos de pago */
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .payment-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 10px;
+            background-color: var(--bg-tertiary);
+            border: 2px solid transparent;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .payment-btn:hover {
+            background-color: var(--border-color);
+        }
+        
+        .payment-btn.active {
+            border-color: var(--primary-color);
+            background-color: rgba(37, 99, 235, 0.1);
+        }
+        
+        .payment-btn i {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        /* Scanner */
+        .scanner-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .scanner-video {
+            width: 100%;
+            max-width: 500px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        .scanner-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.7);
+        }
+        
+        /* Estilos para otras páginas */
+        .page-content {
+            background-color: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            min-height: 400px;
+        }
+        
+        .data-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .data-row:last-child {
+            border-bottom: none;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .pos-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                height: auto;
+                max-height: calc(100vh - var(--header-height) - 60px);
+            }
+            
+            .pos-left {
+                max-height: 300px;
+                overflow-y: auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 70px;
+            }
+            
+            .app-sidebar {
+                padding: 10px 0;
+            }
+            
+            .nav-btn span {
+                display: none;
+            }
+            
+            .nav-btn {
+                justify-content: center;
+                padding: 15px 0;
+            }
+            
+            .session-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .payment-methods {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .cart-item {
+                grid-template-columns: 1fr;
+                gap: 5px;
+            }
+            
+            .cart-item-actions {
+                justify-content: flex-end;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 20px;
+            }
+            
+            .app-header {
+                padding: 0 10px;
+            }
+            
+            .logo {
+                font-size: 18px;
+            }
+            
+            .session-info {
+                font-size: 12px;
+            }
+            
+            .pos-container {
+                gap: 10px;
+            }
+            
+            .search-box {
+                flex-direction: column;
+            }
+            
+            .btn-icon {
+                width: 100%;
+            }
+            
+            .cart-footer {
+                flex-direction: column;
+            }
+        }
+        
+        /* Estados y utilidades */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .error {
+            color: var(--danger-color);
+            padding: 10px;
+            border-radius: var(--border-radius);
+            background-color: rgba(239, 68, 68, 0.1);
+            margin: 10px 0;
+        }
+        
+        .info {
+            color: var(--info-color);
+            padding: 10px;
+            border-radius: var(--border-radius);
+            background-color: rgba(59, 130, 246, 0.1);
+            margin: 10px 0;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .online {
+            color: var(--success-color) !important;
+        }
+        
+        .offline {
+            color: var(--danger-color) !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Pantalla de Login -->
+    <div id="loginScreen">
+        <div class="login-container">
+            <h1>Sistema POS Ferretería</h1>
+            <p>Ingresa tus credenciales para acceder</p>
+            <div class="form-group">
+                <label for="loginEmail">Email</label>
+                <input type="email" id="loginEmail" class="form-control" placeholder="usuario@ejemplo.com">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Contraseña</label>
+                <input type="password" id="loginPassword" class="form-control" placeholder="••••••••">
+            </div>
+            <div id="loginStatus"></div>
+            <button id="loginBtn" class="btn btn-block">Iniciar Sesión</button>
+        </div>
+    </div>
+
+    <!-- Pantalla de la Aplicación -->
+    <div id="appScreen">
+        <!-- Configuración inicial de sesión -->
+        <div id="initialConfig">
+            <div class="config-container">
+                <h2>Configuración de Sesión</h2>
+                <div class="form-group">
+                    <label for="selectLocal">Local</label>
+                    <select id="selectLocal" class="form-control">
+                        <option value="">Seleccionar local...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="selectCaja">Caja</label>
+                    <select id="selectCaja" class="form-control">
+                        <option value="">Seleccionar caja...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="selectTurno">Turno</label>
+                    <select id="selectTurno" class="form-control">
+                        <option value="mañana">Mañana</option>
+                        <option value="tarde">Tarde</option>
+                        <option value="noche">Noche</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="saldoInicial">Saldo Inicial en Caja</label>
+                    <input type="number" id="saldoInicial" class="form-control" value="0" step="0.01">
+                </div>
+                <button id="startSession" class="btn btn-block">Iniciar Sesión de Trabajo</button>
+            </div>
+        </div>
+
+        <!-- Aplicación Principal -->
+        <div id="mainApp">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-left">
+                    <div class="logo">POS Ferretería</div>
+                    <div class="session-info">
+                        <span id="userInfo">Usuario: ...</span>
+                        <span id="localInfo">Local: ...</span>
+                        <span id="cajaInfo">Caja: ...</span>
+                        <span id="turnoInfo">Turno: ...</span>
+                        <span id="currentPage">POS / Venta</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <span id="syncStatus" class="btn-status online">🟢 Online</span>
+                    <button id="syncManual" class="btn btn-sm btn-outline" title="Sincronizar datos">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button id="themeToggle" class="theme-toggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button id="logoutBtn" class="btn btn-sm btn-danger">Cerrar Sesión</button>
+                </div>
+            </header>
+
+            <!-- Contenedor principal -->
+            <div class="app-container">
+                <!-- Sidebar/Navegación -->
+                <nav class="app-sidebar">
+                    <div class="nav-section">
+                        <h3>Principal</h3>
+                        <button class="nav-btn active" data-page="pos">
+                            <i class="fas fa-cash-register"></i>
+                            <span>POS / Venta</span>
+                        </button>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <h3>Gestión</h3>
+                        <button class="nav-btn" data-page="productos">
+                            <i class="fas fa-boxes"></i>
+                            <span>Productos</span>
+                        </button>
+                        <button class="nav-btn" data-page="clientes">
+                            <i class="fas fa-users"></i>
+                            <span>Clientes</span>
+                        </button>
+                        <button class="nav-btn" data-page="proveedores">
+                            <i class="fas fa-truck"></i>
+                            <span>Proveedores</span>
+                        </button>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <h3>Finanzas</h3>
+                        <button class="nav-btn" data-page="presupuestos">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <span>Presupuestos</span>
+                        </button>
+                        <button class="nav-btn" data-page="ventas">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>Ventas</span>
+                        </button>
+                        <button class="nav-btn" data-page="caja">
+                            <i class="fas fa-calculator"></i>
+                            <span>Caja</span>
+                        </button>
+                        <button class="nav-btn" data-page="reportes">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reportes</span>
+                        </button>
+                    </div>
+                </nav>
+
+                <!-- Contenido principal -->
+                <main class="app-content">
+                    <!-- Página POS -->
+                    <div id="pagePos" class="page active">
+                        <div class="page-header">
+                            <h1 class="page-title">Punto de Venta (POS)</h1>
+                        </div>
+                        
+                        <div class="pos-container">
+                            <!-- Sección izquierda: Búsqueda y cliente -->
+                            <div class="pos-left">
+                                <!-- Búsqueda de productos -->
+                                <div class="search-section">
+                                    <h3>Buscar Producto</h3>
+                                    <div class="search-box">
+                                        <input type="text" id="productSearch" class="form-control" 
+                                               placeholder="Código, nombre del producto o escanear código de barras...">
+                                        <button id="scanBarcode" class="btn btn-primary btn-icon" title="Escanear código de barras">
+                                            <i class="fas fa-barcode"></i>
+                                        </button>
+                                        <button id="keyboardMode" class="btn btn-outline btn-icon" title="Modo teclado">
+                                            <i class="fas fa-keyboard"></i>
+                                        </button>
+                                        <button id="buscarProductoBtn" class="btn btn-success btn-icon" title="Buscar producto">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                    <div id="productsGrid" class="products-grid">
+                                        <!-- Los productos se mostrarán aquí -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Selección de cliente -->
+                                <div class="cliente-section">
+                                    <h3>Cliente</h3>
+                                    <select id="selectCliente" class="form-control">
+                                        <option value="">Cliente Contado</option>
+                                        <option value="nuevo">➕ Nuevo Cliente</option>
+                                    </select>
+                                    <button id="nuevoClientePage" class="btn btn-outline btn-sm" style="margin-top: 10px;">
+                                        <i class="fas fa-plus"></i> Nuevo Cliente
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Sección derecha: Carrito -->
+                            <div class="pos-right">
+                                <div class="cart-header">
+                                    <h2>Carrito de Venta</h2>
+                                    <div class="cart-actions">
+                                        <button id="cancelarVenta" class="btn btn-sm btn-danger">Cancelar</button>
+                                        <button id="crearPresupuesto" class="btn btn-sm btn-warning">Presupuesto</button>
+                                        <button id="aplicarPromocion" class="btn btn-sm btn-info">Promoción</button>
+                                        <button id="retirarEfectivo" class="btn btn-sm btn-secondary">Retirar Efectivo</button>
+                                    </div>
+                                </div>
+                                
+                                <div id="cartItems" class="cart-items">
+                                    <!-- Los items del carrito se cargan aquí -->
+                                    <div class="cart-empty">🎯 Busca y agrega productos al carrito</div>
+                                </div>
+                                
+                                <div class="cart-summary">
+                                    <div class="summary-row">
+                                        <span>Subtotal:</span>
+                                        <span id="cartSubtotal">$0.00</span>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span>Descuento:</span>
+                                        <span>
+                                            <input type="number" id="cartDiscount" value="0" min="0" step="0.01" 
+                                                   style="width: 80px; padding: 5px; border: 1px solid var(--border-color); border-radius: 4px;">
+                                        </span>
+                                    </div>
+                                    <div class="summary-row total">
+                                        <span>Total:</span>
+                                        <span id="cartTotal">$0.00</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="cart-footer">
+                                    <button id="finalizarVenta" class="btn btn-success btn-lg">
+                                        <i class="fas fa-check-circle"></i> Finalizar Venta
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Productos -->
+                    <div id="pageProductos" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Gestión de Productos</h1>
+                            <div class="actions">
+                                <button id="filterStockBajo" class="btn btn-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Stock Bajo
+                                </button>
+                                <button id="exportarExcel" class="btn btn-outline">
+                                    <i class="fas fa-file-export"></i> Exportar
+                                </button>
+                                <button id="importarExcel" class="btn btn-outline">
+                                    <i class="fas fa-file-import"></i> Importar
+                                </button>
+                                <button id="nuevoProducto" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Nuevo Producto
+                                </button>
+                            </div>
+                        </div>
+                        <div class="page-content">
+                            <div class="form-group">
+                                <input type="text" id="filterProductos" class="form-control" placeholder="Buscar productos...">
+                            </div>
+                            <div id="productosList" class="data-list">
+                                <!-- Lista de productos -->
+                                <div class="loading">Cargando productos...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Clientes -->
+                    <div id="pageClientes" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Gestión de Clientes</h1>
+                            <button id="nuevoCliente" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nuevo Cliente
+                            </button>
+                        </div>
+                        <div class="page-content">
+                            <div id="clientesList" class="data-list">
+                                <!-- Lista de clientes -->
+                                <div class="loading">Cargando clientes...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Proveedores -->
+                    <div id="pageProveedores" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Gestión de Proveedores</h1>
+                            <div>
+                                <button id="webProveedorBtn" class="btn btn-outline">Web Proveedor</button>
+                                <button id="nuevoProveedor" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Nuevo Proveedor
+                                </button>
+                            </div>
+                        </div>
+                        <div class="page-content">
+                            <div id="proveedoresList" class="data-list">
+                                <!-- Lista de proveedores -->
+                                <div class="loading">Cargando proveedores...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Presupuestos -->
+                    <div id="pagePresupuestos" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Presupuestos</h1>
+                        </div>
+                        <div class="page-content">
+                            <div id="presupuestosList" class="data-list">
+                                <!-- Lista de presupuestos -->
+                                <div class="loading">Cargando presupuestos...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Ventas -->
+                    <div id="pageVentas" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Historial de Ventas</h1>
+                        </div>
+                        <div class="page-content">
+                            <div id="ventasList" class="data-list">
+                                <!-- Lista de ventas -->
+                                <div class="loading">Cargando ventas...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Caja -->
+                    <div id="pageCaja" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Cierre de Caja</h1>
+                            <div>
+                                <button id="verCajasBtn" class="btn btn-outline">Ver Cajas Anteriores</button>
+                                <button id="cerrarCaja" class="btn btn-danger">Cerrar Caja</button>
+                            </div>
+                        </div>
+                        <div class="page-content">
+                            <div class="caja-resumen">
+                                <h3>Resumen del Turno</h3>
+                                <div class="summary-row">
+                                    <span>Saldo Inicial:</span>
+                                    <span id="saldoInicialResumen">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Ventas Efectivo:</span>
+                                    <span id="ventasEfectivo">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Ventas Tarjeta:</span>
+                                    <span id="ventasTarjeta">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Ventas Transferencia:</span>
+                                    <span id="ventasTransferencia">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Ventas QR:</span>
+                                    <span id="ventasQr">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Ventas Cuenta Corriente:</span>
+                                    <span id="ventasCuenta">$0.00</span>
+                                </div>
+                                <div class="summary-row total">
+                                    <span>Total Ventas:</span>
+                                    <span id="totalVentas">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Saldo Final:</span>
+                                    <span id="saldoFinal">$0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Diferencia:</span>
+                                    <span id="diferenciaResumen">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Página Reportes -->
+                    <div id="pageReportes" class="page">
+                        <div class="page-header">
+                            <h1 class="page-title">Reportes y Estadísticas</h1>
+                        </div>
+                        <div class="page-content">
+                            <div id="reportesContent">
+                                <!-- Contenido de reportes -->
+                                <div class="loading">Cargando reportes...</div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Pago -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Finalizar Pago</h2>
+                <button id="cancelPayment" class="btn btn-outline btn-sm">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-total">
+                    <h3>Total a pagar: <span id="paymentTotalAmount">$0.00</span></h3>
+                </div>
+                
+                <div class="payment-methods">
+                    <button class="payment-btn active" data-method="efectivo">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Efectivo</span>
+                    </button>
+                    <button class="payment-btn" data-method="tarjeta">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Tarjeta</span>
+                    </button>
+                    <button class="payment-btn" data-method="transferencia">
+                        <i class="fas fa-university"></i>
+                        <span>Transferencia</span>
+                    </button>
+                    <button class="payment-btn" data-method="qr">
+                        <i class="fas fa-qrcode"></i>
+                        <span>QR</span>
+                    </button>
+                    <button class="payment-btn" data-method="cuenta">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Cuenta Corriente</span>
+                    </button>
+                    <button class="payment-btn" data-method="combinado">
+                        <i class="fas fa-random"></i>
+                        <span>Combinado</span>
+                    </button>
+                </div>
+                
+                <div id="paymentDetails">
+                    <!-- Detalles del método de pago seleccionado -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmPayment" class="btn btn-success">Confirmar Pago</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Genérico -->
+    <div id="genericModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Título del Modal</h2>
+                <button id="modalCancel" class="btn btn-outline btn-sm">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Contenido del modal -->
+            </div>
+            <div class="modal-footer">
+                <button id="modalConfirm" class="btn btn-primary">Confirmar</button>
+                <button id="modalCancel" class="btn btn-outline">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner de código de barras -->
+    <div id="scannerContainer" class="scanner-container">
+        <div class="scanner-overlay"></div>
+        <video id="scannerVideo" autoplay playsinline class="scanner-video"></video>
+        <div style="margin-top: 20px; text-align: center;">
+            <p>Enfoca el código de barras del producto</p>
+            <button id="stopScanner" class="btn btn-danger" style="margin-top: 15px;">
+                <i class="fas fa-times"></i> Cancelar Escaneo
+            </button>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    <div id="alertasContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;"></div>
+
+    <!-- Script de Supabase (se cargará dinámicamente desde app.js) -->
+    <script src="app.js"></script>
+    <script>
+        // Configuración del tema claro/oscuro
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = themeToggle.querySelector('i');
+            
+            // Verificar preferencia guardada
+            const savedTheme = localStorage.getItem('pos-theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeIcon.className = 'fas fa-sun';
+            } else if (savedTheme === 'light') {
+                document.body.classList.remove('dark-mode');
+                themeIcon.className = 'fas fa-moon';
+            } else {
+                // Si no hay preferencia, usar la del sistema
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark-mode');
+                    themeIcon.className = 'fas fa-sun';
+                    localStorage.setItem('pos-theme', 'dark');
+                }
+            }
+            
+            // Alternar tema
+            themeToggle.addEventListener('click', function() {
+                if (document.body.classList.contains('dark-mode')) {
+                    document.body.classList.remove('dark-mode');
+                    themeIcon.className = 'fas fa-moon';
+                    localStorage.setItem('pos-theme', 'light');
+                } else {
+                    document.body.classList.add('dark-mode');
+                    themeIcon.className = 'fas fa-sun';
+                    localStorage.setItem('pos-theme', 'dark');
+                }
+            });
+            
+            // Detectar cambios en el tema del sistema
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (!localStorage.getItem('pos-theme')) {
+                    if (e.matches) {
+                        document.body.classList.add('dark-mode');
+                        themeIcon.className = 'fas fa-sun';
+                    } else {
+                        document.body.classList.remove('dark-mode');
+                        themeIcon.className = 'fas fa-moon';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
