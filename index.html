@@ -3,1137 +3,681 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema POS - Comercio Minorista</title>
+    <title>Sistema POS Comercial</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #2563eb;
-            --secondary: #64748b;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --info: #3b82f6;
-            --dark: #1e293b;
-            --light: #f8fafc;
-            --gray: #94a3b8;
-            --border: #e2e8f0;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --radius: 8px;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-        }
-
-        body {
-            background: var(--light);
-            color: var(--dark);
-            transition: all 0.3s;
-        }
-
-        body.dark-mode {
-            background: #0f172a;
-            color: #cbd5e1;
-            --light: #1e293b;
-            --dark: #f1f5f9;
-            --border: #334155;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-        }
-
-        .container {
-            max-width: 100%;
-            padding: 0 1rem;
-        }
-
-        /* Login Screen */
-        #loginScreen {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .login-box {
-            background: white;
-            padding: 2.5rem;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .login-box h2 {
-            margin-bottom: 1.5rem;
-            color: var(--dark);
-            text-align: center;
-        }
-
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 1rem;
-            transition: border 0.3s;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-        }
-
-        .btn-block {
-            width: 100%;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #1d4ed8;
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: var(--secondary);
-            color: white;
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-warning {
-            background: var(--warning);
-            color: white;
-        }
-
-        .btn-info {
-            background: var(--info);
-            color: white;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-
-        .btn-sm {
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-        }
-
-        .btn-status {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .btn-status.online {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-status.offline {
-            background: #ef4444;
-            color: white;
-        }
-
-        /* App Screen */
-        #appScreen {
-            display: none;
-        }
-
-        /* Header */
-        .app-header {
-            background: white;
-            border-bottom: 1px solid var(--border);
-            padding: 1rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: var(--shadow);
-        }
-
-        .dark-mode .app-header {
-            background: #1e293b;
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .header-info {
-            display: flex;
-            gap: 1.5rem;
-            font-size: 0.875rem;
-            flex-wrap: wrap;
-        }
-
-        .header-info span {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 0.5rem;
-            overflow-x: auto;
-            padding-bottom: 0.5rem;
-        }
-
-        .nav-btn {
-            padding: 0.75rem 1.25rem;
-            background: none;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.3s;
-            color: var(--secondary);
-        }
-
-        .nav-btn:hover {
-            background: #f1f5f9;
-            color: var(--primary);
-        }
-
-        .dark-mode .nav-btn:hover {
-            background: #334155;
-        }
-
-        .nav-btn.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* Pages */
-        .page {
-            display: none;
-            padding: 1.5rem 0;
-            min-height: calc(100vh - 180px);
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .page-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        /* POS Page */
-        .pos-container {
-            display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: 1.5rem;
-        }
-
-        @media (max-width: 1024px) {
-            .pos-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .search-section {
-            background: white;
-            padding: 1.5rem;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 1.5rem;
-        }
-
-        .dark-mode .search-section {
-            background: #1e293b;
-        }
-
-        .search-row {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .search-row input {
-            flex: 1;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .product-card {
-            background: white;
-            border-radius: var(--radius);
-            padding: 1.25rem;
-            box-shadow: var(--shadow);
-            transition: transform 0.3s;
-            cursor: pointer;
-            border: 1px solid var(--border);
-        }
-
-        .dark-mode .product-card {
-            background: #1e293b;
-        }
-
-        .product-card:hover {
-            transform: translateY(-4px);
-        }
-
-        .product-card h4 {
-            margin-bottom: 0.5rem;
-            font-size: 1rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .product-card .price {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .product-card .stock {
-            font-size: 0.875rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 1rem;
-        }
-
-        .stock.normal {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .stock.critico {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .stock.bajo {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Cart Section */
-        .cart-section {
-            background: white;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 1.5rem;
-            position: sticky;
-            top: 140px;
-            max-height: calc(100vh - 160px);
-            overflow-y: auto;
-        }
-
-        .dark-mode .cart-section {
-            background: #1e293b;
-        }
-
-        .cart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid var(--border);
-        }
-
-        .cart-items {
-            margin-bottom: 1.5rem;
-        }
-
-        .cart-item {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
-            gap: 0.75rem;
-            padding: 1rem 0;
-            border-bottom: 1px solid var(--border);
-            align-items: center;
-        }
-
-        .cart-item-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .cantidad-controls {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .cantidad-controls button {
-            width: 24px;
-            height: 24px;
-            border: 1px solid var(--border);
-            background: white;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .dark-mode .cantidad-controls button {
-            background: #334155;
-            color: #cbd5e1;
-        }
-
-        .cart-totals {
-            background: #f8fafc;
-            padding: 1.5rem;
-            border-radius: var(--radius);
-            margin-bottom: 1.5rem;
-        }
-
-        .dark-mode .cart-totals {
-            background: #334155;
-        }
-
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.75rem;
-            font-size: 1.125rem;
-        }
-
-        .total-row.grand-total {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            padding-top: 1rem;
-            border-top: 2px solid var(--border);
-        }
-
-        .cart-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        /* Payment Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 1rem;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: var(--radius);
-            width: 100%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .dark-mode .modal-content {
-            background: #1e293b;
-        }
-
-        .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-footer {
-            padding: 1.5rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-        }
-
-        .payment-methods {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        @media (max-width: 640px) {
-            .payment-methods {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        /* Tables */
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 1.5rem;
-        }
-
-        .table th, .table td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .table th {
-            background: #f1f5f9;
-            font-weight: 600;
-        }
-
-        .dark-mode .table th {
-            background: #334155;
-        }
-
-        /* Cards */
-        .card {
-            background: white;
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
-            margin-bottom: 1.5rem;
-        }
-
-        .dark-mode .card {
-            background: #1e293b;
-        }
-
-        /* Initial Config */
-        #initialConfig {
-            padding: 2rem;
-            max-width: 600px;
-            margin: 2rem auto;
-            background: white;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-        }
-
-        .dark-mode #initialConfig {
-            background: #1e293b;
-        }
-
-        /* Scanner */
-        #scannerContainer {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 2000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #scannerVideo {
-            width: 100%;
-            max-width: 500px;
-            border-radius: var(--radius);
-        }
-
-        /* Utility Classes */
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .text-left { text-align: left; }
-        .mb-1 { margin-bottom: 0.5rem; }
-        .mb-2 { margin-bottom: 1rem; }
-        .mb-3 { margin-bottom: 1.5rem; }
-        .mb-4 { margin-bottom: 2rem; }
-        .mt-1 { margin-top: 0.5rem; }
-        .mt-2 { margin-top: 1rem; }
-        .mt-3 { margin-top: 1.5rem; }
-        .mt-4 { margin-top: 2rem; }
-        .d-flex { display: flex; }
-        .d-block { display: block; }
-        .d-none { display: none; }
-        .gap-1 { gap: 0.5rem; }
-        .gap-2 { gap: 1rem; }
-        .gap-3 { gap: 1.5rem; }
-        .flex-wrap { flex-wrap: wrap; }
-        .align-center { align-items: center; }
-        .justify-between { justify-content: space-between; }
-        .w-100 { width: 100%; }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-info {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-            
-            .nav-tabs {
-                padding-bottom: 0.25rem;
-            }
-            
-            .nav-btn {
-                padding: 0.5rem 0.75rem;
-                font-size: 0.875rem;
-            }
-            
-            .cart-item {
-                grid-template-columns: 1fr;
-                gap: 0.5rem;
-            }
-            
-            .cart-actions {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <!-- Login Screen -->
-    <div id="loginScreen">
-        <div class="login-box">
-            <h2><i class="fas fa-cash-register"></i> Sistema POS</h2>
-            <div class="form-group">
-                <label for="loginEmail">Email</label>
-                <input type="email" id="loginEmail" class="form-control" placeholder="usuario@ejemplo.com">
+<body data-theme="light">
+    <!-- Modales generales -->
+    <div id="genericModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal</h3>
+                <span class="modal-close" onclick="handleModalCancel()">&times;</span>
             </div>
-            <div class="form-group">
-                <label for="loginPassword">Contraseña</label>
-                <input type="password" id="loginPassword" class="form-control" placeholder="••••••••">
+            <div class="modal-body" id="modalBody">
+                <!-- Contenido dinámico -->
             </div>
-            <div id="loginStatus" class="mb-2"></div>
-            <button id="loginBtn" class="btn btn-primary btn-block">Iniciar Sesión</button>
+            <div class="modal-footer">
+                <button id="modalConfirm" class="btn btn-primary">Confirmar</button>
+                <button id="modalCancel" class="btn btn-secondary">Cancelar</button>
+            </div>
         </div>
     </div>
 
-    <!-- App Screen -->
-    <div id="appScreen">
-        <!-- Initial Configuration -->
-        <div id="initialConfig">
-            <h2 class="text-center mb-3">Configuración Inicial</h2>
-            <div class="form-group">
-                <label for="selectLocal">Local</label>
-                <select id="selectLocal" class="form-control">
-                    <option value="">Seleccionar local...</option>
-                </select>
+    <!-- Modal de pago -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content modal-payment">
+            <div class="modal-header">
+                <h3>Método de Pago</h3>
+                <span class="modal-close" onclick="handleModalCancel()">&times;</span>
             </div>
-            <div class="form-group">
-                <label for="selectCaja">Caja</label>
-                <select id="selectCaja" class="form-control">
-                    <option value="">Seleccionar caja...</option>
-                </select>
+            <div class="modal-body">
+                <div class="payment-total">
+                    <h4>Total a pagar: <span id="paymentTotalAmount">$0.00</span></h4>
+                </div>
+                <div class="payment-methods">
+                    <button class="payment-btn" data-method="efectivo">
+                        <i class="fas fa-money-bill-wave"></i> Efectivo
+                    </button>
+                    <button class="payment-btn" data-method="tarjeta">
+                        <i class="fas fa-credit-card"></i> Tarjeta
+                    </button>
+                    <button class="payment-btn" data-method="transferencia">
+                        <i class="fas fa-university"></i> Transferencia
+                    </button>
+                    <button class="payment-btn" data-method="qr">
+                        <i class="fas fa-qrcode"></i> QR
+                    </button>
+                    <button class="payment-btn" data-method="cuenta">
+                        <i class="fas fa-file-invoice-dollar"></i> Cuenta
+                    </button>
+                    <button class="payment-btn" data-method="combinado">
+                        <i class="fas fa-random"></i> Combinado
+                    </button>
+                </div>
+                <div id="paymentDetails" class="payment-details">
+                    <!-- Detalles dinámicos del pago -->
+                </div>
             </div>
-            <div class="form-group">
-                <label for="selectTurno">Turno</label>
-                <select id="selectTurno" class="form-control">
-                    <option value="mañana">Mañana</option>
-                    <option value="tarde">Tarde</option>
-                    <option value="noche">Noche</option>
-                </select>
+            <div class="modal-footer">
+                <button id="confirmPayment" class="btn btn-success">Confirmar Pago</button>
+                <button id="cancelPayment" class="btn btn-secondary">Cancelar</button>
             </div>
-            <div class="form-group">
-                <label for="saldoInicial">Saldo Inicial en Caja</label>
-                <input type="number" id="saldoInicial" class="form-control" value="0" step="0.01" min="0">
+        </div>
+    </div>
+
+    <!-- Contenedor del scanner -->
+    <div id="scannerContainer" class="scanner-container">
+        <div class="scanner-header">
+            <h3>Escanear Código de Barras</h3>
+            <button id="stopScanner" class="btn btn-danger">✕ Cerrar</button>
+        </div>
+        <video id="scannerVideo" autoplay playsinline></video>
+        <div class="scanner-overlay"></div>
+    </div>
+
+    <!-- Teclado numérico virtual -->
+    <div id="tecladoNumericoContainer">
+        <div id="tecladoNumerico" style="display: none;">
+            <div class="teclado-grid">
+                <button class="btn-num" data-num="1">1</button>
+                <button class="btn-num" data-num="2">2</button>
+                <button class="btn-num" data-num="3">3</button>
+                <button class="btn-num" data-num="4">4</button>
+                <button class="btn-num" data-num="5">5</button>
+                <button class="btn-num" data-num="6">6</button>
+                <button class="btn-num" data-num="7">7</button>
+                <button class="btn-num" data-num="8">8</button>
+                <button class="btn-num" data-num="9">9</button>
+                <button class="btn-num" data-num=".">.</button>
+                <button class="btn-num" data-num="0">0</button>
+                <button class="btn-num" id="btnEnter">Enter</button>
             </div>
-            <button id="startSession" class="btn btn-primary btn-block mt-3">Iniciar Sesión de Trabajo</button>
+            <div class="teclado-close">
+                <button onclick="toggleTecladoNumerico()" class="btn btn-danger">✕ Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla de login -->
+    <div id="loginScreen" class="screen login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1><i class="fas fa-cash-register"></i> POS Comercial</h1>
+                <p class="version">v4.0.0</p>
+            </div>
+            
+            <div class="login-form">
+                <h2>Iniciar Sesión</h2>
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="usuario@empresa.com">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Contraseña</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••">
+                </div>
+                <div id="loginStatus"></div>
+                <button id="loginBtn" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> Ingresar
+                </button>
+            </div>
+            
+            <div class="login-footer">
+                <p>Sistema de Punto de Venta Comercial</p>
+                <p class="hint">Presiona Enter para ingresar</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla principal de la aplicación -->
+    <div id="appScreen" class="screen app-screen" style="display: none;">
+        <!-- Configuración inicial (local, caja, turno) -->
+        <div id="initialConfig" class="page active">
+            <div class="config-container">
+                <h2><i class="fas fa-store"></i> Configuración de Sesión</h2>
+                <p class="subtitle">Selecciona el local, caja y turno para comenzar</p>
+                
+                <div class="config-form">
+                    <div class="form-group">
+                        <label for="selectLocal">Local *</label>
+                        <select id="selectLocal" class="form-control" required>
+                            <option value="">Seleccionar local...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="selectCaja">Caja *</label>
+                        <select id="selectCaja" class="form-control" required>
+                            <option value="">Seleccionar caja...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="selectTurno">Turno *</label>
+                        <select id="selectTurno" class="form-control" required>
+                            <option value="">Seleccionar turno...</option>
+                            <option value="mañana">Mañana</option>
+                            <option value="tarde">Tarde</option>
+                            <option value="noche">Noche</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="saldoInicial">Saldo Inicial en Caja</label>
+                        <input type="number" id="saldoInicial" class="form-control" value="0" step="0.01" min="0">
+                    </div>
+                    
+                    <button id="startSession" class="btn btn-success btn-block">
+                        <i class="fas fa-play-circle"></i> Iniciar Sesión de Trabajo
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- Main App -->
-        <div id="mainApp" style="display: none;">
-            <!-- Header -->
+        <!-- Aplicación principal -->
+        <div id="mainApp" class="app-container" style="display: none;">
+            <!-- Header superior -->
             <header class="app-header">
-                <div class="header-top">
-                    <div class="header-info">
-                        <span id="localInfo"><i class="fas fa-store"></i> Local: -</span>
-                        <span id="userInfo"><i class="fas fa-user"></i> Usuario: -</span>
-                        <span id="cajaInfo"><i class="fas fa-cash-register"></i> Caja: -</span>
-                        <span id="turnoInfo"><i class="fas fa-clock"></i> Turno: -</span>
-                    </div>
-                    <div class="header-actions">
-                        <button id="toggleDarkMode" class="btn btn-outline btn-sm">
-                            <i class="fas fa-moon"></i> Modo Oscuro
-                        </button>
-                        <button id="syncManual" class="btn btn-outline btn-sm">
-                            <i class="fas fa-sync-alt"></i> Sincronizar
-                        </button>
-                        <span id="syncStatus" class="btn-status offline">🔴 Offline</span>
-                        <button id="logoutBtn" class="btn btn-danger btn-sm">
-                            <i class="fas fa-sign-out-alt"></i> Salir
-                        </button>
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="app-title">
+                        <h2><i class="fas fa-cash-register"></i> <span id="currentPage">POS</span></h2>
                     </div>
                 </div>
                 
-                <nav class="nav-tabs">
-                    <button class="nav-btn active" data-page="pos">
-                        <i class="fas fa-shopping-cart"></i> POS
+                <div class="header-center">
+                    <div class="session-info">
+                        <span id="userInfo" class="info-badge"><i class="fas fa-user"></i> Usuario</span>
+                        <span id="localInfo" class="info-badge"><i class="fas fa-store"></i> Local</span>
+                        <span id="cajaInfo" class="info-badge"><i class="fas fa-calculator"></i> Caja</span>
+                        <span id="turnoInfo" class="info-badge"><i class="fas fa-clock"></i> Turno</span>
+                        <span id="syncStatus" class="btn-status online" title="Estado de conexión"><i class="fas fa-wifi"></i> Online</span>
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <button id="activarTecladoNumerico" class="btn btn-secondary" title="Teclado numérico">
+                        <i class="fas fa-keyboard"></i>
                     </button>
-                    <button class="nav-btn" data-page="productos">
-                        <i class="fas fa-boxes"></i> Productos
+                    <button id="syncManual" class="btn btn-outline" title="Sincronizar datos">
+                        <i class="fas fa-sync-alt"></i>
                     </button>
-                    <button class="nav-btn" data-page="clientes">
-                        <i class="fas fa-users"></i> Clientes
+                    <button id="cerrarCaja" class="btn btn-warning" title="Cerrar caja">
+                        <i class="fas fa-power-off"></i> Cerrar
                     </button>
-                    <button class="nav-btn" data-page="proveedores">
-                        <i class="fas fa-truck"></i> Proveedores
+                    <button id="logoutBtn" class="btn btn-danger" title="Cerrar sesión">
+                        <i class="fas fa-sign-out-alt"></i>
                     </button>
-                    <button class="nav-btn" data-page="presupuestos">
-                        <i class="fas fa-file-invoice-dollar"></i> Presupuestos
-                    </button>
-                    <button class="nav-btn" data-page="ventas">
-                        <i class="fas fa-receipt"></i> Ventas
-                    </button>
-                    <button class="nav-btn" data-page="caja">
-                        <i class="fas fa-calculator"></i> Caja
-                    </button>
-                    <button class="nav-btn" data-page="reportes">
-                        <i class="fas fa-chart-bar"></i> Reportes
-                    </button>
-                </nav>
+                </div>
             </header>
 
-            <!-- Alertas -->
-            <div id="alertasContainer" class="container mt-2"></div>
+            <!-- Contenedor principal -->
+            <div class="main-content">
+                <!-- Navegación lateral -->
+                <nav class="sidebar" id="sidebar">
+                    <div class="nav-section">
+                        <h3 class="nav-title">VENTAS</h3>
+                        <button class="nav-btn active" data-page="pos">
+                            <i class="fas fa-shopping-cart"></i> POS
+                        </button>
+                        <button class="nav-btn" data-page="ventas">
+                            <i class="fas fa-receipt"></i> Ventas
+                        </button>
+                        <button class="nav-btn" data-page="presupuestos">
+                            <i class="fas fa-file-contract"></i> Presupuestos
+                        </button>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <h3 class="nav-title">INVENTARIO</h3>
+                        <button class="nav-btn" data-page="productos">
+                            <i class="fas fa-boxes"></i> Productos
+                        </button>
+                        <button class="nav-btn" data-page="proveedores">
+                            <i class="fas fa-truck"></i> Proveedores
+                        </button>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <h3 class="nav-title">CLIENTES</h3>
+                        <button class="nav-btn" data-page="clientes">
+                            <i class="fas fa-users"></i> Clientes
+                        </button>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <h3 class="nav-title">CAJA</h3>
+                        <button class="nav-btn" data-page="caja">
+                            <i class="fas fa-cash-register"></i> Caja
+                        </button>
+                        <button class="nav-btn" data-page="reportes">
+                            <i class="fas fa-chart-bar"></i> Reportes
+                        </button>
+                    </div>
+                    
+                    <div class="nav-footer">
+                        <div class="theme-toggle">
+                            <span>Modo Oscuro</span>
+                            <label class="switch">
+                                <input type="checkbox" id="themeToggle">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="system-status">
+                            <p>🟢 Sistema Operativo</p>
+                            <p class="small">POS Comercial v4.0</p>
+                        </div>
+                    </div>
+                </nav>
 
-            <!-- Pages -->
-            <main class="container">
-                <!-- POS Page -->
-                <div id="pagePos" class="page active">
-                    <div class="pos-container">
-                        <!-- Left Column: Products -->
-                        <div>
-                            <div class="search-section">
-                                <div class="search-row">
-                                    <input type="text" id="productSearch" class="form-control" 
-                                           placeholder="Buscar producto por nombre o código...">
-                                    <button id="buscarProductoBtn" class="btn btn-primary">
-                                        <i class="fas fa-search"></i>
-                                    </button>
+                <!-- Contenido de páginas -->
+                <div class="content-area">
+                    <!-- Página POS (Principal) -->
+                    <div id="pagePos" class="page active">
+                        <div class="pos-container">
+                            <!-- Panel izquierdo: Búsqueda y productos -->
+                            <div class="pos-left">
+                                <div class="search-section">
+                                    <div class="search-header">
+                                        <h3><i class="fas fa-search"></i> Búsqueda de Productos</h3>
+                                        <div class="search-actions">
+                                            <button id="scanBarcode" class="btn btn-primary">
+                                                <i class="fas fa-barcode"></i> Escanear
+                                            </button>
+                                            <button id="keyboardMode" class="btn btn-secondary">
+                                                <i class="fas fa-keyboard"></i> Teclado
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="search-box">
+                                        <input type="text" 
+                                               id="productSearch" 
+                                               class="search-input" 
+                                               placeholder="Buscar por nombre, código, marca..."
+                                               autocomplete="off"
+                                               list="productosDatalist">
+                                        <datalist id="productosDatalist"></datalist>
+                                        <button id="buscarProductoBtn" class="btn btn-primary search-btn">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="quick-filters">
+                                        <div class="form-group-inline">
+                                            <label for="selectMarcaProducto">Marca:</label>
+                                            <select id="selectMarcaProducto" class="form-control-sm">
+                                                <option value="">Todas</option>
+                                            </select>
+                                        </div>
+                                        <button id="filterStockBajo" class="btn btn-outline btn-sm">
+                                            <i class="fas fa-exclamation-triangle"></i> Stock Bajo
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="d-flex gap-2 flex-wrap">
-                                    <button id="scanBarcode" class="btn btn-outline">
-                                        <i class="fas fa-barcode"></i> Escanear
-                                    </button>
-                                    <button id="keyboardMode" class="btn btn-outline">
-                                        <i class="fas fa-keyboard"></i> Teclado
-                                    </button>
-                                    <button id="aplicarPromocion" class="btn btn-outline">
-                                        <i class="fas fa-tag"></i> Promoción
-                                    </button>
-                                    <div class="d-flex align-center gap-2 ml-auto">
+                                
+                                <div class="products-section">
+                                    <div class="section-header">
+                                        <h3><i class="fas fa-box-open"></i> Productos Disponibles</h3>
+                                        <div class="section-actions">
+                                            <span class="badge" id="productCount">0 productos</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="productsGrid" class="products-grid">
+                                        <!-- Productos cargados dinámicamente -->
+                                        <div class="no-data">Cargando productos...</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Panel derecho: Carrito y cliente -->
+                            <div class="pos-right">
+                                <div class="cart-section">
+                                    <div class="section-header">
+                                        <h3><i class="fas fa-shopping-cart"></i> Carrito de Venta</h3>
+                                        <div class="section-actions">
+                                            <button id="cancelarVenta" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-times"></i> Cancelar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="client-selector">
                                         <label for="selectCliente">Cliente:</label>
-                                        <select id="selectCliente" class="form-control" style="min-width: 200px;">
+                                        <select id="selectCliente" class="form-control">
                                             <option value="">Cliente Contado</option>
                                             <option value="nuevo">➕ Nuevo Cliente</option>
                                         </select>
                                     </div>
+                                    
+                                    <div id="cartItems" class="cart-items">
+                                        <!-- Items del carrito cargados dinámicamente -->
+                                        <div class="cart-empty">
+                                            <i class="fas fa-shopping-cart"></i>
+                                            <p>Busca y agrega productos al carrito</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="cart-summary">
+                                        <div class="summary-row">
+                                            <span>Subtotal:</span>
+                                            <span id="cartSubtotal">$0.00</span>
+                                        </div>
+                                        <div class="summary-row">
+                                            <label for="cartDiscount">Descuento:</label>
+                                            <input type="number" 
+                                                   id="cartDiscount" 
+                                                   class="form-control-sm"
+                                                   value="0" 
+                                                   step="0.01" 
+                                                   min="0">
+                                        </div>
+                                        <div class="summary-row total">
+                                            <span>TOTAL:</span>
+                                            <span id="cartTotal">$0.00</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="cart-actions">
+                                        <button id="crearPresupuesto" class="btn btn-secondary">
+                                            <i class="fas fa-file-contract"></i> Presupuesto
+                                        </button>
+                                        <button id="finalizarVenta" class="btn btn-success">
+                                            <i class="fas fa-check-circle"></i> Finalizar Venta
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="quick-actions">
+                                    <button id="aplicarPromocion" class="btn btn-outline btn-block">
+                                        <i class="fas fa-tag"></i> Aplicar Promoción
+                                    </button>
+                                    <button id="retirarEfectivo" class="btn btn-outline btn-block">
+                                        <i class="fas fa-hand-holding-usd"></i> Retirar Efectivo
+                                    </button>
+                                    <div class="stats-card">
+                                        <h4><i class="fas fa-chart-line"></i> Estadísticas</h4>
+                                        <p>Ventas hoy: <strong id="ventasHoyCount">0</strong></p>
+                                        <p>Presupuestos: <strong id="presupuestosCount">0</strong></p>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div id="productsGrid" class="products-grid">
-                                <!-- Productos cargados dinámicamente -->
-                            </div>
                         </div>
+                    </div>
 
-                        <!-- Right Column: Cart -->
-                        <div class="cart-section">
-                            <div class="cart-header">
-                                <h3><i class="fas fa-shopping-cart"></i> Carrito de Venta</h3>
-                                <button id="retirarEfectivo" class="btn btn-warning btn-sm">
-                                    <i class="fas fa-money-bill-wave"></i> Retirar Efectivo
+                    <!-- Página Productos -->
+                    <div id="pageProductos" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-boxes"></i> Gestión de Productos</h2>
+                            <div class="page-actions">
+                                <button id="nuevoProducto" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Nuevo Producto
                                 </button>
-                            </div>
-
-                            <div id="cartItems" class="cart-items">
-                                <!-- Items del carrito dinámicos -->
-                            </div>
-
-                            <div class="cart-totals">
-                                <div class="total-row">
-                                    <span>Subtotal:</span>
-                                    <span id="cartSubtotal">$0.00</span>
-                                </div>
-                                <div class="form-group">
-                                    <label for="cartDiscount">Descuento:</label>
-                                    <input type="number" id="cartDiscount" class="form-control" value="0" step="0.01" min="0">
-                                </div>
-                                <div class="total-row grand-total">
-                                    <span>TOTAL:</span>
-                                    <span id="cartTotal">$0.00</span>
+                                <button id="importarExcel" class="btn btn-outline">
+                                    <i class="fas fa-file-import"></i> Importar
+                                </button>
+                                <button id="exportarExcel" class="btn btn-outline">
+                                    <i class="fas fa-file-export"></i> Exportar
+                                </button>
+                                <div class="search-box-sm">
+                                    <input type="text" 
+                                           id="filterProductos" 
+                                           class="form-control"
+                                           placeholder="Filtrar productos...">
                                 </div>
                             </div>
+                        </div>
+                        
+                        <div id="productosList" class="grid-container">
+                            <!-- Productos cargados dinámicamente -->
+                            <div class="loading">Cargando productos...</div>
+                        </div>
+                    </div>
 
-                            <div class="cart-actions">
-                                <button id="finalizarVenta" class="btn btn-success">
-                                    <i class="fas fa-check-circle"></i> Finalizar Venta
+                    <!-- Página Clientes -->
+                    <div id="pageClientes" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-users"></i> Gestión de Clientes</h2>
+                            <div class="page-actions">
+                                <button id="nuevoCliente" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Nuevo Cliente
                                 </button>
-                                <button id="crearPresupuesto" class="btn btn-primary">
-                                    <i class="fas fa-file-invoice"></i> Presupuesto
-                                </button>
-                                <button id="cancelarVenta" class="btn btn-danger">
-                                    <i class="fas fa-times-circle"></i> Cancelar
+                                <button id="nuevoClientePage" class="btn btn-outline">
+                                    <i class="fas fa-user-plus"></i> Nuevo
                                 </button>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Productos Page -->
-                <div id="pageProductos" class="page">
-                    <div class="page-header">
-                        <h2 class="page-title">Gestión de Productos</h2>
-                        <div class="d-flex gap-2">
-                            <button id="filterStockBajo" class="btn btn-warning btn-sm">
-                                <i class="fas fa-exclamation-triangle"></i> Stock Bajo
-                            </button>
-                            <button id="importarExcel" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-file-import"></i> Importar
-                            </button>
-                            <button id="exportarExcel" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-file-export"></i> Exportar
-                            </button>
-                            <button id="nuevoProducto" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Nuevo Producto
-                            </button>
+                        
+                        <div id="clientesList" class="table-container">
+                            <!-- Clientes cargados dinámicamente -->
+                            <div class="loading">Cargando clientes...</div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <input type="text" id="filterProductos" class="form-control" placeholder="Filtrar productos...">
-                    </div>
-                    <div id="productosList">
-                        <!-- Productos cargados dinámicamente -->
-                    </div>
-                </div>
 
-                <!-- Clientes Page -->
-                <div id="pageClientes" class="page">
-                    <div class="page-header">
-                        <h2 class="page-title">Gestión de Clientes</h2>
-                        <button id="nuevoCliente" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Nuevo Cliente
-                        </button>
-                    </div>
-                    <div id="clientesList">
-                        <!-- Clientes cargados dinámicamente -->
-                    </div>
-                </div>
-
-                <!-- Proveedores Page -->
-                <div id="pageProveedores" class="page">
-                    <div class="page-header">
-                        <h2 class="page-title">Gestión de Proveedores</h2>
-                        <div class="d-flex gap-2">
-                            <button id="webProveedorBtn" class="btn btn-info">
-                                <i class="fas fa-globe"></i> Web Proveedor
-                            </button>
-                            <button id="nuevoProveedor" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Nuevo Proveedor
-                            </button>
+                    <!-- Página Proveedores -->
+                    <div id="pageProveedores" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-truck"></i> Gestión de Proveedores</h2>
+                            <div class="page-actions">
+                                <button id="nuevoProveedor" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Nuevo Proveedor
+                                </button>
+                                <button id="webProveedorBtn" class="btn btn-outline">
+                                    <i class="fas fa-globe"></i> Web Proveedor
+                                </button>
+                                <button id="generarPedidos" class="btn btn-success">
+                                    <i class="fas fa-shopping-cart"></i> Generar Pedidos
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="proveedoresList" class="grid-container">
+                            <!-- Proveedores cargados dinámicamente -->
+                            <div class="loading">Cargando proveedores...</div>
                         </div>
                     </div>
-                    <div id="proveedoresList">
-                        <!-- Proveedores cargados dinámicamente -->
-                    </div>
-                </div>
 
-                <!-- Presupuestos Page -->
-                <div id="pagePresupuestos" class="page">
-                    <div class="page-header">
-                        <h2 class="page-title">Presupuestos</h2>
-                        <button id="nuevoClientePage" class="btn btn-primary">
-                            <i class="fas fa-user-plus"></i> Nuevo Cliente
-                        </button>
-                    </div>
-                    <div id="presupuestosList">
-                        <!-- Presupuestos cargados dinámicamente -->
-                    </div>
-                </div>
-
-                <!-- Ventas Page -->
-                <div id="pageVentas" class="page">
-                    <div class="page-header">
-                        <h2 class="page-title">Historial de Ventas</h2>
-                    </div>
-                    <div id="ventasList">
-                        <!-- Ventas cargadas dinámicamente -->
-                    </div>
-                </div>
-
-                <!-- Caja Page -->
-                <div id="pageCaja" class="page">
-                    <div class="page-header">
-                        <h2 class="page-title">Caja del Día</h2>
-                        <div class="d-flex gap-2">
-                            <button id="verCajasBtn" class="btn btn-info">
-                                <i class="fas fa-history"></i> Ver Cajas Anteriores
-                            </button>
-                            <button id="cerrarCaja" class="btn btn-danger">
-                                <i class="fas fa-lock"></i> Cerrar Caja
-                            </button>
+                    <!-- Página Presupuestos -->
+                    <div id="pagePresupuestos" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-file-contract"></i> Gestión de Presupuestos</h2>
+                            <div class="page-actions">
+                                <button class="btn btn-outline" onclick="loadPresupuestos()">
+                                    <i class="fas fa-sync"></i> Actualizar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="presupuestosList" class="table-container">
+                            <!-- Presupuestos cargados dinámicamente -->
+                            <div class="loading">Cargando presupuestos...</div>
                         </div>
                     </div>
-                    <div class="card">
-                        <h3 class="mb-3">Resumen de Caja</h3>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <tr>
-                                    <td><strong>Saldo Inicial</strong></td>
-                                    <td id="saldoInicialResumen" class="text-right">$0.00</td>
-                                </tr>
-                                <tr>
-                                    <td>Ventas en Efectivo</td>
-                                    <td id="ventasEfectivo" class="text-right">$0.00</td>
-                                </tr>
-                                <tr>
-                                    <td>Ventas con Tarjeta</td>
-                                    <td id="ventasTarjeta" class="text-right">$0.00</td>
-                                </tr>
-                                <tr>
-                                    <td>Ventas por Transferencia</td>
-                                    <td id="ventasTransferencia" class="text-right">$0.00</td>
-                                </tr>
-                                <tr>
-                                    <td>Ventas con QR</td>
-                                    <td id="ventasQr" class="text-right">$0.00</td>
-                                </tr>
-                                <tr>
-                                    <td>Ventas a Cuenta Corriente</td>
-                                    <td id="ventasCuenta" class="text-right">$0.00</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Total Ventas</strong></td>
-                                    <td id="totalVentas" class="text-right">$0.00</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Saldo Final Esperado</strong></td>
-                                    <td id="saldoFinal" class="text-right">$0.00</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Diferencia</strong></td>
-                                    <td id="diferenciaResumen" class="text-right">$0.00</td>
-                                </tr>
-                            </table>
+
+                    <!-- Página Reportes -->
+                    <div id="pageReportes" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-chart-bar"></i> Reportes y Estadísticas</h2>
+                            <div class="page-actions">
+                                <button class="btn btn-primary" onclick="generarReporteDetallado()">
+                                    <i class="fas fa-chart-pie"></i> Reporte Detallado
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="reportesContent" class="reports-container">
+                            <!-- Reportes cargados dinámicamente -->
+                            <div class="loading">Cargando reportes...</div>
+                        </div>
+                    </div>
+
+                    <!-- Página Caja -->
+                    <div id="pageCaja" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-cash-register"></i> Cierre de Caja</h2>
+                            <div class="page-actions">
+                                <button id="verCajasBtn" class="btn btn-outline">
+                                    <i class="fas fa-history"></i> Ver Historial
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="caja-container">
+                            <div class="caja-resumen">
+                                <h3><i class="fas fa-chart-line"></i> Resumen de Caja</h3>
+                                <div class="resumen-grid">
+                                    <div class="resumen-card">
+                                        <h4>Saldo Inicial</h4>
+                                        <p class="amount" id="saldoInicialResumen">$0.00</p>
+                                    </div>
+                                    <div class="resumen-card">
+                                        <h4>Ventas Efectivo</h4>
+                                        <p class="amount" id="ventasEfectivo">$0.00</p>
+                                    </div>
+                                    <div class="resumen-card">
+                                        <h4>Ventas Tarjeta</h4>
+                                        <p class="amount" id="ventasTarjeta">$0.00</p>
+                                    </div>
+                                    <div class="resumen-card">
+                                        <h4>Ventas Transferencia</h4>
+                                        <p class="amount" id="ventasTransferencia">$0.00</p>
+                                    </div>
+                                    <div class="resumen-card">
+                                        <h4>Ventas QR</h4>
+                                        <p class="amount" id="ventasQr">$0.00</p>
+                                    </div>
+                                    <div class="resumen-card">
+                                        <h4>Ventas Cuenta</h4>
+                                        <p class="amount" id="ventasCuenta">$0.00</p>
+                                    </div>
+                                    <div class="resumen-card">
+                                        <h4>Retiros Efectivo</h4>
+                                        <p class="amount" id="retirosEfectivo">$0.00</p>
+                                    </div>
+                                    <div class="resumen-card total">
+                                        <h4>Total Ventas</h4>
+                                        <p class="amount" id="totalVentas">$0.00</p>
+                                    </div>
+                                    <div class="resumen-card">
+                                        <h4>Saldo Final</h4>
+                                        <p class="amount" id="saldoFinal">$0.00</p>
+                                    </div>
+                                    <div class="resumen-card diferencia">
+                                        <h4>Diferencia</h4>
+                                        <p class="amount" id="diferenciaResumen">$0.00</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="caja-acciones">
+                                <div class="action-card">
+                                    <h4><i class="fas fa-calculator"></i> Calculadora</h4>
+                                    <div class="calculator">
+                                        <input type="text" class="calc-display" readonly value="0">
+                                        <div class="calc-buttons">
+                                            <button class="calc-btn">7</button>
+                                            <button class="calc-btn">8</button>
+                                            <button class="calc-btn">9</button>
+                                            <button class="calc-btn">/</button>
+                                            <button class="calc-btn">4</button>
+                                            <button class="calc-btn">5</button>
+                                            <button class="calc-btn">6</button>
+                                            <button class="calc-btn">*</button>
+                                            <button class="calc-btn">1</button>
+                                            <button class="calc-btn">2</button>
+                                            <button class="calc-btn">3</button>
+                                            <button class="calc-btn">-</button>
+                                            <button class="calc-btn">0</button>
+                                            <button class="calc-btn">.</button>
+                                            <button class="calc-btn">=</button>
+                                            <button class="calc-btn">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="action-card">
+                                    <h4><i class="fas fa-tools"></i> Acciones Rápidas</h4>
+                                    <button class="btn btn-block btn-outline" onclick="toggleTecladoNumerico()">
+                                        <i class="fas fa-keyboard"></i> Teclado Virtual
+                                    </button>
+                                    <button class="btn btn-block btn-outline" onclick="retirarEfectivo()">
+                                        <i class="fas fa-money-bill-wave"></i> Retiro de Efectivo
+                                    </button>
+                                    <button class="btn btn-block btn-outline" onclick="cerrarCaja()">
+                                        <i class="fas fa-power-off"></i> Cerrar Caja
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Página Ventas -->
+                    <div id="pageVentas" class="page">
+                        <div class="page-header">
+                            <h2><i class="fas fa-receipt"></i> Historial de Ventas</h2>
+                            <div class="page-actions">
+                                <button class="btn btn-outline" onclick="loadVentas()">
+                                    <i class="fas fa-sync"></i> Actualizar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="ventasList" class="table-container">
+                            <!-- Ventas cargadas dinámicamente -->
+                            <div class="loading">Cargando ventas...</div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Reportes Page -->
-                <div id="pageReportes" class="page">
-                    <div class="page-header">
-                        <h2 class="page-title">Reportes</h2>
-                    </div>
-                    <div id="reportesContent">
-                        <!-- Reportes cargados dinámicamente -->
-                    </div>
-                </div>
-            </main>
+            </div>
         </div>
     </div>
 
-    <!-- Payment Modal -->
-    <div id="paymentModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Seleccionar Método de Pago</h3>
-            </div>
-            <div class="modal-body">
-                <div class="payment-methods">
-                    <button class="btn btn-outline payment-btn active" data-method="efectivo">
-                        <i class="fas fa-money-bill-wave fa-2x"></i><br>Efectivo
-                    </button>
-                    <button class="btn btn-outline payment-btn" data-method="tarjeta">
-                        <i class="fas fa-credit-card fa-2x"></i><br>Tarjeta
-                    </button>
-                    <button class="btn btn-outline payment-btn" data-method="transferencia">
-                        <i class="fas fa-university fa-2x"></i><br>Transferencia
-                    </button>
-                    <button class="btn btn-outline payment-btn" data-method="qr">
-                        <i class="fas fa-qrcode fa-2x"></i><br>QR
-                    </button>
-                    <button class="btn btn-outline payment-btn" data-method="cuenta">
-                        <i class="fas fa-file-invoice-dollar fa-2x"></i><br>Cuenta Corriente
-                    </button>
-                    <button class="btn btn-outline payment-btn" data-method="combinado">
-                        <i class="fas fa-random fa-2x"></i><br>Combinado
-                    </button>
-                </div>
-                <div class="mb-3">
-                    <h4>Total a Pagar: <span id="paymentTotalAmount">$0.00</span></h4>
-                </div>
-                <div id="paymentDetails">
-                    <!-- Detalles de pago dinámicos -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="cancelPayment" class="btn btn-secondary">Cancelar</button>
-                <button id="confirmPayment" class="btn btn-success">Confirmar Pago</button>
-            </div>
-        </div>
-    </div>
+    <!-- Contenedor de alertas -->
+    <div id="alertasContainer" class="alertas-container"></div>
 
-    <!-- Generic Modal -->
-    <div id="genericModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">Título</h3>
-            </div>
-            <div class="modal-body">
-                <div id="modalBody">
-                    <!-- Contenido dinámico -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="modalCancel" class="btn btn-secondary">Cancelar</button>
-                <button id="modalConfirm" class="btn btn-primary" style="display: none;">Confirmar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scanner Container -->
-    <div id="scannerContainer">
-        <video id="scannerVideo" autoplay playsinline></video>
-        <div class="mt-3">
-            <button id="stopScanner" class="btn btn-danger">
-                <i class="fas fa-stop-circle"></i> Detener Scanner
-            </button>
-        </div>
-    </div>
-
-    <!-- Datalist for product search -->
-    <datalist id="productosDatalist"></datalist>
-
-    <script>
-        // Toggle dark mode
-        document.getElementById('toggleDarkMode').addEventListener('click', function() {
-            document.body.classList.toggle('dark-mode');
-            const icon = this.querySelector('i');
-            const text = this.querySelector('.btn-text');
-            if (document.body.classList.contains('dark-mode')) {
-                icon.className = 'fas fa-sun';
-                this.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
-            } else {
-                icon.className = 'fas fa-moon';
-                this.innerHTML = '<i class="fas fa-moon"></i> Modo Oscuro';
-            }
-        });
-
-        // Make functions available globally
-        window.updateCantidad = updateCantidad;
-        window.removeFromCart = removeFromCart;
-        window.changePrice = changePrice;
-        window.changeUnit = changeUnit;
-        window.agregarAlCarrito = agregarAlCarrito;
-        window.buscarYAgregarProducto = buscarYAgregarProducto;
-        window.finalizarVenta = finalizarVenta;
-        window.crearPresupuesto = crearPresupuesto;
-        window.cancelarVenta = cancelarVenta;
-        window.updateCartTotal = updateCartTotal;
-        window.confirmarPago = confirmarPago;
-        window.imprimirTicket = imprimirTicket;
-        window.enviarTicketWhatsapp = enviarTicketWhatsapp;
-        window.showNuevoProductoModal = showNuevoProductoModal;
-        window.showNuevoClienteModal = showNuevoClienteModal;
-        window.showNuevoProveedorModal = showNuevoProveedorModal;
-        window.toggleScanner = toggleScanner;
-        window.stopScanner = stopScanner;
-        window.activateKeyboardMode = activateKeyboardMode;
-        window.editarProducto = editarProducto;
-        window.eliminarProducto = eliminarProducto;
-        window.verCliente = verCliente;
-        window.editarCliente = editarCliente;
-        window.verMovimientosCliente = verMovimientosCliente;
-        window.registrarPagoCliente = registrarPagoCliente;
-        window.verProveedor = verProveedor;
-        window.editarProveedor = editarProveedor;
-        window.contactarProveedor = contactarProveedor;
-        window.verPresupuesto = verPresupuesto;
-        window.editarPresupuesto = editarPresupuesto;
-        window.convertirPresupuestoAVenta = convertirPresupuestoAVenta;
-        window.exportarReporteMensual = exportarReporteMensual;
-        window.verVentaDetalle = verVentaDetalle;
-        window.anularVenta = anularVenta;
-        window.aplicarPromocion = aplicarPromocion;
-        window.retirarEfectivo = retirarEfectivo;
-        window.verCajasPorDia = verCajasPorDia;
-        window.abrirWebProveedor = abrirWebProveedor;
-        window.recalcularDeudaPresupuesto = recalcularDeudaPresupuesto;
-        window.handleProductSearch = handleProductSearch;
-        window.handleModalConfirm = handleModalConfirm;
-        window.handleModalCancel = handleModalCancel;
-        window.agregarMetodoCombinado = agregarMetodoCombinado;
-        window.eliminarMetodoCombinado = eliminarMetodoCombinado;
-        window.actualizarTotalCombinado = actualizarTotalCombinado;
-        window.switchPage = switchPage;
-    </script>
     <script src="app.js"></script>
+    <script>
+        // Toggle tema claro/oscuro
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const savedTheme = localStorage.getItem('pos-theme') || 'light';
+            
+            document.body.setAttribute('data-theme', savedTheme);
+            themeToggle.checked = savedTheme === 'dark';
+            
+            themeToggle.addEventListener('change', function() {
+                const theme = this.checked ? 'dark' : 'light';
+                document.body.setAttribute('data-theme', theme);
+                localStorage.setItem('pos-theme', theme);
+            });
+            
+            // Toggle sidebar en móviles
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('mobile-open');
+            });
+            
+            // Cerrar sidebar al hacer clic fuera en móviles
+            document.addEventListener('click', function(event) {
+                if (window.innerWidth <= 768 && 
+                    !sidebar.contains(event.target) && 
+                    !menuToggle.contains(event.target) &&
+                    sidebar.classList.contains('mobile-open')) {
+                    sidebar.classList.remove('mobile-open');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
