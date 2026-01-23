@@ -33,6 +33,113 @@ const APP_STATE = {
     cantidadEditando: null
 };
 
+// ============================================
+// FUNCIONES DE BÚSQUEDA Y CARGA
+// ============================================
+
+function handleProductSearch() {
+    const searchInput = document.getElementById('productSearch');
+    if (!searchInput) return;
+    
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    
+    // Si estamos en la página POS y hay productos cargados
+    if (APP_STATE.currentPage === 'pos' && APP_STATE.productosCargados.length > 0) {
+        // Si no hay término de búsqueda, mostrar todos los productos
+        if (!searchTerm) {
+            mostrarProductosEnVenta(APP_STATE.productosCargados);
+            return;
+        }
+        
+        // Filtrar productos por múltiples criterios
+        const productosFiltrados = APP_STATE.productosCargados.filter(producto => {
+            const nombreMatch = producto.nombre && producto.nombre.toLowerCase().includes(searchTerm);
+            const codigoBarrasMatch = producto.codigo_barras && producto.codigo_barras.toLowerCase().includes(searchTerm);
+            const codigoInternoMatch = producto.codigo_interno && producto.codigo_interno.toLowerCase().includes(searchTerm);
+            const descripcionMatch = producto.descripcion && producto.descripcion.toLowerCase().includes(searchTerm);
+            const marcaMatch = producto.marcas && producto.marcas.nombre && producto.marcas.nombre.toLowerCase().includes(searchTerm);
+            const proveedorMatch = producto.proveedores && producto.proveedores.nombre && producto.proveedores.nombre.toLowerCase().includes(searchTerm);
+            const categoriaMatch = producto.categoria && producto.categoria.toLowerCase().includes(searchTerm);
+            
+            return nombreMatch || codigoBarrasMatch || codigoInternoMatch || 
+                   descripcionMatch || marcaMatch || proveedorMatch || categoriaMatch;
+        });
+        
+        mostrarProductosEnVenta(productosFiltrados);
+    }
+}
+
+async function buscarYAgregarProducto() {
+    const searchInput = document.getElementById('productSearch');
+    if (!searchInput) return;
+    
+    const searchTerm = searchInput.value.trim();
+    if (!searchTerm) {
+        alert('Ingresa un nombre, código, marca o proveedor');
+        return;
+    }
+    
+    try {
+        let producto = null;
+        
+        // Primero buscar por código exacto (barras o interno)
+        const { data: productosCodigo, error: errorCodigo } = await APP_STATE.supabase
+            .from('productos')
+            .select('*, marcas(nombre), proveedores(nombre)')
+            .or(`codigo_barras.eq.${searchTerm},codigo_interno.eq.${searchTerm}`)
+            .eq('activo', true)
+            .limit(1);
+        
+        if (!errorCodigo && productosCodigo && productosCodigo.length > 0) {
+            producto = productosCodigo[0];
+        } else {
+            // Buscar por nombre (insensible a mayúsculas)
+            const { data: productosNombre, error: errorNombre } = await APP_STATE.supabase
+                .from('productos')
+                .select('*, marcas(nombre), proveedores(nombre)')
+                .ilike('nombre', `%${searchTerm}%`)
+                .eq('activo', true)
+                .limit(1);
+            
+            if (!errorNombre && productosNombre && productosNombre.length > 0) {
+                producto = productosNombre[0];
+            } else {
+                // Buscar por marca
+                const { data: productosMarca, error: errorMarca } = await APP_STATE.supabase
+                    .from('productos')
+                    .select('*, marcas(nombre), proveedores(nombre)')
+                    .eq('activo', true)
+                    .limit(10);
+                
+                // Filtrar en memoria por marca
+                if (!errorMarca && productosMarca) {
+                    const productoMarca = productosMarca.find(p => 
+                        p.marcas && p.marcas.nombre && p.marcas.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                    if (productoMarca) {
+                        producto = productoMarca;
+                    }
+                }
+            }
+        }
+        
+        if (producto) {
+            await agregarAlCarrito(producto.id);
+            searchInput.value = '';
+            searchInput.focus();
+        } else {
+            alert(`Producto "${searchTerm}" no encontrado. Verifica el código o nombre.`);
+        }
+    } catch (error) {
+        console.error('Error en búsqueda:', error);
+        alert('Error al buscar producto');
+    }
+}
+
+// ============================================
+// FUNCIONES DE INICIALIZACIÓN
+// ============================================
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Inicializando Sistema POS Online v4.0...');
@@ -1085,73 +1192,6 @@ function displayProductos(productos) {
         
         container.appendChild(card);
     });
-}
-
-async function buscarYAgregarProducto() {
-    const searchInput = document.getElementById('productSearch');
-    if (!searchInput) return;
-    
-    const searchTerm = searchInput.value.trim();
-    if (!searchTerm) {
-        alert('Ingresa un nombre, código, marca o proveedor');
-        return;
-    }
-    
-    try {
-        let producto = null;
-        
-        // Primero buscar por código exacto (barras o interno)
-        const { data: productosCodigo, error: errorCodigo } = await APP_STATE.supabase
-            .from('productos')
-            .select('*, marcas(nombre), proveedores(nombre)')
-            .or(`codigo_barras.eq.${searchTerm},codigo_interno.eq.${searchTerm}`)
-            .eq('activo', true)
-            .limit(1);
-        
-        if (!errorCodigo && productosCodigo && productosCodigo.length > 0) {
-            producto = productosCodigo[0];
-        } else {
-            // Buscar por nombre (insensible a mayúsculas)
-            const { data: productosNombre, error: errorNombre } = await APP_STATE.supabase
-                .from('productos')
-                .select('*, marcas(nombre), proveedores(nombre)')
-                .ilike('nombre', `%${searchTerm}%`)
-                .eq('activo', true)
-                .limit(1);
-            
-            if (!errorNombre && productosNombre && productosNombre.length > 0) {
-                producto = productosNombre[0];
-            } else {
-                // Buscar por marca
-                const { data: productosMarca, error: errorMarca } = await APP_STATE.supabase
-                    .from('productos')
-                    .select('*, marcas(nombre), proveedores(nombre)')
-                    .eq('activo', true)
-                    .limit(1);
-                
-                // Filtrar en memoria por marca
-                if (!errorMarca && productosMarca) {
-                    const productoMarca = productosMarca.find(p => 
-                        p.marcas && p.marcas.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-                    );
-                    if (productoMarca) {
-                        producto = productoMarca;
-                    }
-                }
-            }
-        }
-        
-        if (producto) {
-            await agregarAlCarrito(producto.id);
-            searchInput.value = '';
-            searchInput.focus();
-        } else {
-            alert(`Producto "${searchTerm}" no encontrado. Verifica el código o nombre.`);
-        }
-    } catch (error) {
-        console.error('Error en búsqueda:', error);
-        alert('Error al buscar producto');
-    }
 }
 
 async function agregarAlCarrito(productoId) {
